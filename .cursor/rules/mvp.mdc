@@ -1,0 +1,117 @@
+---
+alwaysApply: true
+---
+# Valorant Tournament Platform — Project Rule
+
+Tech Stack:
+- React + TypeScript + Vite
+- TailwindCSS + Shadcn UI + Radix UI
+- Supabase (auth, RLS, DB, storage)
+- React Hook Form + Zod
+- React Router v6+
+- Lucide Icons, clsx, Zustand (optional)
+
+File Conventions:
+- All components must be function components using TypeScript
+- Use TailwindCSS for all styling — no external CSS or <style> tags
+- Use Shadcn UI components for UI (Button, Input, Dialog, etc.)
+- Supabase client is located in: src/integrations/supabase/client.ts
+- Environment variables:
+  VITE_SUPABASE_URL=
+  VITE_SUPABASE_ANON_KEY=
+
+Supabase Rules:
+- Use @supabase/supabase-js
+- Always check both data and error on queries
+- Never expose service_role keys on frontend
+- RLS is always enabled
+- Use Database types from Supabase for strong typing
+- RLS expectations:
+  profiles: only self-editable (auth.uid() = id)
+  teams: only editable by captain
+  team_requests: visible to captain and player only
+  tournaments: only organizer can modify
+  matches: results editable only by admin or organizer
+
+Coding Principles:
+- Use early returns for clarity
+- All styling with Tailwind utility classes only
+- Use class: where relevant (e.g., class variance)
+- All handler functions start with “handle” (e.g., handleSubmit, handleCreateTeam)
+- Use const arrow functions for all event handlers
+- Always type state, refs, and effect values
+- All forms must use zod + zodResolver for validation
+- Do not use any, @ts-ignore, or TODOs in committed code
+
+Accessibility & UI:
+- All interactive elements must support tabIndex={0}, aria-labels, and keyboard control
+- Use lucide-react for all icons
+- Use clsx or cn utility for conditional classes
+- Apply consistent spacing, transitions, rounding (e.g., p-4, shadow-md, rounded-xl)
+- Use toast notifications for all user actions (success/failure)
+
+Structure:
+- Reusable UI components: src/components/
+- Feature-specific logic: src/features/ (e.g., profile, teams, tournaments)
+- Utilities/helpers: src/lib/
+- Supabase client: src/integrations/supabase/client.ts
+
+Functionality (MVP):
+
+Profiles:
+- Auth via Supabase email/password
+- User profile includes Riot ID, region, rank, roles[], agents[], bio
+- Optional avatar upload via Supabase Storage
+
+Teams:
+- Captains can create/manage teams
+- Players can request to join if recruiting = true
+- Captains can accept or reject
+- A player can be in only one team at a time
+
+Tournaments:
+- Organizers can create single or double elim tournaments
+- Define max teams, prize pool, match format (BO1–BO5)
+- Winners are auto-advanced after score input
+- Tournament can only start at configured time
+
+Logic Notes:
+- Prevent duplicate team requests from same player
+- Team requests are visible only to captain and applicant
+- Admin can manage (delete/edit) all teams, users, tournaments
+
+Quality Requirements:
+- Code must always build without TypeScript or runtime errors
+- No commented out code, TODOs or incomplete logic
+- No console.log in committed code
+- Code must be readable, maintainable, and commit-ready
+
+Git Commits:
+- Use semantic commits:
+  feat: create tournament creation form
+  fix: reject duplicate team join request
+  refactor: extract useTeam hook
+- 1 feature = 1 commit
+
+Example Pattern:
+const handleJoinTeam = async () => {
+  const { error } = await supabase
+    .from('team_requests')
+    .insert({ team_id: selectedTeamId, player_id: user.id })
+
+  if (error) {
+    toast.error("Failed to send request")
+    console.error(error)
+    return
+  }
+
+  toast.success("Request sent")
+}
+
+Final Note:
+When working with Cursor AI:
+- Always follow this rule set
+- Validate role-based access using profile.role
+- Supabase operations must be typed and error-handled
+- UI must strictly follow Tailwind + Shadcn conventions
+- If anything is uncertain — comment the risk or suggest fallback

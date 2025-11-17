@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Shuffle, Zap } from "lucide-react";
@@ -36,11 +36,7 @@ export function TournamentBracket({ tournamentId, isOwner, bracketFormat, partic
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
-  useEffect(() => {
-    fetchMatches();
-  }, [tournamentId]);
-
-  const fetchMatches = async () => {
+  const fetchMatches = useCallback(async () => {
     const { data, error } = await supabase
       .from("tournament_matches")
       .select("*")
@@ -65,7 +61,11 @@ export function TournamentBracket({ tournamentId, isOwner, bracketFormat, partic
 
     setMatches(matchesWithTeams);
     setLoading(false);
-  };
+  }, [tournamentId]);
+
+  useEffect(() => {
+    fetchMatches();
+  }, [fetchMatches]);
 
   const getTeamInfo = async (teamId: string) => {
     const { data } = await supabase

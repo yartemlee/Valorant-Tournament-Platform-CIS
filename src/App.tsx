@@ -7,7 +7,6 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SessionProvider } from "@/contexts/SessionContext";
 import Index from "./pages/Index";
-import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -67,7 +66,6 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />

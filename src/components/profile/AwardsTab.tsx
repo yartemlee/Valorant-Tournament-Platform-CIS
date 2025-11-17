@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,11 +14,7 @@ export function AwardsTab({ userId }: AwardsTabProps) {
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadAchievements();
-  }, [userId]);
-
-  const loadAchievements = async () => {
+  const loadAchievements = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("user_achievements")
@@ -35,7 +31,11 @@ export function AwardsTab({ userId }: AwardsTabProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    loadAchievements();
+  }, [loadAchievements]);
 
   const filteredAchievements = filter === "all" 
     ? achievements 

@@ -38,7 +38,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast.error("Войдите, чтобы создать турнир");
-      navigate("/login");
+      onOpenChange(false);
       return;
     }
 

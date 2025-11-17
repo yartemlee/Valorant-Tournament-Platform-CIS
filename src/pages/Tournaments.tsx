@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -47,11 +47,7 @@ const Tournaments = () => {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    fetchTournaments();
-  }, [statusFilter, formatFilter]);
-
-  const fetchTournaments = async () => {
+  const fetchTournaments = useCallback(async () => {
     setLoading(true);
     let query = supabase
       .from("tournaments")
@@ -74,7 +70,11 @@ const Tournaments = () => {
       setTournaments(data || []);
     }
     setLoading(false);
-  };
+  }, [statusFilter, formatFilter]);
+
+  useEffect(() => {
+    fetchTournaments();
+  }, [fetchTournaments]);
 
   const filteredTournaments = tournaments.filter((t) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -83,7 +83,7 @@ const Tournaments = () => {
   const handleMyTournaments = () => {
     if (!user) {
       toast.error("Войдите, чтобы увидеть свои турниры");
-      navigate("/login");
+      navigate("/");
       return;
     }
     setStatusFilter("all");

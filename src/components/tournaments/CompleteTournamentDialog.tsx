@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,13 +36,7 @@ export function CompleteTournamentDialog({
   const [secondPlace, setSecondPlace] = useState("");
   const [thirdPlace, setThirdPlace] = useState("");
 
-  useEffect(() => {
-    if (open && autoDetect) {
-      detectWinnersFromBracket();
-    }
-  }, [open, autoDetect]);
-
-  const detectWinnersFromBracket = async () => {
+  const detectWinnersFromBracket = useCallback(async () => {
     try {
       // Fetch all matches from bracket
       const { data: matches } = await supabase
@@ -85,7 +79,13 @@ export function CompleteTournamentDialog({
       toast.error("Ошибка определения призёров");
       setAutoDetect(false);
     }
-  };
+  }, [tournamentId]);
+
+  useEffect(() => {
+    if (open && autoDetect) {
+      detectWinnersFromBracket();
+    }
+  }, [open, autoDetect, detectWinnersFromBracket]);
 
   const handleComplete = async () => {
     if (!firstPlace) {
@@ -155,7 +155,6 @@ export function CompleteTournamentDialog({
       // Cleanup phantom data after tournament completion
       try {
         await cleanupTournamentPhantoms(tournamentId);
-        console.log("Фантомные данные турнира очищены");
       } catch (error) {
         console.error("Ошибка очистки фантомных данных:", error);
         // Don't block tournament completion if cleanup fails

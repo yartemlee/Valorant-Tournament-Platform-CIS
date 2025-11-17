@@ -63,7 +63,6 @@ export function PhantomPlayersControls({ teamId, onUpdate }: PhantomPlayersContr
         variant="outline"
         size="sm"
         onClick={() => {
-          console.log("Fill button clicked - opening dialog");
           setFillDialogOpen(true);
         }}
         disabled={isLoading}
@@ -80,7 +79,6 @@ export function PhantomPlayersControls({ teamId, onUpdate }: PhantomPlayersContr
         variant="outline"
         size="sm"
         onClick={() => {
-          console.log("Cleanup button clicked - opening dialog");
           setCleanupDialogOpen(true);
         }}
         disabled={isLoading}

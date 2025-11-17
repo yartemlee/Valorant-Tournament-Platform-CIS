@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Sidebar from "@/components/Sidebar";
@@ -67,6 +67,7 @@ const TournamentDetails = () => {
     if (searchParams.get("action") === "join") {
       handleJoin();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const checkAuth = async () => {
@@ -132,7 +133,7 @@ const TournamentDetails = () => {
 
     if (!user) {
       toast.error("Войдите, чтобы участвовать");
-      navigate("/login");
+      navigate("/");
       return;
     }
 

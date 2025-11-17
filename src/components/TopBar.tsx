@@ -15,11 +15,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { NotificationsDialog } from "./NotificationsDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import LoginModal from "./auth/LoginModal";
 
 const TopBar = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -118,7 +120,11 @@ const TopBar = () => {
         {/* Auth Section */}
         {!user ? (
           <>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsLoginOpen(true)}
+            >
               Войти
             </Button>
             <Button
@@ -183,6 +189,11 @@ const TopBar = () => {
       <NotificationsDialog 
         open={notificationsOpen} 
         onOpenChange={setNotificationsOpen} 
+      />
+
+      <LoginModal 
+        isOpen={isLoginOpen} 
+        onClose={() => setIsLoginOpen(false)} 
       />
     </header>
   );

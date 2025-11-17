@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoleSelector } from "./RoleSelector";
@@ -15,11 +15,7 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadProfileData();
-  }, [profile.id]);
-
-  const loadProfileData = async () => {
+  const loadProfileData = useCallback(async () => {
     try {
       // Load roles
       const { data: rolesData } = await supabase
@@ -33,7 +29,11 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile.id]);
+
+  useEffect(() => {
+    loadProfileData();
+  }, [loadProfileData]);
 
   if (loading) {
     return <div className="animate-pulse">Загрузка...</div>;

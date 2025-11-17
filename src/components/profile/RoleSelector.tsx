@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Slider } from "@/components/ui/slider";
 import { Sword, Shield, Zap, Target } from "lucide-react";
@@ -50,17 +50,17 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
   const [updating, setUpdating] = useState(false);
   const [agents, setAgents] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadAgents();
-  }, [userId]);
-
-  const loadAgents = async () => {
+  const loadAgents = useCallback(async () => {
     const { data } = await supabase
       .from("player_agents")
       .select("*")
       .eq("user_id", userId);
     setAgents(data || []);
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    loadAgents();
+  }, [loadAgents]);
 
   const getRoleComfort = (role: string) => {
     const roleData = roles.find(r => r.role === role);
