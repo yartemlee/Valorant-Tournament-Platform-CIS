@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Coins, LogOut, Settings, User, Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { User as SupabaseUser } from "@supabase/supabase-js";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,59 +11,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
 import { NotificationsDialog } from "./NotificationsDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import LoginModal from "./auth/LoginModal";
+import RegisterModal from "./auth/RegisterModal";
+import { useAuth } from "@/hooks/useAuth";
 
 const TopBar = () => {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [profile, setProfile] = useState<any>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const loadProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    
-    if (data) {
-      setProfile(data);
-    }
-  };
+  const { user, profile, signOut } = useAuth();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     await queryClient.clear();
-    toast.success("Вы вышли из аккаунта");
     navigate("/");
   };
 
@@ -131,7 +94,7 @@ const TopBar = () => {
               variant="default"
               size="sm"
               className="bg-gradient-primary shadow-glow-primary hover:shadow-glow-primary hover:scale-105"
-              onClick={() => navigate("/signup")}
+              onClick={() => setIsRegisterOpen(true)}
             >
               Регистрация
             </Button>
@@ -194,6 +157,11 @@ const TopBar = () => {
       <LoginModal 
         isOpen={isLoginOpen} 
         onClose={() => setIsLoginOpen(false)} 
+      />
+
+      <RegisterModal 
+        isOpen={isRegisterOpen} 
+        onClose={() => setIsRegisterOpen(false)} 
       />
     </header>
   );

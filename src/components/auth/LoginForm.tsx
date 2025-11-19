@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
 import { Chrome, MessageCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -18,89 +17,35 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { signIn, signInWithGoogle, signInWithDiscord } = useAuth();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      let loginEmail = email;
+    const success = await signIn(email, password);
 
-      if (!email.includes("@")) {
-        const { data: emailData, error: emailError } = await supabase
-          .rpc("get_email_by_username", { username_input: email });
+    setLoading(false);
 
-        if (emailError || !emailData) {
-          toast.error("Пользователь с таким никнеймом не найден");
-          setLoading(false);
-          return;
-        }
-
-        loginEmail = emailData;
-      }
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password,
-      });
-
-      if (error) {
-        if (error.message.includes("Invalid login credentials")) {
-          toast.error("Неверный email/никнейм или пароль");
-        } else {
-          toast.error(error.message);
-        }
-        return;
-      }
-
-      toast.success("Добро пожаловать!");
-      
+    if (success) {
       if (onSuccess) {
         onSuccess();
       } else {
         navigate("/");
       }
-    } catch (error) {
-      toast.error("Произошла ошибка при входе");
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      toast.error("Ошибка входа через Google");
-    } finally {
-      setLoading(false);
-    }
+    await signInWithGoogle();
+    setLoading(false);
   };
 
   const handleDiscordLogin = async () => {
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "discord",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      toast.error("Ошибка входа через Discord");
-    } finally {
-      setLoading(false);
-    }
+    await signInWithDiscord();
+    setLoading(false);
   };
 
   return (

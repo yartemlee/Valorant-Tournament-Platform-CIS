@@ -29,14 +29,14 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="sr-only">Вход в аккаунт</DialogTitle>
-          <button
+          {/* <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-lg hover:bg-accent transition-colors"
             aria-label="Закрыть"
             tabIndex={0}
           >
             <X className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-          </button>
+          </button> */}
         </DialogHeader>
         <LoginForm onSuccess={handleSuccess} />
       </DialogContent>

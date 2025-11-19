@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Chrome, MessageCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
   SelectContent,
@@ -31,6 +32,7 @@ const Signup = () => {
   const [newsletter, setNewsletter] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { signUp, signInWithGoogle, signInWithDiscord } = useAuth();
 
   const countries = [
     // СНГ страны
@@ -224,7 +226,6 @@ const Signup = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!agreedToTerms) {
       toast.error("Необходимо принять правила платформы");
       return;
@@ -245,107 +246,65 @@ const Signup = () => {
       return;
     }
 
-    // Check age
-    const birthDate = new Date(formData.dateOfBirth);
-    const age = new Date().getFullYear() - birthDate.getFullYear();
-    if (age < 16) {
-      toast.error("Регистрация доступна только с 16 лет");
-      return;
+    if (formData.dateOfBirth) {
+      const birthDate = new Date(formData.dateOfBirth);
+      const age = new Date().getFullYear() - birthDate.getFullYear();
+      if (age < 16) {
+        toast.error("Регистрация доступна только с 16 лет");
+        return;
+      }
     }
 
     setLoading(true);
 
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            username: formData.username,
-            full_name: formData.fullName,
-            country: formData.country,
-            phone_number: formData.phone,
-            date_of_birth: formData.dateOfBirth,
-            newsletter_subscribed: newsletter,
-          },
-        },
-      });
+    const fullPhoneNumber = formData.phone 
+      ? `${formData.countryCode}${formData.phone}`
+      : null;
 
-      if (error) {
-        if (error.message.includes("already registered")) {
-          toast.error("Email уже зарегистрирован");
-        } else {
-          toast.error(error.message);
-        }
-        return;
+    const success = await signUp(
+      formData.email,
+      formData.password,
+      formData.username,
+      {
+        full_name: formData.fullName,
+        country: formData.country,
+        phone_number: fullPhoneNumber,
+        date_of_birth: formData.dateOfBirth,
+        newsletter_subscribed: newsletter,
       }
+    );
 
-      if (data.user) {
-        // Update profile with additional data
-        // Combine country code and phone number
-        const fullPhoneNumber = formData.phone 
-          ? `${formData.countryCode}${formData.phone}`
-          : null;
+    setLoading(false);
 
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({
-            country: formData.country,
-            phone_number: fullPhoneNumber,
-            date_of_birth: formData.dateOfBirth,
-            newsletter_subscribed: newsletter,
-          })
-          .eq("id", data.user.id);
-
-        if (profileError) {
-          // Profile update failed but user is created
+    if (success) {
+      if (formData.country || fullPhoneNumber || formData.dateOfBirth) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from("profiles")
+            .update({
+              country: formData.country || null,
+              phone_number: fullPhoneNumber,
+              date_of_birth: formData.dateOfBirth || null,
+              newsletter_subscribed: newsletter,
+            })
+            .eq("id", user.id);
         }
-
-        toast.success("Аккаунт создан! Добро пожаловать в VALHUB!");
-        navigate("/");
       }
-    } catch (error: any) {
-      toast.error("Произошла ошибка при регистрации");
-    } finally {
-      setLoading(false);
+      navigate("/");
     }
   };
 
   const handleGoogleSignup = async () => {
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      toast.error("Ошибка регистрации через Google");
-    } finally {
-      setLoading(false);
-    }
+    await signInWithGoogle();
+    setLoading(false);
   };
 
   const handleDiscordSignup = async () => {
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "discord",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      toast.error("Ошибка регистрации через Discord");
-    } finally {
-      setLoading(false);
-    }
+    await signInWithDiscord();
+    setLoading(false);
   };
 
   return (
