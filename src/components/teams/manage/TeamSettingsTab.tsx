@@ -45,20 +45,71 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
   const isManager = isCaptain || isCoach;
 
   const handleUpdate = async () => {
+    // Валидация на стороне клиента
+    if (!formData.name.trim()) {
+      toast({
+        title: "Ошибка валидации",
+        description: "Название команды обязательно",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.name.trim().length < 3) {
+      toast({
+        title: "Ошибка валидации",
+        description: "Название команды должно содержать минимум 3 символа",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.tag.trim()) {
+      toast({
+        title: "Ошибка валидации",
+        description: "Тег команды обязателен",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.tag.trim().length < 2) {
+      toast({
+        title: "Ошибка валидации",
+        description: "Тег команды должен содержать минимум 2 символа",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.logo_url && formData.logo_url.trim()) {
+      try {
+        new URL(formData.logo_url);
+      } catch {
+        toast({
+          title: "Ошибка валидации",
+          description: "Некорректный URL логотипа",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsUpdating(true);
     try {
-      // Use secure RPC that validates captain role
-      const { data, error } = await supabase.rpc('update_team_settings', {
-        team_id_input: team.id,
-        new_name: formData.name,
-        new_tag: formData.tag,
-        new_logo_url: formData.logo_url || null,
-        new_description: formData.description || null,
-        new_is_recruiting: formData.is_recruiting,
-      });
+      const { error } = await supabase
+        .from("teams")
+        .update({
+          name: formData.name.trim(),
+          tag: formData.tag.trim().toUpperCase(),
+          description: formData.description.trim() || null,
+          logo_url: formData.logo_url.trim() || null,
+          is_recruiting: formData.is_recruiting,
+        })
+        .eq("id", team.id);
 
       if (error) {
-        if (error.message.includes('not_captain') || error.message.includes('not_authorized')) {
+        if (error.message.includes('policy') || error.message.includes('permission')) {
           toast({
             title: "Нет прав",
             description: "Управление доступно только капитану или тренеру команды.",
@@ -76,10 +127,9 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
     } catch (error: any) {
-      console.error("Update team settings error:", error);
       toast({
         title: "Ошибка",
-        description: error.message,
+        description: error.message || "Не удалось обновить настройки команды",
         variant: "destructive",
       });
     } finally {
@@ -99,7 +149,7 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
 
       // 2. Отменяем все активные приглашения от этой команды
       const { error: invitesError } = await supabase
-        .from("team_invites")
+        .from("team_invitations")
         .update({ status: "cancelled", updated_at: new Date().toISOString() })
         .eq("team_id", team.id)
         .eq("status", "pending");
@@ -164,7 +214,13 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               disabled={!isManager}
+              placeholder="Введите название команды"
+              minLength={3}
+              required
             />
+            <p className="text-xs text-muted-foreground">
+              Минимум 3 символа
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -175,7 +231,13 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
               onChange={(e) => setFormData({ ...formData, tag: e.target.value.toUpperCase() })}
               maxLength={5}
               disabled={!isManager}
+              placeholder="Например: TEST"
+              minLength={2}
+              required
             />
+            <p className="text-xs text-muted-foreground">
+              2-5 символов, только заглавные буквы
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -186,7 +248,11 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
               value={formData.logo_url}
               onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
               disabled={!isManager}
+              placeholder="https://example.com/logo.png"
             />
+            <p className="text-xs text-muted-foreground">
+              Необязательно. Введите полный URL изображения
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -198,7 +264,11 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
               rows={4}
               maxLength={400}
               disabled={!isManager}
+              placeholder="Расскажите о вашей команде..."
             />
+            <p className="text-xs text-muted-foreground">
+              {formData.description.length}/400 символов
+            </p>
           </div>
 
           <div className="flex items-center justify-between">
