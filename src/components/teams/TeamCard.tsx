@@ -5,7 +5,7 @@ import { Users, Shield, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUserProfile } from "@/hooks/useCurrentUserProfile";
 
@@ -16,7 +16,6 @@ interface TeamCardProps {
 
 export function TeamCard({ team, isUserTeam }: TeamCardProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isApplying, setIsApplying] = useState(false);
   const { id: currentUserId, current_team_id, isMemberOfThisTeam, isManager } = useCurrentUserProfile(team.id);
@@ -27,11 +26,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
 
   const handleApply = async () => {
     if (!currentUserId) {
-      toast({
-        title: "Требуется авторизация",
-        description: "Войдите, чтобы подать заявку",
-        variant: "destructive",
-      });
+      toast.error("Требуется авторизация. Войдите, чтобы подать заявку");
       return;
     }
 
@@ -50,11 +45,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
       }
 
       if (freshProfile.current_team_id) {
-        toast({
-          title: "Вы уже состоите в команде",
-          description: "Чтобы вступить в другую — сначала покиньте текущую.",
-          variant: "destructive",
-        });
+        toast.error("Вы уже состоите в команде. Чтобы вступить в другую — сначала покиньте текущую");
         queryClient.invalidateQueries({ queryKey: ["profile"] });
         setIsApplying(false);
         return;
@@ -71,58 +62,35 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
         
         // Обрабатываем известные ошибки с понятными сообщениями
         if (error.message.includes('already_in_team')) {
-          toast({
-            title: "Вы уже состоите в команде",
-            description: "Чтобы вступить в другую — сначала покиньте текущую.",
-            variant: "destructive",
-          });
+          toast.error("Вы уже состоите в команде. Чтобы вступить в другую — сначала покиньте текущую");
           queryClient.invalidateQueries({ queryKey: ["profile"] });
           return;
         }
         
         if (error.message.includes('duplicate_pending')) {
-          toast({
-            title: "Вы уже подали заявку в эту команду",
-            description: "Ожидайте ответа от капитана команды",
-          });
+          toast.error("Вы уже подали заявку в эту команду. Ожидайте ответа от капитана команды");
           return;
         }
         
         if (error.message.includes('not_authenticated')) {
-          toast({
-            title: "Требуется авторизация",
-            description: "Войдите, чтобы подать заявку",
-            variant: "destructive",
-          });
+          toast.error("Требуется авторизация. Войдите, чтобы подать заявку");
           return;
         }
 
         if (error.message.includes('team_not_recruiting')) {
-          toast({
-            title: "Набор в команду закрыт",
-            description: "Эта команда больше не принимает новых участников",
-            variant: "destructive",
-          });
+          toast.error("Набор в команду закрыт. Эта команда больше не принимает новых участников");
           queryClient.invalidateQueries({ queryKey: ["teams"] });
           return;
         }
 
         if (error.message.includes('team_full')) {
-          toast({
-            title: "Команда заполнена",
-            description: "В команде уже максимальное количество участников (10)",
-            variant: "destructive",
-          });
+          toast.error("Команда заполнена. В команде уже максимальное количество участников (10)");
           queryClient.invalidateQueries({ queryKey: ["teams"] });
           return;
         }
 
         if (error.code === '42501') {
-          toast({
-            title: "Не удалось отправить заявку",
-            description: "Проверьте, что вы не состоите в команде.",
-            variant: "destructive",
-          });
+          toast.error("Не удалось отправить заявку. Проверьте, что вы не состоите в команде");
           return;
         }
         
@@ -130,10 +98,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
         throw error;
       }
 
-      toast({
-        title: "Заявка отправлена",
-        description: "Ожидайте ответа от капитана команды",
-      });
+      toast.success("Заявка отправлена. Ожидайте ответа от капитана команды");
 
       // Обновляем все связанные кэши
       await Promise.all([
@@ -143,12 +108,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
         queryClient.invalidateQueries({ queryKey: ["team-applications-count"] }),
       ]);
     } catch (error: any) {
-      console.error("Application process error:", error);
-      toast({
-        title: "Ошибка при отправке заявки",
-        description: "Не удалось отправить заявку. Попробуйте ещё раз.",
-        variant: "destructive",
-      });
+      toast.error("Ошибка при отправке заявки. Не удалось отправить заявку. Попробуйте ещё раз");
     } finally {
       setIsApplying(false);
     }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,6 @@ interface InvitePlayerDialogProps {
 }
 
 export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerDialogProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [inviting, setInviting] = useState<string | null>(null);
@@ -56,10 +55,7 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
         .maybeSingle();
 
       if (existingInvite) {
-        toast({
-          title: "Приглашение уже отправлено",
-          variant: "destructive",
-        });
+        toast.error("Приглашение уже отправлено");
         return;
       }
 
@@ -79,20 +75,14 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
 
       if (error) {
         if (error.code === "23505") {
-          toast({
-            title: "Приглашение уже отправлено",
-            variant: "destructive",
-          });
+          toast.error("Приглашение уже отправлено");
         } else {
           throw error;
         }
         return;
       }
 
-      toast({
-        title: "Приглашение отправлено",
-        description: "Игрок получит уведомление",
-      });
+      toast.success("Приглашение отправлено. Игрок получит уведомление");
 
       queryClient.invalidateQueries({ queryKey: ["team-invites-sent"] });
       onOpenChange(false);
@@ -100,16 +90,9 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
     } catch (error: any) {
       // Если ошибка связана с дублированием или RLS, показываем дружественное сообщение
       if (error.code === "23505" || error.message?.includes("row-level security")) {
-        toast({
-          title: "Этот игрок уже приглашен в команду",
-          variant: "destructive",
-        });
+        toast.error("Этот игрок уже приглашен в команду");
       } else {
-        toast({
-          title: "Ошибка",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error(error.message || "Ошибка отправки приглашения");
       }
     } finally {
       setInviting(null);

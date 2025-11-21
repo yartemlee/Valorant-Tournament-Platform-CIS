@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,6 @@ interface TeamSettingsTabProps {
 }
 
 export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps) {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,21 +52,13 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
     // Validate file
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      toast({
-        title: "Ошибка",
-        description: "Файл превышает допустимый размер (5 МБ)",
-        variant: "destructive",
-      });
+      toast.error("Файл превышает допустимый размер (5 МБ)");
       return;
     }
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "Ошибка",
-        description: "Поддерживаются только JPG, PNG и WEBP",
-        variant: "destructive",
-      });
+      toast.error("Поддерживаются только JPG, PNG и WEBP");
       return;
     }
 
@@ -90,16 +81,9 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
       setLogoPreview(publicUrl);
       setFormData({ ...formData, logo_url: publicUrl });
 
-      toast({
-        title: "Логотип загружен",
-        description: "Не забудьте сохранить изменения",
-      });
+      toast.success("Логотип загружен. Не забудьте сохранить изменения");
     } catch (error: any) {
-      toast({
-        title: "Ошибка загрузки",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Ошибка загрузки логотипа");
     } finally {
       setIsUploading(false);
     }
@@ -126,19 +110,12 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
 
       if (error) throw error;
 
-      toast({
-        title: "Настройки обновлены",
-        description: "Изменения сохранены",
-      });
+      toast.success("Настройки обновлены");
 
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
     } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Ошибка обновления настроек");
     } finally {
       setIsUpdating(false);
     }
@@ -161,18 +138,11 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
 
       if (error) throw error;
 
-      toast({
-        title: "Команда распущена",
-        description: "Все участники освобождены",
-      });
+      toast.success("Команда распущена. Все участники освобождены");
 
       navigate("/teams");
     } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Ошибка при распускании команды");
     }
   };
 

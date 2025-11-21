@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,18 +23,13 @@ interface LeaveTeamButtonProps {
 }
 
 export function LeaveTeamButton({ teamId, userId, isCaptain, onLeave }: LeaveTeamButtonProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
   const handleLeaveTeam = async () => {
     if (isCaptain) {
-      toast({
-        title: "Нельзя покинуть команду",
-        description: "Сначала передайте капитанство другому участнику",
-        variant: "destructive",
-      });
+      toast.error("Нельзя покинуть команду. Сначала передайте капитанство другому участнику");
       return;
     }
 
@@ -76,10 +71,7 @@ export function LeaveTeamButton({ teamId, userId, isCaptain, onLeave }: LeaveTea
         .eq("invited_user_id", userId)
         .in("status", ["pending", "accepted"]);
 
-      toast({
-        title: "Вы покинули команду",
-        description: "Вы можете присоединиться к другой команде",
-      });
+      toast.success("Вы покинули команду. Вы можете присоединиться к другой команде");
 
       // Invalidate caches
       await Promise.all([
@@ -95,12 +87,7 @@ export function LeaveTeamButton({ teamId, userId, isCaptain, onLeave }: LeaveTea
         onLeave();
       }
     } catch (error: any) {
-      console.error("Leave team error:", error);
-      toast({
-        title: "Ошибка",
-        description: error.message || "Не удалось покинуть команду",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Не удалось покинуть команду");
     } finally {
       setIsLeaving(false);
     }

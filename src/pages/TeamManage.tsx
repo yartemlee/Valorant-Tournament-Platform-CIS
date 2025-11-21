@@ -120,7 +120,13 @@ const TeamManage = () => {
               </TabsList>
 
               <TabsContent value="roster" className="space-y-4">
-                <TeamRosterTab team={team} isOwner={isOwner} isCoach={isCoach} />
+                <TeamRosterTab 
+                  team={team} 
+                  isOwner={isOwner} 
+                  isCaptain={isCaptain}
+                  isCoach={isCoach}
+                  currentUserId={session?.user?.id}
+                />
               </TabsContent>
 
               <TabsContent value="applications" className="space-y-4">

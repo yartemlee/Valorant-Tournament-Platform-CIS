@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,6 @@ interface TeamApplicationsTabProps {
 }
 
 export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -115,10 +114,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
           .eq("team_id", teamId);
 
         if (count && count >= 10) {
-          toast({
-            title: "В команде уже максимум участников (10)",
-            variant: "destructive",
-          });
+          toast.error("В команде уже максимум участников (10)");
           return;
         }
 
@@ -130,11 +126,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
           .maybeSingle();
 
         if (existingMembership) {
-          toast({
-            title: "Игрок уже состоит в другой команде",
-            description: "Заявка автоматически отклонена",
-            variant: "destructive",
-          });
+          toast.error("Игрок уже состоит в другой команде. Заявка автоматически отклонена");
           // Отклоняем заявку автоматически
           await supabase
             .from("team_applications")
@@ -161,10 +153,11 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
 
       if (error) throw error;
 
-      toast({
-        title: accept ? "Заявка принята" : "Заявка отклонена",
-        description: accept ? "Игрок добавлен в команду" : undefined,
-      });
+      if (accept) {
+        toast.success("Заявка принята. Игрок добавлен в команду");
+      } else {
+        toast.success("Заявка отклонена");
+      }
 
       queryClient.invalidateQueries({ queryKey: ["team-applications"] });
       queryClient.invalidateQueries({ queryKey: ["team-applications-count"] });
@@ -173,12 +166,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
     } catch (error: any) {
-      console.error("Error handling application response:", error);
-      toast({
-        title: "Ошибка",
-        description: error.message || "Не удалось обработать заявку",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Не удалось обработать заявку");
     } finally {
       setProcessingId(null);
     }
@@ -193,19 +181,12 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
 
       if (error) throw error;
 
-      toast({
-        title: "Приглашение отменено",
-      });
+      toast.success("Приглашение отменено");
 
       queryClient.invalidateQueries({ queryKey: ["team-invites-sent"] });
       queryClient.invalidateQueries({ queryKey: ["team-applications-count"] });
     } catch (error: any) {
-      console.error("Error canceling invite:", error);
-      toast({
-        title: "Ошибка",
-        description: error.message || "Не удалось отменить приглашение",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Не удалось отменить приглашение");
     }
   };
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,6 @@ interface TeamSettingsTabProps {
 }
 
 export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSettingsTabProps) {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -47,38 +46,22 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
   const handleUpdate = async () => {
     // Валидация на стороне клиента
     if (!formData.name.trim()) {
-      toast({
-        title: "Ошибка валидации",
-        description: "Название команды обязательно",
-        variant: "destructive",
-      });
+      toast.error("Название команды обязательно");
       return;
     }
 
     if (formData.name.trim().length < 3) {
-      toast({
-        title: "Ошибка валидации",
-        description: "Название команды должно содержать минимум 3 символа",
-        variant: "destructive",
-      });
+      toast.error("Название команды должно содержать минимум 3 символа");
       return;
     }
 
     if (!formData.tag.trim()) {
-      toast({
-        title: "Ошибка валидации",
-        description: "Тег команды обязателен",
-        variant: "destructive",
-      });
+      toast.error("Тег команды обязателен");
       return;
     }
 
     if (formData.tag.trim().length < 2) {
-      toast({
-        title: "Ошибка валидации",
-        description: "Тег команды должен содержать минимум 2 символа",
-        variant: "destructive",
-      });
+      toast.error("Тег команды должен содержать минимум 2 символа");
       return;
     }
 
@@ -86,11 +69,7 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
       try {
         new URL(formData.logo_url);
       } catch {
-        toast({
-          title: "Ошибка валидации",
-          description: "Некорректный URL логотипа",
-          variant: "destructive",
-        });
+        toast.error("Некорректный URL логотипа");
         return;
       }
     }
@@ -110,28 +89,18 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
 
       if (error) {
         if (error.message.includes('policy') || error.message.includes('permission')) {
-          toast({
-            title: "Нет прав",
-            description: "Управление доступно только капитану или тренеру команды.",
-            variant: "destructive",
-          });
+          toast.error("Управление доступно только капитану или тренеру команды");
           return;
         }
         throw error;
       }
 
-      toast({
-        title: "Настройки команды обновлены",
-      });
+      toast.success("Настройки команды обновлены");
 
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
     } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: error.message || "Не удалось обновить настройки команды",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Не удалось обновить настройки команды");
     } finally {
       setIsUpdating(false);
     }
@@ -183,20 +152,13 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
       const { error } = await supabase.from("teams").delete().eq("id", team.id);
       if (error) throw error;
 
-      toast({
-        title: "Команда распущена",
-        description: "Команда полностью удалена, все участники освобождены",
-      });
+      toast.success("Команда распущена. Все участники освобождены");
 
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       navigate("/teams");
     } catch (error: any) {
-      toast({
-        title: "Ошибка при распускании команды",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Ошибка при распускании команды");
     }
   };
 

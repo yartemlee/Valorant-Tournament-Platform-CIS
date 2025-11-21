@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,7 +35,6 @@ interface TeamRosterTabProps {
 }
 
 export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId, onCaptainTransferred }: TeamRosterTabProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [removingMember, setRemovingMember] = useState<string | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
@@ -55,25 +54,16 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
 
       if (error) {
         if (error.message.includes('not_captain')) {
-          toast({
-            title: "Нет прав",
-            description: "Управление доступно только капитану команды.",
-            variant: "destructive",
-          });
+          toast.error("Управление доступно только капитану команды");
           return;
         } else if (error.message.includes('cannot_change_own_role')) {
-          toast({
-            title: "Нельзя изменить свою роль",
-            variant: "destructive",
-          });
+          toast.error("Нельзя изменить свою роль");
           return;
         }
         throw error;
       }
 
-      toast({
-        title: "Роль обновлена",
-      });
+      toast.success("Роль обновлена");
 
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
@@ -81,12 +71,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
       queryClient.invalidateQueries({ queryKey: ["team"] });
       queryClient.invalidateQueries({ queryKey: ["team-member"] });
     } catch (error: any) {
-      console.error("Role change error:", error);
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Ошибка изменения роли");
     } finally {
       setUpdatingRole(null);
     }
@@ -112,10 +97,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
         throw error;
       }
 
-      toast({
-        title: "Капитанство передано",
-        description: "Роль капитана успешно передана",
-      });
+      toast.success("Капитанство передано");
 
       // Invalidate all relevant caches for immediate UI update, including team-member
       await Promise.all([
@@ -137,11 +119,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
         onCaptainTransferred();
       }
     } catch (error: any) {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Ошибка передачи капитанства");
       setTransferringCaptaincy(null);
     }
   };
@@ -156,25 +134,16 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
 
       if (error) {
         if (error.message.includes('not_captain')) {
-          toast({
-            title: "Нет прав",
-            description: "Управление доступно только капитану команды.",
-            variant: "destructive",
-          });
+          toast.error("Управление доступно только капитану команды");
           return;
         } else if (error.message.includes('cannot_kick_self')) {
-          toast({
-            title: "Нельзя удалить самого себя из команды",
-            variant: "destructive",
-          });
+          toast.error("Нельзя удалить самого себя из команды");
           return;
         }
         throw error;
       }
 
-      toast({
-        title: "Игрок удалён из команды",
-      });
+      toast.success("Игрок удалён из команды");
 
       // Инвалидируем все связанные кэши для мгновенного обновления UI
       await Promise.all([
@@ -188,12 +157,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
       
       setRemovingMember(null);
     } catch (error: any) {
-      console.error("Kick member error:", error);
-      toast({
-        title: "Ошибка удаления",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Ошибка удаления игрока");
       setRemovingMember(null);
     }
   };
