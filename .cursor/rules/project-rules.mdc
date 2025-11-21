@@ -1,0 +1,251 @@
+---
+alwaysApply: true
+---
+# Valorant Tournament Platform — Project Rules
+
+Tech Stack:
+- React 18 + TypeScript 5.8 + Vite 5.4
+- TailwindCSS 3.4 + Shadcn UI + Radix UI
+- Supabase (auth, RLS, DB, storage, real-time)
+- React Hook Form + Zod
+- React Router v6+
+- TanStack Query (React Query) 5.83
+- Lucide React Icons, clsx, tailwind-merge
+- Sonner (toast notifications)
+- date-fns
+
+File Conventions:
+- All components must be function components using TypeScript
+- Use TailwindCSS for all styling — no external CSS or <style> tags (except index.css for global styles)
+- Use Shadcn UI components for UI (Button, Input, Dialog, Card, etc.)
+- Supabase client is located in: src/lib/supabase.ts
+- Environment variables:
+  VITE_SUPABASE_URL=
+  VITE_SUPABASE_ANON_KEY= (or VITE_SUPABASE_PUBLISHABLE_KEY)
+
+Project Structure:
+- Reusable UI components: src/components/ui/
+- Feature-specific components: src/components/{feature}/ (e.g., profile/, teams/, tournaments/)
+- Pages/routes: src/pages/
+- Utilities/helpers: src/lib/
+- Custom hooks: src/hooks/
+- Context providers: src/contexts/
+- Type definitions: src/types/
+- Supabase client: src/lib/supabase.ts
+
+Supabase Rules:
+- Use @supabase/supabase-js
+- Always check both data and error on queries
+- Never expose service_role keys on frontend
+- RLS is always enabled on all tables
+- Use Database types from Supabase for strong typing (src/types/supabase.ts)
+- Always use typed queries: supabase.from<TableName>()
+- RLS expectations:
+  - profiles: only self-editable (auth.uid() = id), readable by all authenticated users
+  - teams: editable by captain and coaches, readable by all
+  - team_members: visible to team members, editable by captain/coach
+  - team_invitations: visible to captain/coach and invited player only
+  - team_applications: visible to captain/coach and applicant only
+  - tournaments: readable by all, editable by organizer (creator) and admin
+  - tournament_registrations: readable by all, editable by captain/coach and organizer
+  - matches: readable by all, results editable only by organizer and admin
+  - brackets: readable by all, editable by organizer and admin
+  - scrims: readable by all, editable by creator
+  - notifications: visible only to recipient (auth.uid() = user_id)
+  - posts: readable by all, editable by publisher and admin
+
+Coding Principles:
+- Use early returns for clarity
+- All styling with Tailwind utility classes only
+- Use cn() utility (from lib/utils.ts) for conditional classes
+- All handler functions start with "handle" (e.g., handleSubmit, handleCreateTeam, handleJoinTournament)
+- Use const arrow functions for all event handlers
+- Always type state, refs, and effect values explicitly
+- All forms must use react-hook-form + zod + zodResolver for validation
+- Do not use any, @ts-ignore, or TODOs in committed code
+- Use TanStack Query for all server state management
+- Use React Router hooks (useNavigate, useParams, useLocation) for navigation
+- Always handle loading and error states in UI
+
+Accessibility & UI:
+- All interactive elements must support keyboard navigation (tabIndex, Enter/Space)
+- Use aria-labels for icon-only buttons and complex components
+- Use lucide-react for all icons (consistent icon library)
+- Use clsx or cn utility for conditional classes
+- Apply consistent spacing, transitions, rounding (e.g., p-4, shadow-md, rounded-xl)
+- Use toast notifications (Sonner) for all user actions (success/failure/errors)
+- Loading states: use Skeleton components from shadcn/ui
+- Error states: show user-friendly error messages with retry options
+
+Functionality (MVP Priority):
+
+Profiles:
+- Auth via Supabase email/password
+- User profile includes: nickname, Riot ID (required), region, description, social links, roles[], agents[], rank
+- Optional avatar upload via Supabase Storage (avatars bucket)
+- If no avatar: display initials or default avatar
+- Support all Valorant ranks (Iron, Bronze, Silver, Gold, Platinum, Diamond, Ascendant, Immortal, Radiant)
+- History of tournament participation
+
+Teams:
+- Captains can create/manage teams (max 10 players, min 1)
+- Players can request to join if team recruiting = true
+- Captains/coaches can accept or reject applications
+- A player can be in only one team at a time
+- Players can leave team at any time
+- Captains can invite players directly
+- Only one captain per team
+- Captain can transfer captaincy (requires new captain's acceptance)
+- Auto-transfer captaincy if captain deletes account
+- Unlimited coaches per team (coaches can also be players)
+- Coach rights: same as captain except delete team and transfer captaincy
+- Team settings: name, logo, description, recruiting status, rank/role requirements
+- Team auto-deactivation: after 3 months of inactivity (marked as inactive)
+
+Tournaments:
+- Any user can create tournament and becomes organizer
+- Tournament formats: Single Elimination / Double Elimination
+- Tournament settings: max teams, min players per team, BO format (BO1-BO5), start time, description, rules
+- Registration: captain/coach registers team (with validation of requirements)
+- Registration can be cancelled until tournament start time
+- Tournament can be edited only before start
+- Organizer can start tournament with fewer teams than limit
+- Auto-generate bracket based on registered teams
+- Organizer inputs match results
+- Auto-advance winner in bracket
+- No-show handling: organizer decides (auto-loss, disqualification, etc.)
+- Tournament cancellation: nothing is refunded (show warning when creating)
+
+Scrims:
+- Any user can create scrim lobby (no team or player minimum required)
+- Scrims are for finding training partners under specific conditions
+- No results needed — just matchmaking for practice
+- Scrims don't affect rating
+
+Notifications:
+- System notifications for: team invitations, applications, tournament updates, match schedules
+- Notifications visible only to recipient
+
+Logic Notes:
+- Prevent duplicate team applications from same player
+- Prevent duplicate tournament registrations
+- Team applications visible only to captain/coach and applicant
+- Validate team requirements before tournament registration
+- Check team member count before registration
+- Only captain/coach can register team for tournament
+- Admin can manage (delete/edit) all entities
+- Organizer can only manage their own tournaments
+- Riot ID is required for tournament participation
+
+Role-Based Access:
+- Player: basic rights, join teams, participate in tournaments
+- Captain: manage team, invite/remove players, register for tournaments, transfer captaincy, delete team
+- Coach: same as captain except delete team and transfer captaincy
+- Organizer: manage created tournament(s), input match results
+- Admin: full access to all entities, manage users, tournaments, currency (future)
+- Publisher: create/edit posts (news, announcements, patch notes) — role assigned by admin
+
+Quality Requirements:
+- Code must always build without TypeScript or runtime errors
+- No commented out code, TODOs or incomplete logic in committed code
+- No console.log in committed code (use proper logging or remove)
+- Code must be readable, maintainable, and commit-ready
+- All async operations must have error handling
+- All user-facing errors must show toast notifications
+- Loading states must be shown for all async operations
+- Validate all user inputs on client and server side
+
+Git Commits:
+- Use semantic commits:
+  feat: add tournament bracket generation
+  fix: prevent duplicate team applications
+  refactor: extract useTournament hook
+  style: update team card design
+  docs: update project rules
+- 1 feature = 1 commit
+- Write clear, meaningful commit messages in Russian or English
+
+Example Patterns:
+
+Team Application:
+```typescript
+const handleJoinTeam = async (teamId: string) => {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) {
+    toast.error("Необходима авторизация");
+    return;
+  }
+
+  // Check if already in a team
+  const { data: existingTeam } = await supabase
+    .from('team_members')
+    .select('team_id')
+    .eq('player_id', user.user.id)
+    .single();
+
+  if (existingTeam) {
+    toast.error("Вы уже состоите в команде");
+    return;
+  }
+
+  const { error } = await supabase
+    .from('team_applications')
+    .insert({ team_id: teamId, player_id: user.user.id });
+
+  if (error) {
+    toast.error("Не удалось отправить заявку");
+    return;
+  }
+
+  toast.success("Заявка отправлена");
+};
+```
+
+Tournament Registration:
+```typescript
+const handleRegisterTeam = async (tournamentId: string) => {
+  const { data: team } = await getCurrentUserTeam();
+  if (!team) {
+    toast.error("Вы не состоите в команде");
+    return;
+  }
+
+  // Validate team requirements
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('min_players_per_team')
+    .eq('id', tournamentId)
+    .single();
+
+  const { data: members } = await supabase
+    .from('team_members')
+    .select('player_id')
+    .eq('team_id', team.id);
+
+  if (members && members.length < tournament.min_players_per_team) {
+    toast.error(`Минимум ${tournament.min_players_per_team} игроков в команде`);
+    return;
+  }
+
+  const { error } = await supabase
+    .from('tournament_registrations')
+    .insert({ tournament_id: tournamentId, team_id: team.id });
+
+  if (error) {
+    toast.error("Не удалось зарегистрироваться");
+    return;
+  }
+
+  toast.success("Команда зарегистрирована");
+};
+```
+
+Final Notes:
+- Always follow this rule set when working with Cursor AI
+- Validate role-based access using team_members.role and user roles
+- Supabase operations must be typed and error-handled
+- UI must strictly follow Tailwind + Shadcn conventions
+- Use TanStack Query for data fetching and caching
+- All Russian text should be user-facing only (UI), code comments can be in English
+- If anything is uncertain — comment the risk or suggest fallback
+- MVP focus: Profile setup, Team creation/management, Tournament creation/management, Bracket generation/display
