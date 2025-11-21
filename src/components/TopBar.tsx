@@ -74,9 +74,9 @@ const TopBar = () => {
       
       // Приглашения в команду
       const { count: invitesCount } = await supabase
-        .from("team_invites")
+        .from("team_invitations")
         .select("*", { count: "exact", head: true })
-        .eq("to_user_id", user.id)
+        .eq("invited_user_id", user.id)
         .eq("status", "pending");
       
       // Измененные статусы заявок (accepted/declined)

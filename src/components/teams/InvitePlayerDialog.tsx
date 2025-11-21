@@ -48,10 +48,10 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
     try {
       // Проверка существующего приглашения
       const { data: existingInvite } = await supabase
-        .from("team_invites")
+        .from("team_invitations")
         .select("id")
         .eq("team_id", teamId)
-        .eq("to_user_id", playerId)
+        .eq("invited_user_id", playerId)
         .eq("status", "pending")
         .maybeSingle();
 
@@ -65,15 +65,15 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
 
       // Отменяем все старые приглашения перед созданием нового
       await supabase
-        .from("team_invites")
+        .from("team_invitations")
         .update({ status: "cancelled" })
         .eq("team_id", teamId)
-        .eq("to_user_id", playerId)
+        .eq("invited_user_id", playerId)
         .in("status", ["accepted", "declined"]);
 
-      const { error } = await supabase.from("team_invites").insert({
+      const { error } = await supabase.from("team_invitations").insert({
         team_id: teamId,
-        to_user_id: playerId,
+        invited_user_id: playerId,
         status: "pending",
       });
 

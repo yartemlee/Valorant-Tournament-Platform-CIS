@@ -36,7 +36,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
     queryKey: ["my-team-invites", session?.user?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from("team_invites")
+        .from("team_invitations")
         .select(`
           *,
           teams:team_id (
@@ -46,7 +46,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
             logo_url
           )
         `)
-        .eq("to_user_id", session?.user?.id)
+        .eq("invited_user_id", session?.user?.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
       return data || [];
@@ -102,7 +102,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
           toast.error("В команде уже максимум участников (10)");
           // Автоматически отклоняем приглашение
           await supabase
-            .from("team_invites")
+            .from("team_invitations")
             .update({ status: "declined" })
             .eq("id", inviteId);
           queryClient.invalidateQueries({ queryKey: ["my-team-invites"] });
@@ -130,7 +130,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
 
         // Обновляем статус приглашения
         const { error: inviteError } = await supabase
-          .from("team_invites")
+          .from("team_invitations")
           .update({ status: "accepted" })
           .eq("id", inviteId);
 
@@ -139,7 +139,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
         toast.success("Приглашение принято, вы вступили в команду!");
       } else {
         const { error } = await supabase
-          .from("team_invites")
+          .from("team_invitations")
           .update({ status: "declined" })
           .eq("id", inviteId);
 

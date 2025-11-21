@@ -70,10 +70,10 @@ export function LeaveTeamButton({ teamId, userId, isCaptain, onLeave }: LeaveTea
 
       // Cancel related invites
       await supabase
-        .from("team_invites")
+        .from("team_invitations")
         .update({ status: "cancelled" })
         .eq("team_id", teamId)
-        .eq("to_user_id", userId)
+        .eq("invited_user_id", userId)
         .in("status", ["pending", "accepted"]);
 
       toast({

@@ -97,6 +97,26 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
           return;
         }
 
+        if (error.message.includes('team_not_recruiting')) {
+          toast({
+            title: "Набор в команду закрыт",
+            description: "Эта команда больше не принимает новых участников",
+            variant: "destructive",
+          });
+          queryClient.invalidateQueries({ queryKey: ["teams"] });
+          return;
+        }
+
+        if (error.message.includes('team_full')) {
+          toast({
+            title: "Команда заполнена",
+            description: "В команде уже максимальное количество участников (10)",
+            variant: "destructive",
+          });
+          queryClient.invalidateQueries({ queryKey: ["teams"] });
+          return;
+        }
+
         if (error.code === '42501') {
           toast({
             title: "Не удалось отправить заявку",

@@ -26,10 +26,10 @@ export const checkPendingInvite = async (
   userId: string
 ): Promise<boolean> => {
   const { data } = await supabase
-    .from("team_invites")
+    .from("team_invitations")
     .select("id")
     .eq("team_id", teamId)
-    .eq("to_user_id", userId)
+    .eq("invited_user_id", userId)
     .eq("status", "pending")
     .maybeSingle();
 

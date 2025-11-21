@@ -27,7 +27,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
         .from("team_applications")
         .select(`
           *,
-          from_user:profiles!from_user_id (
+          from_user:profiles!applicant_id (
             id,
             username,
             avatar_url,
@@ -78,10 +78,10 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
     queryKey: ["team-invites-sent", teamId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("team_invites")
+        .from("team_invitations")
         .select(`
           *,
-          to_user:profiles!to_user_id (
+          to_user:profiles!invited_user_id (
             id,
             username,
             avatar_url
@@ -123,13 +123,13 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
         }
 
         // Проверяем, не состоит ли пользователь уже в другой команде
-        const { data: userProfile } = await supabase
-          .from("profiles")
-          .select("current_team_id")
-          .eq("id", userId)
-          .single();
+        const { data: existingMembership } = await supabase
+          .from("team_members")
+          .select("team_id")
+          .eq("user_id", userId)
+          .maybeSingle();
 
-        if (userProfile?.current_team_id) {
+        if (existingMembership) {
           toast({
             title: "Игрок уже состоит в другой команде",
             description: "Заявка автоматически отклонена",
@@ -151,13 +151,6 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
           role: "member",
         });
         if (memberError) throw memberError;
-
-        // Update user's current team
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ current_team_id: teamId })
-          .eq("id", userId);
-        if (profileError) throw profileError;
       }
 
       // Update application status
@@ -194,7 +187,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
   const handleCancelInvite = async (inviteId: string) => {
     try {
       const { error } = await supabase
-        .from("team_invites")
+        .from("team_invitations")
         .update({ status: "cancelled" })
         .eq("id", inviteId);
 
@@ -282,7 +275,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    onClick={() => handleApplicationResponse(app.id, app.from_user_id, true)}
+                    onClick={() => handleApplicationResponse(app.id, app.applicant_id, true)}
                     disabled={processingId === app.id}
                   >
                     <Check className="h-4 w-4 mr-1" />
@@ -291,7 +284,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleApplicationResponse(app.id, app.from_user_id, false)}
+                    onClick={() => handleApplicationResponse(app.id, app.applicant_id, false)}
                     disabled={processingId === app.id}
                   >
                     <X className="h-4 w-4 mr-1" />
