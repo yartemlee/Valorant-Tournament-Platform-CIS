@@ -80,70 +80,37 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
   const handleInviteResponse = async (inviteId: string, teamId: string, accept: boolean) => {
     try {
       if (accept) {
-        // Проверяем, не состоит ли пользователь уже в другой команде
-        const { data: currentProfile } = await supabase
-          .from("profiles")
-          .select("current_team_id")
-          .eq("id", session?.user?.id)
-          .single();
+        // Используем RPC функцию для безопасного принятия приглашения
+        const { data, error } = await supabase.rpc("accept_team_invitation", {
+          invitation_id_input: inviteId,
+        });
 
-        if (currentProfile?.current_team_id) {
-          toast.error("Вы уже состоите в команде. Сначала покиньте текущую команду.");
-          return;
-        }
+        if (error) throw error;
 
-        // Проверяем лимит участников команды
-        const { count } = await supabase
-          .from("team_members")
-          .select("*", { count: "exact", head: true })
-          .eq("team_id", teamId);
+        const result = data as { success: boolean; error?: string };
 
-        if (count && count >= 10) {
-          toast.error("В команде уже максимум участников (10)");
-          // Автоматически отклоняем приглашение
-          await supabase
-            .from("team_invitations")
-            .update({ status: "declined" })
-            .eq("id", inviteId);
+        if (!result.success) {
+          toast.error(result.error || "Не удалось принять приглашение");
           queryClient.invalidateQueries({ queryKey: ["my-team-invites"] });
           return;
         }
 
-        // Добавляем игрока в команду (триггер автоматически отменит другие заявки/приглашения)
-        const { error: memberError } = await supabase
-          .from("team_members")
-          .insert({
-            team_id: teamId,
-            user_id: session?.user?.id,
-            role: "member",
-          });
-
-        if (memberError) throw memberError;
-
-        // Обновляем current_team_id в профиле
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ current_team_id: teamId })
-          .eq("id", session?.user?.id);
-
-        if (profileError) throw profileError;
-
-        // Обновляем статус приглашения
-        const { error: inviteError } = await supabase
-          .from("team_invitations")
-          .update({ status: "accepted" })
-          .eq("id", inviteId);
-
-        if (inviteError) throw inviteError;
-
         toast.success("Приглашение принято, вы вступили в команду!");
       } else {
-        const { error } = await supabase
-          .from("team_invitations")
-          .update({ status: "declined" })
-          .eq("id", inviteId);
+        // Используем RPC функцию для отклонения приглашения
+        const { data, error } = await supabase.rpc("decline_team_invitation", {
+          invitation_id_input: inviteId,
+        });
 
         if (error) throw error;
+
+        const result = data as { success: boolean; error?: string };
+
+        if (!result.success) {
+          toast.error(result.error || "Не удалось отклонить приглашение");
+          return;
+        }
+
         toast.success("Приглашение отклонено");
       }
 

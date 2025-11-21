@@ -107,55 +107,37 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
     setProcessingId(applicationId);
     try {
       if (accept) {
-        // Проверяем лимит участников команды
-        const { count } = await supabase
-          .from("team_members")
-          .select("*", { count: "exact", head: true })
-          .eq("team_id", teamId);
+        // Используем RPC функцию для безопасного принятия заявки
+        const { data, error } = await supabase.rpc("accept_team_application", {
+          application_id_input: applicationId,
+        });
 
-        if (count && count >= 10) {
-          toast.error("В команде уже максимум участников (10)");
-          return;
-        }
+        if (error) throw error;
 
-        // Проверяем, не состоит ли пользователь уже в другой команде
-        const { data: existingMembership } = await supabase
-          .from("team_members")
-          .select("team_id")
-          .eq("user_id", userId)
-          .maybeSingle();
+        const result = data as { success: boolean; error?: string };
 
-        if (existingMembership) {
-          toast.error("Игрок уже состоит в другой команде. Заявка автоматически отклонена");
-          // Отклоняем заявку автоматически
-          await supabase
-            .from("team_applications")
-            .update({ status: "cancelled" })
-            .eq("id", applicationId);
+        if (!result.success) {
+          toast.error(result.error || "Не удалось принять заявку");
           queryClient.invalidateQueries({ queryKey: ["team-applications"] });
           return;
         }
 
-        // Add user to team (триггер автоматически отменит другие заявки/приглашения)
-        const { error: memberError } = await supabase.from("team_members").insert({
-          team_id: teamId,
-          user_id: userId,
-          role: "member",
-        });
-        if (memberError) throw memberError;
-      }
-
-      // Update application status
-      const { error } = await supabase
-        .from("team_applications")
-        .update({ status: accept ? "accepted" : "declined" })
-        .eq("id", applicationId);
-
-      if (error) throw error;
-
-      if (accept) {
         toast.success("Заявка принята. Игрок добавлен в команду");
       } else {
+        // Используем RPC функцию для отклонения заявки
+        const { data, error } = await supabase.rpc("decline_team_application", {
+          application_id_input: applicationId,
+        });
+
+        if (error) throw error;
+
+        const result = data as { success: boolean; error?: string };
+
+        if (!result.success) {
+          toast.error(result.error || "Не удалось отклонить заявку");
+          return;
+        }
+
         toast.success("Заявка отклонена");
       }
 
