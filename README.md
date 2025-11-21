@@ -25,9 +25,19 @@
 
 ## Environment Variables
 
-Create a `.env` file with the following:
+1. Copy the example environment file:
+   ```sh
+   cp .env.example .env
+   ```
 
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+2. Fill in your Supabase credentials in `.env`:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+   Or use `VITE_SUPABASE_PUBLISHABLE_KEY` if available (takes priority over `VITE_SUPABASE_ANON_KEY`).
+
+   Get these values from your [Supabase project settings](https://supabase.com/dashboard/project/_/settings/api).
+
+**Note:** `.env` files are ignored by Git. Use `.env.local` for local overrides that should never be committed.
