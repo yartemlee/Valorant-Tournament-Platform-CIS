@@ -58,14 +58,18 @@ const TournamentDetails = () => {
   const [startDialogOpen, setStartDialogOpen] = useState(false);
 
   useEffect(() => {
-    fetchData();
     checkAuth();
-
-    // Auto-join if action=join
-    if (searchParams.get("action") === "join") {
-      handleJoin();
-    }
+    fetchData();
   }, [id]);
+
+  // Auto-join after data is loaded
+  useEffect(() => {
+    if (!loading && tournament && searchParams.get("action") === "join") {
+      handleJoin();
+      // Clear the action parameter after handling
+      navigate(`/tournaments/${id}`, { replace: true });
+    }
+  }, [loading, tournament, searchParams]);
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();

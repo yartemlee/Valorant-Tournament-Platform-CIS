@@ -105,15 +105,6 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
           >
             Подробнее
           </Button>
-          {tournament.status === "registration" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/tournaments/${tournament.id}?action=join`)}
-            >
-              Участвовать
-            </Button>
-          )}
         </div>
       </div>
     </Card>
