@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Calendar, Users, Edit, LogOut, UserPlus } from "lucide-react";
+import { Trophy, Calendar, Users, Edit, LogOut, UserPlus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { toast } from "sonner";
@@ -55,6 +55,7 @@ const TournamentDetails = () => {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [startDialogOpen, setStartDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -89,11 +90,12 @@ const TournamentDetails = () => {
 
     setTournament(tournamentData);
 
-    // Fetch participants
+    // Fetch participants (registrations)
     const { data: participantsData } = await supabase
-      .from("tournament_participants")
-      .select("id, user_id, team_id, joined_at")
-      .eq("tournament_id", id);
+      .from("tournament_registrations")
+      .select("id, team_id, registered_at, status")
+      .eq("tournament_id", id)
+      .eq("status", "pending");
 
     if (participantsData) {
       const participantsWithTeams = await Promise.all(
@@ -106,7 +108,10 @@ const TournamentDetails = () => {
             .maybeSingle();
 
           return {
-            ...p,
+            id: p.id,
+            user_id: "", // Not used for team registrations
+            team_id: p.team_id,
+            joined_at: p.registered_at,
             team: team || null,
           };
         })
@@ -114,11 +119,19 @@ const TournamentDetails = () => {
       setParticipants(participantsWithTeams);
     }
 
-    // Check if current user is participant
+    // Check if current user's team is participant
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const isJoined = participantsData?.some((p) => p.user_id === user.id);
-      setIsParticipant(!!isJoined);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("current_team_id")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.current_team_id) {
+        const isJoined = participantsData?.some((p) => p.team_id === profile.current_team_id);
+        setIsParticipant(!!isJoined);
+      }
     }
 
     setLoading(false);
@@ -193,12 +206,11 @@ const TournamentDetails = () => {
       return;
     }
 
-    const { error } = await supabase.from("tournament_participants").insert([
+    const { error } = await supabase.from("tournament_registrations").insert([
       {
         tournament_id: id,
-        user_id: user.id,
         team_id: teamMember.team_id,
-        status: "registered",
+        status: "pending",
       },
     ]);
 
@@ -222,20 +234,7 @@ const TournamentDetails = () => {
         })
         .eq("id", id);
 
-      // Send notifications to all participants
-      const notificationTypes = ["30min", "15min", "5min", "started"];
-      const notifications = participants.flatMap((p) =>
-        notificationTypes.map((type) => ({
-          tournament_id: id,
-          user_id: p.user_id,
-          notification_type: type,
-          sent_at: type === "started" ? new Date().toISOString() : null,
-        }))
-      );
-
-      await supabase.from("tournament_notifications").insert(notifications);
-
-      toast.success("Турнир начался! Уведомления отправлены участникам");
+      toast.success("Турнир начался!");
       setStartDialogOpen(false);
       fetchData();
     } catch (error) {
@@ -246,19 +245,49 @@ const TournamentDetails = () => {
   const handleLeave = async () => {
     if (!user) return;
 
+    // Get user's team
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("current_team_id")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.current_team_id) {
+      toast.error("Команда не найдена");
+      return;
+    }
+
     const { error } = await supabase
-      .from("tournament_participants")
+      .from("tournament_registrations")
       .delete()
       .eq("tournament_id", id)
-      .eq("user_id", user.id);
+      .eq("team_id", profile.current_team_id);
 
     if (error) {
       toast.error("Ошибка выхода из турнира");
       return;
     }
 
-    toast.success("Вы вышли из турнира");
+    toast.success("Команда снята с турнира");
     fetchData();
+  };
+
+  const handleDeleteTournament = async () => {
+    if (!isOwner) return;
+
+    try {
+      const { error } = await supabase
+        .from("tournaments")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast.success("Турнир удалён");
+      navigate("/tournaments");
+    } catch (error) {
+      toast.error("Ошибка удаления турнира");
+    }
   };
 
   if (loading) {
@@ -280,15 +309,19 @@ const TournamentDetails = () => {
   const isOwner = user?.id === tournament.organizer_id;
 
   const statusColors = {
-    open: "bg-accent text-accent-foreground",
-    ongoing: "bg-primary text-primary-foreground",
+    draft: "bg-muted text-muted-foreground",
+    registration: "bg-accent text-accent-foreground",
+    active: "bg-primary text-primary-foreground",
     completed: "bg-muted text-muted-foreground",
+    cancelled: "bg-destructive text-destructive-foreground",
   };
 
   const statusLabels = {
-    open: "Открыт",
-    ongoing: "В процессе",
+    draft: "Черновик",
+    registration: "Регистрация",
+    active: "Активен",
     completed: "Завершён",
+    cancelled: "Отменён",
   };
 
   const formatLabels = {
@@ -309,7 +342,7 @@ const TournamentDetails = () => {
                 <div className="absolute inset-0">
                   <img
                     src={tournament.banner_url}
-                    alt={tournament.name}
+                    alt={tournament.title}
                     className="w-full h-full object-cover opacity-30"
                   />
                 </div>
@@ -318,7 +351,7 @@ const TournamentDetails = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <Trophy className="h-10 w-10 text-primary" />
-                    <h1 className="text-4xl font-bold">{tournament.name}</h1>
+                    <h1 className="text-4xl font-bold">{tournament.title}</h1>
                   </div>
                   <Badge className={statusColors[tournament.status as keyof typeof statusColors]}>
                     {statusLabels[tournament.status as keyof typeof statusLabels]}
@@ -357,7 +390,7 @@ const TournamentDetails = () => {
                   )}
                   {isOwner && (
                     <>
-                      {!tournament.started_at && (
+                      {(tournament.status === "draft" || tournament.status === "registration") && (
                         <>
                           <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
                             <Edit className="h-4 w-4 mr-2" />
@@ -368,7 +401,7 @@ const TournamentDetails = () => {
                           </Button>
                         </>
                       )}
-                      {tournament.started_at && tournament.status !== "completed" && (
+                      {tournament.status === "active" && (
                         <Button onClick={() => setCompleteDialogOpen(true)}>
                           Завершить турнир
                         </Button>
@@ -383,10 +416,23 @@ const TournamentDetails = () => {
                     <p className="text-sm text-muted-foreground mb-3">
                       Инструменты для тестирования сетки
                     </p>
-                    <PhantomDataControls 
-                      tournamentId={id!} 
-                      onUpdate={fetchData}
-                    />
+                    <div className="flex flex-col gap-3">
+                      <PhantomDataControls 
+                        tournamentId={id!} 
+                        onUpdate={fetchData}
+                      />
+                      {(tournament.status === "draft" || tournament.status === "registration") && (
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => setDeleteDialogOpen(true)}
+                          className="w-fit"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Удалить турнир
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -397,7 +443,7 @@ const TournamentDetails = () => {
               <TabsList>
                 <TabsTrigger value="description">Описание</TabsTrigger>
                 <TabsTrigger value="participants">
-                  Команды ({participants.length}/{tournament.participant_limit})
+                  Команды ({participants.length}/{tournament.max_teams || 0})
                 </TabsTrigger>
                 <TabsTrigger value="bracket">Сетка</TabsTrigger>
               </TabsList>
@@ -461,7 +507,7 @@ const TournamentDetails = () => {
                                 onClick={async () => {
                                   if (window.confirm(`Удалить команду ${participant.team?.name || "Unknown"} из турнира?`)) {
                                     const { error } = await supabase
-                                      .from("tournament_participants")
+                                      .from("tournament_registrations")
                                       .delete()
                                       .eq("id", participant.id);
 
@@ -492,11 +538,11 @@ const TournamentDetails = () => {
                     <CardTitle>Турнирная сетка</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {tournament.started_at || isOwner ? (
+                    {tournament.status === "active" || tournament.status === "completed" || isOwner ? (
                       <TournamentBracket
                         tournamentId={tournament.id}
                         isOwner={isOwner}
-                        bracketFormat={tournament.bracket_format}
+                        bracketFormat={tournament.format}
                         participants={participants}
                       />
                     ) : (
@@ -541,6 +587,22 @@ const TournamentDetails = () => {
               <AlertDialogFooter>
                 <AlertDialogCancel>Отмена</AlertDialogCancel>
                 <AlertDialogAction onClick={handleStartTournament}>Начать турнир</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Удалить турнир?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Это действие необратимо. Турнир и все связанные данные (участники, матчи, результаты) будут удалены.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Отмена</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteTournament} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Удалить
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
