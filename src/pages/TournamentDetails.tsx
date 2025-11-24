@@ -52,6 +52,7 @@ const TournamentDetails = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isParticipant, setIsParticipant] = useState(false);
+  const [isTeamLeader, setIsTeamLeader] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [startDialogOpen, setStartDialogOpen] = useState(false);
@@ -118,18 +119,28 @@ const TournamentDetails = () => {
       setParticipants(participantsWithTeams);
     }
 
-    // Check if current user's team is participant
+    // Check if current user's team is participant and user role
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: teamMember } = await supabase
+      // Check if user is captain or coach
+      const { data: leaderRole } = await supabase
         .from("team_members")
-        .select("team_id")
+        .select("team_id, role")
         .eq("user_id", user.id)
         .in("role", ["captain", "coach"])
         .maybeSingle();
 
-      if (teamMember?.team_id) {
-        const isJoined = participantsData?.some((p) => p.team_id === teamMember.team_id);
+      setIsTeamLeader(!!leaderRole);
+
+      // Check if user's team (any role) is registered
+      const { data: anyTeamMember } = await supabase
+        .from("team_members")
+        .select("team_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (anyTeamMember?.team_id) {
+        const isJoined = participantsData?.some((p) => p.team_id === anyTeamMember.team_id);
         setIsParticipant(!!isJoined);
       }
     }
@@ -347,13 +358,13 @@ const TournamentDetails = () => {
                 </div>
 
                 <div className="flex gap-3">
-                  {tournament.status === "registration" && !isParticipant && (
+                  {tournament.status === "registration" && !isParticipant && isTeamLeader && (
                     <Button onClick={handleJoin}>
                       <UserPlus className="h-4 w-4 mr-2" />
                       Участвовать
                     </Button>
                   )}
-                  {isParticipant && tournament.status === "registration" && (
+                  {isParticipant && tournament.status === "registration" && isTeamLeader && (
                     <Button variant="outline" onClick={handleLeave}>
                       <LogOut className="h-4 w-4 mr-2" />
                       Выйти из турнира
