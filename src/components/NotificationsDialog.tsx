@@ -85,13 +85,13 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
     try {
       if (accept) {
         // Используем RPC функцию для безопасного принятия приглашения
-        const { data, error } = await supabase.rpc("accept_team_invitation", {
+        const { data, error } = await (supabase.rpc as any)("accept_team_invitation", {
           invitation_id_input: inviteId,
         });
 
         if (error) throw error;
 
-        const result = data as { success: boolean; error?: string };
+        const result = data as unknown as { success: boolean; error?: string };
 
         if (!result.success) {
           toast.error(result.error || "Не удалось принять приглашение");
@@ -102,13 +102,13 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
         toast.success("Приглашение принято, вы вступили в команду!");
       } else {
         // Используем RPC функцию для отклонения приглашения
-        const { data, error } = await supabase.rpc("decline_team_invitation", {
+        const { data, error } = await (supabase.rpc as any)("decline_team_invitation", {
           invitation_id_input: inviteId,
         });
 
         if (error) throw error;
 
-        const result = data as { success: boolean; error?: string };
+        const result = data as unknown as { success: boolean; error?: string };
 
         if (!result.success) {
           toast.error(result.error || "Не удалось отклонить приглашение");
