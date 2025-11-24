@@ -30,12 +30,13 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
     queryFn: async () => {
       if (!search || search.length < 2) return [];
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url, riot_id") // Removed riot_tag and current_team_id (not in schema)
-        .ilike("username", `%${search}%`)
-        // .is("current_team_id", null) // Schema does not have current_team_id
-        .limit(10);
+      const { data, error } = await supabase
+        .rpc("search_available_players", { search_term: search });
+
+      if (error) {
+        console.error("Error searching players:", error);
+        return [];
+      }
 
       return data || [];
     },
