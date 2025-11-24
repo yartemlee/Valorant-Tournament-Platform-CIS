@@ -14,8 +14,6 @@ import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { useRealtimeTeamInvitations } from "@/hooks/useRealtimeTeamInvitations";
-import { useRealtimeTeamApplications } from "@/hooks/useRealtimeTeamApplications";
 
 interface NotificationsDialogProps {
   open: boolean;
@@ -33,9 +31,9 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
     },
   });
 
-  // Real-time подписки для автоматического обновления приглашений и заявок
-  useRealtimeTeamInvitations({ userId: session?.user?.id });
-  useRealtimeTeamApplications({ userId: session?.user?.id });
+  // ПРИМЕЧАНИЕ: Real-time подписки вынесены в TopBar компонент,
+  // который всегда монтирован и обеспечивает постоянные подписки.
+  // Дублирование подписок здесь не требуется и может вызвать проблемы.
 
   // Личные приглашения в команды (toUserId = текущий пользователь)
   const { data: invites, isLoading: invitesLoading } = useQuery({
