@@ -99,7 +99,7 @@ const TournamentDetails = () => {
       .from("tournament_registrations")
       .select("id, team_id, registered_at, status")
       .eq("tournament_id", id)
-      .eq("status", "pending");
+      .in("status", ["pending", "approved"]);
 
     if (participantsData) {
       const participantsWithTeams = await Promise.all(
@@ -194,7 +194,7 @@ const TournamentDetails = () => {
     const allHaveRiotId = teamProfiles?.every((m: any) => {
       const prof = m.profiles;
       if (!prof) return false;
-      
+
       // Check if riot_id is present (assuming it contains Name#Tag)
       return !!prof.riot_id;
     });
@@ -232,8 +232,8 @@ const TournamentDetails = () => {
     try {
       await supabase
         .from("tournaments")
-        .update({ 
-          status: "active" 
+        .update({
+          status: "active"
         })
         .eq("id", id);
 
@@ -395,15 +395,15 @@ const TournamentDetails = () => {
                     </>
                   )}
                 </div>
-                
+
                 {/* Phantom Data Controls for Organizer */}
                 {isOwner && (
                   <div className="mt-4 pt-4 border-t border-border">
                     <p className="text-sm text-muted-foreground mb-3">
                       Инструменты для тестирования сетки
                     </p>
-                    <PhantomDataControls 
-                      tournamentId={id!} 
+                    <PhantomDataControls
+                      tournamentId={id!}
                       onUpdate={fetchData}
                     />
                   </div>
