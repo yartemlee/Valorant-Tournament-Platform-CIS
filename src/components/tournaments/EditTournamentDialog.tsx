@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 interface EditTournamentDialogProps {
   open: boolean;
@@ -21,7 +24,9 @@ export function EditTournamentDialog({
   tournament,
   onSuccess,
 }: EditTournamentDialogProps) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -89,6 +94,25 @@ export function EditTournamentDialog({
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from("tournaments")
+        .delete()
+        .eq("id", tournament.id);
+
+      if (error) throw error;
+
+      toast.success("Турнир удалён");
+      onOpenChange(false);
+      setDeleteDialogOpen(false);
+      navigate("/tournaments");
+    } catch (error) {
+      toast.error("Ошибка удаления турнира");
+      console.error(error);
     }
   };
 
@@ -203,7 +227,41 @@ export function EditTournamentDialog({
             </Button>
           </div>
         </form>
+
+        {/* Delete button - only for draft/registration status */}
+        {(tournament?.status === "draft" || tournament?.status === "registration") && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <Button 
+              type="button"
+              variant="destructive" 
+              size="sm"
+              onClick={() => setDeleteDialogOpen(true)}
+              className="w-full"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Удалить турнир
+            </Button>
+          </div>
+        )}
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить турнир?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие необратимо. Турнир и все связанные данные (участники, матчи, результаты) будут удалены.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

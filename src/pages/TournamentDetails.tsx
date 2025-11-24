@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Calendar, Users, Edit, LogOut, UserPlus, Trash2 } from "lucide-react";
+import { Trophy, Calendar, Users, Edit, LogOut, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { toast } from "sonner";
@@ -55,7 +55,6 @@ const TournamentDetails = () => {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [startDialogOpen, setStartDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -122,14 +121,15 @@ const TournamentDetails = () => {
     // Check if current user's team is participant
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("current_team_id")
-        .eq("id", user.id)
-        .single();
+      const { data: teamMember } = await supabase
+        .from("team_members")
+        .select("team_id")
+        .eq("user_id", user.id)
+        .in("role", ["captain", "coach"])
+        .maybeSingle();
 
-      if (profile?.current_team_id) {
-        const isJoined = participantsData?.some((p) => p.team_id === profile.current_team_id);
+      if (teamMember?.team_id) {
+        const isJoined = participantsData?.some((p) => p.team_id === teamMember.team_id);
         setIsParticipant(!!isJoined);
       }
     }
@@ -146,27 +146,15 @@ const TournamentDetails = () => {
       return;
     }
 
-    // Check if user is a captain
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("current_team_id")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile?.current_team_id) {
-      toast.error("Зарегистрировать команду может только капитан");
-      return;
-    }
-
-    // Check if user is captain or coach of their team
+    // Check if user is captain or coach of any team
     const { data: teamMember } = await supabase
       .from("team_members")
       .select("role, team_id")
       .eq("user_id", user.id)
-      .eq("team_id", profile.current_team_id)
+      .in("role", ["captain", "coach"])
       .single();
 
-    if (!teamMember || !["captain", "coach"].includes(teamMember.role)) {
+    if (!teamMember) {
       toast.error("Зарегистрировать команду может только капитан или тренер");
       return;
     }
@@ -175,7 +163,7 @@ const TournamentDetails = () => {
     const { data: teamMembers } = await supabase
       .from("team_members")
       .select("id")
-      .eq("team_id", profile.current_team_id);
+      .eq("team_id", teamMember.team_id);
 
     if (!teamMembers || teamMembers.length < 5) {
       toast.error("В команде должно быть минимум 5 игроков для участия в турнире");
@@ -186,7 +174,7 @@ const TournamentDetails = () => {
     const { data: teamProfiles } = await supabase
       .from("team_members")
       .select("user_id, profiles:user_id(riot_id)")
-      .eq("team_id", profile.current_team_id);
+      .eq("team_id", teamMember.team_id);
 
     const allHaveRiotId = teamProfiles?.every((m: any) => {
       const prof = m.profiles;
@@ -246,13 +234,14 @@ const TournamentDetails = () => {
     if (!user) return;
 
     // Get user's team
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("current_team_id")
-      .eq("id", user.id)
+    const { data: teamMember } = await supabase
+      .from("team_members")
+      .select("team_id")
+      .eq("user_id", user.id)
+      .in("role", ["captain", "coach"])
       .single();
 
-    if (!profile?.current_team_id) {
+    if (!teamMember) {
       toast.error("Команда не найдена");
       return;
     }
@@ -261,7 +250,7 @@ const TournamentDetails = () => {
       .from("tournament_registrations")
       .delete()
       .eq("tournament_id", id)
-      .eq("team_id", profile.current_team_id);
+      .eq("team_id", teamMember.team_id);
 
     if (error) {
       toast.error("Ошибка выхода из турнира");
@@ -270,24 +259,6 @@ const TournamentDetails = () => {
 
     toast.success("Команда снята с турнира");
     fetchData();
-  };
-
-  const handleDeleteTournament = async () => {
-    if (!isOwner) return;
-
-    try {
-      const { error } = await supabase
-        .from("tournaments")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast.success("Турнир удалён");
-      navigate("/tournaments");
-    } catch (error) {
-      toast.error("Ошибка удаления турнира");
-    }
   };
 
   if (loading) {
@@ -416,23 +387,10 @@ const TournamentDetails = () => {
                     <p className="text-sm text-muted-foreground mb-3">
                       Инструменты для тестирования сетки
                     </p>
-                    <div className="flex flex-col gap-3">
-                      <PhantomDataControls 
-                        tournamentId={id!} 
-                        onUpdate={fetchData}
-                      />
-                      {(tournament.status === "draft" || tournament.status === "registration") && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => setDeleteDialogOpen(true)}
-                          className="w-fit"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Удалить турнир
-                        </Button>
-                      )}
-                    </div>
+                    <PhantomDataControls 
+                      tournamentId={id!} 
+                      onUpdate={fetchData}
+                    />
                   </div>
                 )}
               </div>
@@ -587,22 +545,6 @@ const TournamentDetails = () => {
               <AlertDialogFooter>
                 <AlertDialogCancel>Отмена</AlertDialogCancel>
                 <AlertDialogAction onClick={handleStartTournament}>Начать турнир</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Удалить турнир?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Это действие необратимо. Турнир и все связанные данные (участники, матчи, результаты) будут удалены.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Отмена</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteTournament} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Удалить
-                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
