@@ -13,6 +13,8 @@ import { TeamStatsSection } from "@/components/teams/TeamStatsSection";
 import { TeamActivitySection } from "@/components/teams/TeamActivitySection";
 import { TeamManageDialog } from "@/components/teams/TeamManageDialog";
 import { useCurrentUserProfile } from "@/hooks/useCurrentUserProfile";
+import { useRealtimeTeamMembers } from "@/hooks/useRealtimeTeamMembers";
+import { useRealtimeTeams } from "@/hooks/useRealtimeTeams";
 
 const TeamDetails = () => {
   const { id } = useParams();
@@ -32,6 +34,10 @@ const TeamDetails = () => {
     isManager,
     refetch: refetchUserProfile
   } = useCurrentUserProfile(id);
+
+  // Real-time подписки для автоматического обновления
+  useRealtimeTeamMembers({ teamId: id });
+  useRealtimeTeams({ teamId: id });
 
   const { data: team, isLoading } = useQuery({
     queryKey: ["team", id],

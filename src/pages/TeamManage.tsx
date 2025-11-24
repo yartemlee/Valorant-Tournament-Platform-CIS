@@ -10,11 +10,17 @@ import { ArrowLeft, Settings } from "lucide-react";
 import { TeamRosterTab } from "@/components/teams/manage/TeamRosterTab";
 import { TeamApplicationsTab } from "@/components/teams/manage/TeamApplicationsTab";
 import { TeamSettingsTab } from "@/components/teams/manage/TeamSettingsTab";
+import { useRealtimeTeamMembers } from "@/hooks/useRealtimeTeamMembers";
+import { useRealtimeTeams } from "@/hooks/useRealtimeTeams";
 
 const TeamManage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Real-time подписки для автоматического обновления состава
+  useRealtimeTeamMembers({ teamId: id });
+  useRealtimeTeams({ teamId: id });
 
   const { data: session } = useQuery({
     queryKey: ["session"],
@@ -48,7 +54,7 @@ const TeamManage = () => {
         .single();
       return data;
     },
-    refetchInterval: 2000, // Проверяем доступ каждые 2 секунды
+    // Убрали refetchInterval - теперь используем Realtime
   });
 
   const isOwner = session?.user?.id === team?.captain_id;

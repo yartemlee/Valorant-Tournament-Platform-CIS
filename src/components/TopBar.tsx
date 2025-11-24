@@ -17,6 +17,7 @@ import { NotificationsDialog } from "./NotificationsDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeTeamInvitations } from "@/hooks/useRealtimeTeamInvitations";
 import { useRealtimeTeamApplications } from "@/hooks/useRealtimeTeamApplications";
+import { useRealtimeProfiles } from "@/hooks/useRealtimeProfiles";
 
 const TopBar = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -93,9 +94,10 @@ const TopBar = () => {
     enabled: !!user?.id,
   });
 
-  // Real-time подписки для автоматического обновления уведомлений
+  // Real-time подписки для автоматического обновления уведомлений и профиля
   useRealtimeTeamInvitations({ userId: user?.id });
   useRealtimeTeamApplications({ userId: user?.id });
+  useRealtimeProfiles({ userId: user?.id });
 
   const getUserInitials = () => {
     if (profile?.username) {

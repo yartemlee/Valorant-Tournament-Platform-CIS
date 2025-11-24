@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Users, Search, Plus } from "lucide-react";
 import { TeamCard } from "@/components/teams/TeamCard";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeTeams } from "@/hooks/useRealtimeTeams";
 
 const Teams = () => {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ const Teams = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { session, authLoading: sessionLoading } = useAuth();
+
+  // Real-time подписка на все команды для автоматического обновления списка
+  useRealtimeTeams({ watchAll: true });
 
   // Get user profile
   const { data: profile } = useQuery({
