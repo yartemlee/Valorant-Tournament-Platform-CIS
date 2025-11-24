@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { NotificationsDialog } from "./NotificationsDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeTeamInvitations } from "@/hooks/useRealtimeTeamInvitations";
+import { useRealtimeTeamApplications } from "@/hooks/useRealtimeTeamApplications";
 
 const TopBar = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -89,8 +91,11 @@ const TopBar = () => {
       return (invitesCount || 0) + (applicationsCount || 0);
     },
     enabled: !!user?.id,
-    refetchInterval: 10000,
   });
+
+  // Real-time подписки для автоматического обновления уведомлений
+  useRealtimeTeamInvitations({ userId: user?.id });
+  useRealtimeTeamApplications({ userId: user?.id });
 
   const getUserInitials = () => {
     if (profile?.username) {

@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRealtimeTeamApplications } from "@/hooks/useRealtimeTeamApplications";
+import { useMemo } from "react";
 
 const navItems = [
   { icon: Home, label: "Главная", path: "/" },
@@ -16,34 +18,50 @@ const navItems = [
 const Sidebar = () => {
   const { session } = useAuth();
 
-  // Счётчик входящих заявок в команды пользователя (для капитанов/тренеров)
-  const { data: teamApplicationsCount = 0 } = useQuery({
-    queryKey: ["team-applications-count", session?.user?.id],
+  // Получаем команды, где пользователь капитан или тренер
+  const { data: managedTeams } = useQuery({
+    queryKey: ["managed-teams", session?.user?.id],
     queryFn: async () => {
-      if (!session?.user?.id) return 0;
+      if (!session?.user?.id) return [];
       
-      // Получаем команды, где пользователь капитан или тренер
       const { data: teams } = await supabase
         .from("team_members")
         .select("team_id")
         .eq("user_id", session.user.id)
         .in("role", ["captain", "coach"]);
 
-      if (!teams || teams.length === 0) return 0;
+      return teams || [];
+    },
+    enabled: !!session?.user?.id,
+  });
 
-      const teamIds = teams.map(t => t.team_id);
+  const managedTeamIds = useMemo(() => 
+    managedTeams?.map(t => t.team_id) || [], 
+    [managedTeams]
+  );
 
-      // Считаем pending заявки на эти команды
+  // Счётчик входящих заявок в команды пользователя (для капитанов/тренеров)
+  const { data: teamApplicationsCount = 0 } = useQuery({
+    queryKey: ["team-applications-count", session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id || managedTeamIds.length === 0) return 0;
+
+      // Считаем pending заявки на управляемые команды
       const { count } = await supabase
         .from("team_applications")
         .select("*", { count: "exact", head: true })
-        .in("team_id", teamIds)
+        .in("team_id", managedTeamIds)
         .eq("status", "pending");
 
       return count || 0;
     },
-    enabled: !!session?.user?.id,
-    refetchInterval: 30000,
+    enabled: !!session?.user?.id && managedTeamIds.length > 0,
+  });
+
+  // Real-time подписка на заявки в управляемые команды
+  useRealtimeTeamApplications({
+    userId: session?.user?.id,
+    managedTeamIds,
   });
 
   return (

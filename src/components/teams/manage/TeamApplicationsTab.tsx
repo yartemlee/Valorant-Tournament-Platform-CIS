@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Check, X, Users, Send } from "lucide-react";
 import { InvitePlayerDialog } from "../InvitePlayerDialog";
+import { useRealtimeTeamInvitations } from "@/hooks/useRealtimeTeamInvitations";
+import { useRealtimeTeamApplications } from "@/hooks/useRealtimeTeamApplications";
 import type { Session } from "@supabase/supabase-js";
 
 interface TeamApplicationsTabProps {
@@ -50,28 +52,15 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
     },
   });
 
-  // Realtime подписка на изменения заявок
-  useEffect(() => {
-    const channel = supabase
-      .channel('team-applications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'team_applications',
-          filter: `team_id=eq.${teamId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["team-applications", teamId] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [teamId, queryClient]);
+  // Real-time подписки для автоматического обновления заявок и приглашений
+  useRealtimeTeamApplications({ 
+    userId: session?.user?.id, 
+    managedTeamIds: [teamId] 
+  });
+  useRealtimeTeamInvitations({ 
+    userId: session?.user?.id, 
+    managedTeamIds: [teamId] 
+  });
 
   const { data: invites, isLoading: invitesLoading, error: invitesError } = useQuery({
     queryKey: ["team-invites-sent", teamId],
