@@ -13,15 +13,14 @@ import { toast } from "sonner";
 
 interface Tournament {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
-  bracket_format: string;
-  date_start: string;
-  prize: string | null;
+  format: string;
+  start_time: string;
+  prize_pool: string | null;
   status: string;
-  registration_open: boolean;
   banner_url: string | null;
-  participant_limit: number;
+  max_teams: number | null;
   organizer_id: string;
 }
 
@@ -56,14 +55,14 @@ const Tournaments = () => {
     let query = supabase
       .from("tournaments")
       .select("*")
-      .order("date_start", { ascending: true });
+      .order("start_time", { ascending: true });
 
     if (statusFilter !== "all") {
       query = query.eq("status", statusFilter);
     }
 
     if (formatFilter !== "all") {
-      query = query.eq("bracket_format", formatFilter);
+      query = query.eq("format", formatFilter);
     }
 
     const { data, error } = await query;
@@ -77,7 +76,7 @@ const Tournaments = () => {
   };
 
   const filteredTournaments = tournaments.filter((t) =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+    t.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleMyTournaments = () => {
@@ -133,9 +132,11 @@ const Tournaments = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все статусы</SelectItem>
-                    <SelectItem value="open">Открыт</SelectItem>
-                    <SelectItem value="ongoing">В процессе</SelectItem>
+                    <SelectItem value="draft">Черновик</SelectItem>
+                    <SelectItem value="registration">Регистрация</SelectItem>
+                    <SelectItem value="active">Активен</SelectItem>
                     <SelectItem value="completed">Завершён</SelectItem>
+                    <SelectItem value="cancelled">Отменён</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={formatFilter} onValueChange={setFormatFilter}>

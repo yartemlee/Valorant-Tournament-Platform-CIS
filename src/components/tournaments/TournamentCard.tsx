@@ -9,15 +9,14 @@ import { ru } from "date-fns/locale";
 interface TournamentCardProps {
   tournament: {
     id: string;
-    name: string;
+    title: string;
     description: string | null;
-    bracket_format: string;
-    date_start: string;
-    prize: string | null;
+    format: string;
+    start_time: string;
+    prize_pool: string | null;
     status: string;
-    registration_open: boolean;
     banner_url: string | null;
-    participant_limit: number;
+    max_teams: number | null;
   };
 }
 
@@ -25,9 +24,11 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
   const navigate = useNavigate();
 
   const statusColors = {
-    open: "bg-accent text-accent-foreground",
-    ongoing: "bg-primary text-primary-foreground",
+    draft: "bg-muted text-muted-foreground",
+    registration: "bg-accent text-accent-foreground",
+    active: "bg-primary text-primary-foreground",
     completed: "bg-muted text-muted-foreground",
+    cancelled: "bg-destructive text-destructive-foreground",
   };
 
   const formatLabels = {
@@ -36,9 +37,11 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
   };
 
   const statusLabels = {
-    open: "Открыт",
-    ongoing: "В процессе",
+    draft: "Черновик",
+    registration: "Регистрация",
+    active: "Активен",
     completed: "Завершён",
+    cancelled: "Отменён",
   };
 
   return (
@@ -48,7 +51,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         <div className="h-32 overflow-hidden">
           <img
             src={tournament.banner_url}
-            alt={tournament.name}
+            alt={tournament.title}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
           />
         </div>
@@ -60,7 +63,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1">
             <Trophy className="h-5 w-5 text-primary shrink-0" />
-            <h3 className="text-lg font-bold text-foreground line-clamp-1">{tournament.name}</h3>
+            <h3 className="text-lg font-bold text-foreground line-clamp-1">{tournament.title}</h3>
           </div>
           <Badge className={statusColors[tournament.status as keyof typeof statusColors]}>
             {statusLabels[tournament.status as keyof typeof statusLabels]}
@@ -76,18 +79,18 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>{format(new Date(tournament.date_start), "d MMMM yyyy, HH:mm", { locale: ru })}</span>
+            <span>{format(new Date(tournament.start_time), "d MMMM yyyy, HH:mm", { locale: ru })}</span>
           </div>
 
           <div className="flex items-center gap-2 text-muted-foreground">
             <Users className="h-4 w-4" />
-            <span>{formatLabels[tournament.bracket_format as keyof typeof formatLabels]}</span>
+            <span>{formatLabels[tournament.format as keyof typeof formatLabels]}</span>
           </div>
 
-          {tournament.prize && (
+          {tournament.prize_pool && (
             <div className="pt-2">
               <div className="text-xs text-muted-foreground">Призовой фонд</div>
-              <div className="text-xl font-bold text-accent">{tournament.prize}</div>
+              <div className="text-xl font-bold text-accent">{tournament.prize_pool}</div>
             </div>
           )}
         </div>
@@ -102,7 +105,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
           >
             Подробнее
           </Button>
-          {tournament.status === "open" && tournament.registration_open && (
+          {tournament.status === "registration" && (
             <Button
               variant="outline"
               size="sm"

@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 interface CreateTournamentDialogProps {
@@ -20,15 +19,14 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    title: "",
     description: "",
-    bracket_format: "single_elimination",
-    date_start: "",
-    prize: "",
-    participant_limit: 16,
+    format: "single_elimination",
+    start_time: "",
+    prize_pool: "",
+    max_teams: 16,
     rules: "",
     banner_url: "",
-    registration_open: true,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,18 +41,18 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
     }
 
     // Validation
-    if (!formData.name.trim()) {
+    if (!formData.title.trim()) {
       toast.error("Введите название турнира");
       return;
     }
 
-    if (!formData.date_start) {
+    if (!formData.start_time) {
       toast.error("Выберите дату начала");
       return;
     }
 
     // Check if date is in the past
-    const selectedDate = new Date(formData.date_start);
+    const selectedDate = new Date(formData.start_time);
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
@@ -72,7 +70,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
         {
           ...formData,
           organizer_id: user.id,
-          status: "open",
+          status: "registration",
         },
       ])
       .select()
@@ -100,13 +98,13 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">
+            <Label htmlFor="title">
               Название турнира <span className="text-destructive">*</span>
             </Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Введите название"
               maxLength={100}
               required
@@ -127,14 +125,14 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="bracket_format">
+              <Label htmlFor="format">
                 Формат сетки <span className="text-destructive">*</span>
               </Label>
               <Select
-                value={formData.bracket_format}
-                onValueChange={(value) => setFormData({ ...formData, bracket_format: value })}
+                value={formData.format}
+                onValueChange={(value) => setFormData({ ...formData, format: value })}
               >
-                <SelectTrigger id="bracket_format">
+                <SelectTrigger id="format">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -145,14 +143,14 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date_start">
+              <Label htmlFor="start_time">
                 Дата и время начала <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="date_start"
+                id="start_time"
                 type="datetime-local"
-                value={formData.date_start}
-                onChange={(e) => setFormData({ ...formData, date_start: e.target.value })}
+                value={formData.start_time}
+                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                 min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
                 required
               />
@@ -164,24 +162,24 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="prize">Призовой фонд</Label>
+              <Label htmlFor="prize_pool">Призовой фонд</Label>
               <Input
-                id="prize"
-                value={formData.prize}
-                onChange={(e) => setFormData({ ...formData, prize: e.target.value })}
+                id="prize_pool"
+                value={formData.prize_pool}
+                onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })}
                 placeholder="Например: $500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="participant_limit">Лимит команд</Label>
+              <Label htmlFor="max_teams">Лимит команд</Label>
               <Input
-                id="participant_limit"
+                id="max_teams"
                 type="number"
                 min={2}
                 max={64}
-                value={formData.participant_limit}
-                onChange={(e) => setFormData({ ...formData, participant_limit: parseInt(e.target.value) })}
+                value={formData.max_teams}
+                onChange={(e) => setFormData({ ...formData, max_teams: parseInt(e.target.value) })}
               />
             </div>
           </div>
@@ -206,19 +204,6 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
               onChange={(e) => setFormData({ ...formData, banner_url: e.target.value })}
               placeholder="https://example.com/banner.jpg"
             />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="registration_open"
-              checked={formData.registration_open}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, registration_open: checked as boolean })
-              }
-            />
-            <Label htmlFor="registration_open" className="cursor-pointer">
-              Открыт для регистрации
-            </Label>
           </div>
 
           <div className="flex gap-3 pt-4">

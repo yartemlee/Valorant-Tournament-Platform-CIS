@@ -10,15 +10,14 @@ import { Trophy, Plus } from "lucide-react";
 
 interface Tournament {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
-  bracket_format: string;
-  date_start: string;
-  prize: string | null;
+  format: string;
+  start_time: string;
+  prize_pool: string | null;
   status: string;
-  registration_open: boolean;
   banner_url: string | null;
-  participant_limit: number;
+  max_teams: number | null;
   organizer_id: string;
 }
 
@@ -39,8 +38,8 @@ const Index = () => {
     const { data, error } = await supabase
       .from("tournaments")
       .select("*")
-      .in("status", ["open", "ongoing"])
-      .order("date_start", { ascending: true })
+      .in("status", ["registration", "active"])
+      .order("start_time", { ascending: true })
       .limit(4);
 
     if (!error && data) {
@@ -113,7 +112,7 @@ const Index = () => {
                       <Button onClick={() => navigate(`/tournaments/${featuredTournament.id}`)}>
                         Подробнее
                       </Button>
-                      {featuredTournament.registration_open && (
+                      {featuredTournament.status === "registration" && (
                         <Button
                           variant="outline"
                           onClick={() => navigate(`/tournaments/${featuredTournament.id}?action=join`)}

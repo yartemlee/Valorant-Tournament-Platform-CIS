@@ -19,19 +19,16 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface Tournament {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
-  bracket_format: string;
-  date_start: string;
-  prize: string | null;
+  format: string;
+  start_time: string;
+  prize_pool: string | null;
   status: string;
-  registration_open: boolean;
   banner_url: string | null;
-  participant_limit: number;
+  max_teams: number | null;
   rules: string | null;
   organizer_id: string;
-  started_at: string | null;
-  bracket_generated: boolean;
 }
 
 interface Participant {
@@ -191,7 +188,7 @@ const TournamentDetails = () => {
       return;
     }
 
-    if (!tournament?.registration_open) {
+    if (tournament?.status !== "registration") {
       toast.error("Регистрация закрыта");
       return;
     }
@@ -221,8 +218,7 @@ const TournamentDetails = () => {
       await supabase
         .from("tournaments")
         .update({ 
-          started_at: new Date().toISOString(),
-          status: "ongoing" 
+          status: "active" 
         })
         .eq("id", id);
 
@@ -332,28 +328,28 @@ const TournamentDetails = () => {
                 <div className="flex flex-wrap gap-6 mb-6 text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    <span>{format(new Date(tournament.date_start), "d MMMM yyyy, HH:mm", { locale: ru })}</span>
+                    <span>{format(new Date(tournament.start_time), "d MMMM yyyy, HH:mm", { locale: ru })}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
-                    <span>{formatLabels[tournament.bracket_format as keyof typeof formatLabels]}</span>
+                    <span>{formatLabels[tournament.format as keyof typeof formatLabels]}</span>
                   </div>
-                  {tournament.prize && (
+                  {tournament.prize_pool && (
                     <div className="flex items-center gap-2">
                       <Trophy className="h-5 w-5" />
-                      <span className="text-accent font-semibold">{tournament.prize}</span>
+                      <span className="text-accent font-semibold">{tournament.prize_pool}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="flex gap-3">
-                  {tournament.status === "open" && tournament.registration_open && !isParticipant && (
+                  {tournament.status === "registration" && !isParticipant && (
                     <Button onClick={handleJoin}>
                       <UserPlus className="h-4 w-4 mr-2" />
                       Участвовать
                     </Button>
                   )}
-                  {isParticipant && tournament.status === "open" && (
+                  {isParticipant && tournament.status === "registration" && (
                     <Button variant="outline" onClick={handleLeave}>
                       <LogOut className="h-4 w-4 mr-2" />
                       Выйти из турнира

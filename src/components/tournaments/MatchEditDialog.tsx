@@ -94,7 +94,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
       // Получить информацию о турнире
       const { data: tournament } = await supabase
         .from("tournaments")
-        .select("bracket_format")
+        .select("format")
         .eq("id", currentMatch.tournament_id)
         .single();
 
@@ -123,7 +123,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
       }
 
       // Для Double Elimination: проигравший идет в нижнюю сетку
-      if (tournament.bracket_format === "double_elimination" && loserId && currentMatch.bracket_type === "upper") {
+      if (tournament.format === "double_elimination" && loserId && currentMatch.bracket_type === "upper") {
         // Найти соответствующий матч в нижней сетке
         const { data: lowerMatches } = await supabase
           .from("tournament_matches")

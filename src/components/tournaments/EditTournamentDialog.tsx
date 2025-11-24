@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 interface EditTournamentDialogProps {
@@ -24,29 +23,27 @@ export function EditTournamentDialog({
 }: EditTournamentDialogProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    title: "",
     description: "",
-    bracket_format: "single_elimination",
-    date_start: "",
-    prize: "",
-    participant_limit: 16,
+    format: "single_elimination",
+    start_time: "",
+    prize_pool: "",
+    max_teams: 16,
     rules: "",
     banner_url: "",
-    registration_open: true,
   });
 
   useEffect(() => {
     if (tournament) {
       setFormData({
-        name: tournament.name || "",
+        title: tournament.title || "",
         description: tournament.description || "",
-        bracket_format: tournament.bracket_format || "single_elimination",
-        date_start: tournament.date_start ? new Date(tournament.date_start).toISOString().slice(0, 16) : "",
-        prize: tournament.prize || "",
-        participant_limit: tournament.participant_limit || 16,
+        format: tournament.format || "single_elimination",
+        start_time: tournament.start_time ? new Date(tournament.start_time).toISOString().slice(0, 16) : "",
+        prize_pool: tournament.prize_pool || "",
+        max_teams: tournament.max_teams || 16,
         rules: tournament.rules || "",
         banner_url: tournament.banner_url || "",
-        registration_open: tournament.registration_open ?? true,
       });
     }
   }, [tournament]);
@@ -54,13 +51,13 @@ export function EditTournamentDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.date_start) {
+    if (!formData.title || !formData.start_time) {
       toast.error("Заполните обязательные поля");
       return;
     }
 
-    // Проверка - если турнир уже начался, запретить редактирование
-    if (tournament.started_at) {
+    // Проверка - если турнир уже активен, запретить редактирование
+    if (tournament.status === "active" || tournament.status === "completed") {
       toast.error("Нельзя редактировать турнир после его начала");
       return;
     }
@@ -71,15 +68,14 @@ export function EditTournamentDialog({
       const { error } = await supabase
         .from("tournaments")
         .update({
-          name: formData.name,
+          title: formData.title,
           description: formData.description,
-          bracket_format: formData.bracket_format,
-          date_start: new Date(formData.date_start).toISOString(),
-          prize: formData.prize || null,
-          participant_limit: formData.participant_limit,
+          format: formData.format,
+          start_time: new Date(formData.start_time).toISOString(),
+          prize_pool: formData.prize_pool || null,
+          max_teams: formData.max_teams,
           rules: formData.rules || null,
           banner_url: formData.banner_url || null,
-          registration_open: formData.registration_open,
         })
         .eq("id", tournament.id);
 
@@ -105,11 +101,11 @@ export function EditTournamentDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Название турнира *</Label>
+            <Label htmlFor="title">Название турнира *</Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Введите название"
               required
             />
@@ -129,8 +125,8 @@ export function EditTournamentDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="bracket_format">Формат сетки *</Label>
-              <Select value={formData.bracket_format} onValueChange={(value) => setFormData({ ...formData, bracket_format: value })}>
+              <Label htmlFor="format">Формат сетки *</Label>
+              <Select value={formData.format} onValueChange={(value) => setFormData({ ...formData, format: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -142,12 +138,12 @@ export function EditTournamentDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date_start">Дата и время начала *</Label>
+              <Label htmlFor="start_time">Дата и время начала *</Label>
               <Input
-                id="date_start"
+                id="start_time"
                 type="datetime-local"
-                value={formData.date_start}
-                onChange={(e) => setFormData({ ...formData, date_start: e.target.value })}
+                value={formData.start_time}
+                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                 required
               />
             </div>
@@ -155,24 +151,24 @@ export function EditTournamentDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="prize">Приз</Label>
+              <Label htmlFor="prize_pool">Приз</Label>
               <Input
-                id="prize"
-                value={formData.prize}
-                onChange={(e) => setFormData({ ...formData, prize: e.target.value })}
+                id="prize_pool"
+                value={formData.prize_pool}
+                onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })}
                 placeholder="Например: 10,000₽"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="participant_limit">Лимит команд</Label>
+              <Label htmlFor="max_teams">Лимит команд</Label>
               <Input
-                id="participant_limit"
+                id="max_teams"
                 type="number"
                 min="2"
                 max="64"
-                value={formData.participant_limit}
-                onChange={(e) => setFormData({ ...formData, participant_limit: parseInt(e.target.value) })}
+                value={formData.max_teams}
+                onChange={(e) => setFormData({ ...formData, max_teams: parseInt(e.target.value) })}
               />
             </div>
           </div>
@@ -196,17 +192,6 @@ export function EditTournamentDialog({
               onChange={(e) => setFormData({ ...formData, banner_url: e.target.value })}
               placeholder="https://example.com/banner.jpg"
             />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="registration_open"
-              checked={formData.registration_open}
-              onCheckedChange={(checked) => setFormData({ ...formData, registration_open: checked as boolean })}
-            />
-            <Label htmlFor="registration_open" className="cursor-pointer">
-              Открыт для регистрации
-            </Label>
           </div>
 
           <div className="flex gap-3 pt-4">
