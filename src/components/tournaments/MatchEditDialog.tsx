@@ -89,6 +89,10 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
     }
   };
 
+  /**
+   * Продвигает команды в следующие матчи после завершения текущего
+   * Обрабатывает все сценарии: обычные раунды, полуфиналы, финалы
+   */
   const advanceWinner = async (currentMatch: any, winnerId: string, loserId: string | null) => {
     try {
       // Получить информацию о турнире
@@ -100,7 +104,110 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
 
       if (!tournament) return;
 
-      // Найти следующий матч в верхней сетке
+      // Получить все матчи турнира для определения структуры
+      const { data: allMatches } = await supabase
+        .from("tournament_matches")
+        .select("*")
+        .eq("tournament_id", currentMatch.tournament_id)
+        .order("round_number")
+        .order("match_number");
+
+      if (!allMatches) return;
+
+      // Определить максимальный раунд в верхней сетке
+      const upperMatches = allMatches.filter(m => m.bracket_type === "upper" || m.bracket_type === "final");
+      const maxUpperRound = Math.max(...upperMatches.map(m => m.round_number));
+
+      // Проверяем, является ли текущий матч полуфиналом
+      const isSemifinal = currentMatch.bracket_type === "upper" &&
+        currentMatch.round_number === maxUpperRound - 1;
+
+      // Проверяем, является ли текущий матч финалом верхней сетки (для double elimination)
+      const isUpperFinal = currentMatch.bracket_type === "upper" &&
+        currentMatch.round_number === maxUpperRound &&
+        tournament.format === "double_elimination";
+
+      // ========== СПЕЦИАЛЬНАЯ ЛОГИКА ДЛЯ ПОЛУФИНАЛА ==========
+      if (isSemifinal && tournament.format === "single_elimination") {
+        // Победитель полуфинала → Финал
+        const finalMatch = allMatches.find(m => m.bracket_type === "final");
+        if (finalMatch) {
+          const isTeam1Slot = currentMatch.match_number % 2 === 1;
+          await supabase
+            .from("tournament_matches")
+            .update(isTeam1Slot ? { team1_id: winnerId } : { team2_id: winnerId })
+            .eq("id", finalMatch.id);
+        }
+
+        // Проигравший полуфинала → Матч за 3-е место
+        if (loserId) {
+          const thirdPlaceMatch = allMatches.find(m => m.bracket_type === "third_place");
+          if (thirdPlaceMatch) {
+            const isTeam1SlotThird = currentMatch.match_number % 2 === 1;
+            await supabase
+              .from("tournament_matches")
+              .update(isTeam1SlotThird ? { team1_id: loserId } : { team2_id: loserId })
+              .eq("id", thirdPlaceMatch.id);
+          }
+        }
+        return; // Выходим, т.к. обработали полуфинал специально
+      }
+
+      // ========== СПЕЦИАЛЬНАЯ ЛОГИКА ДЛЯ ФИНАЛА ВЕРХНЕЙ СЕТКИ (DOUBLE ELIMINATION) ==========
+      if (isUpperFinal) {
+        // Победитель финала верхней сетки → Гранд-финал (слот team1)
+        const grandFinalMatch = allMatches.find(m => m.bracket_type === "grand_final");
+        if (grandFinalMatch) {
+          await supabase
+            .from("tournament_matches")
+            .update({ team1_id: winnerId })
+            .eq("id", grandFinalMatch.id);
+        }
+
+        // Проигравший финала верхней сетки → Нижняя сетка (последний раунд)
+        if (loserId) {
+          const lowerMatches = allMatches.filter(m => m.bracket_type === "lower");
+          const maxLowerRound = Math.max(...lowerMatches.map(m => m.round_number));
+          const lowerFinalMatch = lowerMatches.find(m => m.round_number === maxLowerRound);
+
+          if (lowerFinalMatch) {
+            // Определяем свободный слот в финале нижней сетки
+            if (!lowerFinalMatch.team1_id) {
+              await supabase
+                .from("tournament_matches")
+                .update({ team1_id: loserId })
+                .eq("id", lowerFinalMatch.id);
+            } else if (!lowerFinalMatch.team2_id) {
+              await supabase
+                .from("tournament_matches")
+                .update({ team2_id: loserId })
+                .eq("id", lowerFinalMatch.id);
+            }
+          }
+        }
+        return; // Выходим, т.к. обработали финал верхней сетки
+      }
+
+      // ========== СПЕЦИАЛЬНАЯ ЛОГИКА ДЛЯ ФИНАЛА НИЖНЕЙ СЕТКИ ==========
+      if (currentMatch.bracket_type === "lower") {
+        const lowerMatches = allMatches.filter(m => m.bracket_type === "lower");
+        const maxLowerRound = Math.max(...lowerMatches.map(m => m.round_number));
+        const isLowerFinal = currentMatch.round_number === maxLowerRound;
+
+        if (isLowerFinal) {
+          // Победитель финала нижней сетки → Гранд-финал (слот team2)
+          const grandFinalMatch = allMatches.find(m => m.bracket_type === "grand_final");
+          if (grandFinalMatch) {
+            await supabase
+              .from("tournament_matches")
+              .update({ team2_id: winnerId })
+              .eq("id", grandFinalMatch.id);
+          }
+          return; // Проигравший финала нижней сетки выбывает
+        }
+      }
+
+      // ========== ОБЫЧНАЯ ЛОГИКА ПРОДВИЖЕНИЯ В СЛЕДУЮЩИЙ РАУНД ==========
       const nextRound = currentMatch.round_number + 1;
       const nextMatchNumber = Math.ceil(currentMatch.match_number / 2);
 
@@ -110,7 +217,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
         .eq("tournament_id", currentMatch.tournament_id)
         .eq("round_number", nextRound)
         .eq("match_number", nextMatchNumber)
-        .eq("bracket_type", currentMatch.bracket_type === "lower" ? "lower" : "upper");
+        .eq("bracket_type", currentMatch.bracket_type);
 
       if (nextMatches && nextMatches.length > 0) {
         const nextMatch = nextMatches[0];
@@ -122,19 +229,27 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
           .eq("id", nextMatch.id);
       }
 
-      // Для Double Elimination: проигравший идет в нижнюю сетку
-      if (tournament.format === "double_elimination" && loserId && currentMatch.bracket_type === "upper") {
-        // Найти соответствующий матч в нижней сетке
+      // ========== DOUBLE ELIMINATION: ПРОИГРАВШИЙ ИЗ ВЕРХНЕЙ СЕТКИ → НИЖНЯЯ СЕТКА ==========
+      if (tournament.format === "double_elimination" &&
+        loserId &&
+        currentMatch.bracket_type === "upper" &&
+        !isSemifinal && // Полуфинал уже обработан выше
+        !isUpperFinal) { // Финал верхней сетки уже обработан выше
+
+        // Вычисляем, в какой раунд нижней сетки должен попасть проигравший
+        // Это зависит от раунда верхней сетки
+        const lowerRoundTarget = (currentMatch.round_number - 1) * 2 + 1;
+
         const { data: lowerMatches } = await supabase
           .from("tournament_matches")
           .select("*")
           .eq("tournament_id", currentMatch.tournament_id)
           .eq("bracket_type", "lower")
-          .order("round_number")
+          .eq("round_number", lowerRoundTarget)
           .order("match_number");
 
         if (lowerMatches && lowerMatches.length > 0) {
-          // Найти первый свободный слот в нижней сетке
+          // Найти первый свободный слот в целевом раунде нижней сетки
           for (const lowerMatch of lowerMatches) {
             if (!lowerMatch.team1_id) {
               await supabase
@@ -154,6 +269,8 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
       }
     } catch (error) {
       console.error("Error advancing winner:", error);
+      // Показываем ошибку пользователю, но не блокируем сохранение матча
+      toast.error("Команды продвинуты в следующий раунд с ошибками");
     }
   };
 
