@@ -58,10 +58,17 @@ export function CompleteTournamentDialog({
   }, [open, autoDetect]);
 
   /**
-   * Определяет победителей автоматически из турнирной сетки
+   * Определяет победителей автоматически из турни турнирной сетки
    */
   const detectWinnersFromBracket = async () => {
     try {
+      // Получаем информацию о турнире
+      const { data: tournament } = await supabase
+        .from("tournaments")
+        .select("format")
+        .eq("id", tournamentId)
+        .single();
+
       // Получаем все завершённые матчи
       const { data: matches } = await supabase
         .from("tournament_matches")
@@ -91,13 +98,32 @@ export function CompleteTournamentDialog({
         setSecondPlace(secondPlaceId || "");
       }
 
-      // Ищем матч за 3-е место
-      const thirdPlaceMatch = matches.find((m) => m.bracket_type === "third_place");
-      if (thirdPlaceMatch?.winner_id) {
-        setThirdPlace(thirdPlaceMatch.winner_id);
+      // Определяем 3-е место в зависимости от формата
+      if (tournament?.format === "double_elimination") {
+        // Для DE: 3-е место = проигравший финала нижней сетки
+        const lowerMatches = matches.filter(m => m.bracket_type === "lower");
+        if (lowerMatches.length > 0) {
+          // Находим финал нижней сетки (последний раунд)
+          const maxLowerRound = Math.max(...lowerMatches.map(m => m.round_number));
+          const lowerFinalMatch = lowerMatches.find(m => m.round_number === maxLowerRound);
+
+          if (lowerFinalMatch?.winner_id) {
+            // 3-е место = loser of LB Final
+            const thirdPlaceId = lowerFinalMatch.team1_id === lowerFinalMatch.winner_id
+              ? lowerFinalMatch.team2_id
+              : lowerFinalMatch.team1_id;
+            setThirdPlace(thirdPlaceId || "");
+          }
+        }
+      } else {
+        // Для SE: ищем матч за 3-е место
+        const thirdPlaceMatch = matches.find((m) => m.bracket_type === "third_place");
+        if (thirdPlaceMatch?.winner_id) {
+          setThirdPlace(thirdPlaceMatch.winner_id);
+        }
       }
 
-      if (finalMatch?.winner_id || thirdPlaceMatch?.winner_id) {
+      if (finalMatch?.winner_id) {
         toast.success("Призёры определены автоматически по сетке");
       } else {
         toast.info("Не удалось определить призёров. Выберите вручную.");
@@ -153,6 +179,32 @@ export function CompleteTournamentDialog({
   };
 
   /**
+   * Начисляет медаль команде
+   */
+  const awardMedalToTeam = async (
+    teamId: string,
+    medalType: "medals_gold" | "medals_silver" | "medals_bronze"
+  ) => {
+    try {
+      // Получаем текущее количество медалей команды
+      const { data: team } = await supabase
+        .from("teams")
+        .select(medalType)
+        .eq("id", teamId)
+        .single();
+
+      // Увеличиваем счётчик медалей команды
+      await supabase
+        .from("teams")
+        .update({ [medalType]: (team?.[medalType] || 0) + 1 })
+        .eq("id", teamId);
+    } catch (error) {
+      console.error(`Ошибка начисления медали команде ${teamId}:`, error);
+      // Продолжаем даже если для команды не удалось
+    }
+  };
+
+  /**
    * Завершает турнир и начисляет награды
    */
   const handleComplete = async () => {
@@ -169,7 +221,20 @@ export function CompleteTournamentDialog({
       const secondPlaceMembers = secondPlace ? await getTeamMembers(secondPlace) : [];
       const thirdPlaceMembers = thirdPlace ? await getTeamMembers(thirdPlace) : [];
 
-      // Начисляем медали командам
+      // Начисляем медали КОМАНДАМ
+      if (firstPlace) {
+        await awardMedalToTeam(firstPlace, "medals_gold");
+      }
+
+      if (secondPlace) {
+        await awardMedalToTeam(secondPlace, "medals_silver");
+      }
+
+      if (thirdPlace) {
+        await awardMedalToTeam(thirdPlace, "medals_bronze");
+      }
+
+      // Начисляем медали ИГРОКАМ команд
       if (firstPlace) {
         await awardMedalsToTeam(firstPlace, "medals_gold");
       }
@@ -208,7 +273,7 @@ export function CompleteTournamentDialog({
         // Не блокируем завершение турнира если очистка не удалась
       }
 
-      toast.success("Турнир завершён. Медали начислены всем участникам команд!");
+      toast.success("Турнир завершён. Медали начислены командам и всем участникам!");
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {

@@ -209,7 +209,17 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
 
       // ========== ОБЫЧНАЯ ЛОГИКА ПРОДВИЖЕНИЯ В СЛЕДУЮЩИЙ РАУНД ==========
       const nextRound = currentMatch.round_number + 1;
-      const nextMatchNumber = Math.ceil(currentMatch.match_number / 2);
+
+      /**
+       * КРИТИЧНО: для нечётных lower rounds (L1, L3...) match mapping ПРЯМОЙ!
+       * - L1-M1 winner → L2-M1 (не L2-M1 из ceil(1/2))
+       * - L1-M2 winner → L2-M2 (не L2-M1 из ceil(2/2))
+       * 
+       * Для upper и чётных lower: стандартная формула ceil(match/2)
+       */
+      const nextMatchNumber = (currentMatch.bracket_type === "lower" && currentMatch.round_number % 2 === 1)
+        ? currentMatch.match_number  // Прямой маппинг для odd lower
+        : Math.ceil(currentMatch.match_number / 2);  // Стандартный для upper/even lower
 
       const { data: nextMatches } = await supabase
         .from("tournament_matches")
@@ -221,11 +231,31 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
 
       if (nextMatches && nextMatches.length > 0) {
         const nextMatch = nextMatches[0];
-        const isTeam1Slot = currentMatch.match_number % 2 === 1;
+
+        /**
+         * ПРАВИЛЬНАЯ логика для Double Elimination (по скриншоту):
+         * 
+         * Lower bracket odd rounds (L1, L3, L5...) → даже rounds (L2, L4, L6...):
+         * - Победители ВСЕГДА идут в team2 следующего чётного раунда
+         * - Примеры: L1-M1 winner → L2-M1 team2, L3 winner → L4 team2
+         * 
+         * Upper + Lower even rounds → обычная логика чередования:
+         * - odd match (M1, M3...) → team1
+         * - even match (M2, M4...) → team2
+         */
+        let targetSlot: "team1_id" | "team2_id";
+
+        if (currentMatch.bracket_type === "lower" && currentMatch.round_number % 2 === 1) {
+          // Нечётные lower rounds → ВСЕГДА team2
+          targetSlot = "team2_id";
+        } else {
+          // Upper и чётные lower → обычное чередование
+          targetSlot = currentMatch.match_number % 2 === 1 ? "team1_id" : "team2_id";
+        }
 
         await supabase
           .from("tournament_matches")
-          .update(isTeam1Slot ? { team1_id: winnerId } : { team2_id: winnerId })
+          .update({ [targetSlot]: winnerId })
           .eq("id", nextMatch.id);
       }
 
@@ -233,12 +263,21 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
       if (tournament.format === "double_elimination" &&
         loserId &&
         currentMatch.bracket_type === "upper" &&
-        !isSemifinal && // Полуфинал уже обработан выше
         !isUpperFinal) { // Финал верхней сетки уже обработан выше
 
-        // Вычисляем, в какой раунд нижней сетки должен попасть проигравший
-        // Это зависит от раунда верхней сетки
-        const lowerRoundTarget = (currentMatch.round_number - 1) * 2 + 1;
+        /**
+         * ПРАВИЛЬНАЯ формула определения раунда lower bracket:
+         * 
+         * По скриншоту:
+         * - U1 (round 1) → L1 (round 1) - нечётный раунд lower
+         * - U2 (round 2) → L2 (round 2) - чётный раунд lower  
+         * - U3 (round 3) → L4 (round 4) - чётный раунд lower
+         * 
+         * Формула: upperRound === 1 ? 1 : upperRound * 2 - 2
+         */
+        const lowerRoundTarget = currentMatch.round_number === 1
+          ? 1
+          : currentMatch.round_number * 2 - 2;
 
         const { data: lowerMatches } = await supabase
           .from("tournament_matches")
@@ -249,20 +288,57 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
           .order("match_number");
 
         if (lowerMatches && lowerMatches.length > 0) {
-          // Найти первый свободный слот в целевом раунде нижней сетки
-          for (const lowerMatch of lowerMatches) {
-            if (!lowerMatch.team1_id) {
+          if (currentMatch.round_number === 1) {
+            /**
+             * U1 (первый раунд upper): каждая ПАРА матчей → один lower match
+             * 
+             * По скриншоту:
+             * - U1-M1 (FNATIC vs DRX): DRX loses → L1-M1 team1
+             * - U1-M2 (Paper Rex vs G2): G2 loses → L1-M1 team2
+             * - U1-M3 (Team Heretics vs MIBR): Team Heretics loses → L1-M2 team1
+             * - U1-M4 (NRG vs GIANTX): GIANTX loses → L1-M2 team2
+             * 
+             * Паттерн:
+             * - targetLowerMatch = ceil(upperMatch / 2)
+             * - slot: нечётный upperMatch (M1, M3) → team1, чётный (M2, M4) → team2
+             */
+            const targetMatchNumber = Math.ceil(currentMatch.match_number / 2);
+            const targetMatch = lowerMatches.find(m => m.match_number === targetMatchNumber);
+
+            if (targetMatch) {
+              const isTeam1Slot = currentMatch.match_number % 2 === 1;
+              await supabase
+                .from("tournament_matches")
+                .update(isTeam1Slot ? { team1_id: loserId } : { team2_id: loserId })
+                .eq("id", targetMatch.id);
+            }
+          } else {
+            /**
+             * U2+ раунды: один upper loser → один lower match
+             * 
+             * КРИТИЧНО: upper losers ВСЕГДА идут в TEAM1 чётного lower раунда!
+             * team2 зарезервирован для winners из предыдущего нечётного lower раунда
+             * 
+             * По скриншоту:
+             * - U2-M2: MIBR loses → L2-M**1** team1 (team2 = DRX из L1-M1)
+             * - U2-M1: Paper Rex loses → L2-M**2** team1 (team2 = Team Heretics из L1-M2)
+             * - U3: FNATIC loses → L4 team1 (team2 = DRX из L3)
+             * 
+             * МАППИНГ ОБРАТНЫЙ (reseeding в DE):
+             * - U2-M1 → L2-M2
+             * - U2-M2 → L2-M1
+             * 
+             * Формула: targetMatch = totalMatches - currentMatch + 1
+             */
+            const totalMatchesInRound = lowerMatches.length;
+            const targetMatchNumber = totalMatchesInRound - currentMatch.match_number + 1;
+            const targetMatch = lowerMatches.find(m => m.match_number === targetMatchNumber);
+
+            if (targetMatch) {
               await supabase
                 .from("tournament_matches")
                 .update({ team1_id: loserId })
-                .eq("id", lowerMatch.id);
-              break;
-            } else if (!lowerMatch.team2_id) {
-              await supabase
-                .from("tournament_matches")
-                .update({ team2_id: loserId })
-                .eq("id", lowerMatch.id);
-              break;
+                .eq("id", targetMatch.id);
             }
           }
         }

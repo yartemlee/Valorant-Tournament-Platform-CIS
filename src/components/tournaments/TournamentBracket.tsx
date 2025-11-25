@@ -244,7 +244,7 @@ export function TournamentBracket({
       }
     }
 
-    // ========== МАТЧ ЗА 3-Е МЕСТО ==========
+    // ========== МАТЧ ЗА 3-Е МЕСТО (только для Single Elimination) ==========
     // Специальный матч между проигравшими в полуфинале
     matchesToCreate.push({
       tournament_id: tournamentId,
@@ -268,6 +268,7 @@ export function TournamentBracket({
    * - Верхняя сетка (upper bracket): как в single elimination
    * - Нижняя сетка (lower bracket): для проигравших из верхней сетки
    * - Гранд-финал: победитель верхней vs победитель нижней сетки
+   * - НЕТ отдельного матча за 3-е место (3-е место = проигравший LB Final)
    * 
    * @param numRounds - Количество раундов в верхней сетке
    */
@@ -311,19 +312,36 @@ export function TournamentBracket({
       }
     }
 
-    // ========== НИЖНЯЯ СЕТКА ==========
-    // В нижней сетке раундов примерно в 2 раза больше, чем в верхней
-    // Это нужно, чтобы проигравшие команды могли пройти полный путь
+    // ========== НИЖНЯЯ СЕТКА (Правильная структура для Double Elimination) ==========
+    /**
+     * Lower bracket имеет чередующуюся структуру:
+     * - Нечётные раунды (L1, L3, L5): только проигравшие из upper bracket
+     * - Чётные раунды (L2, L4, L6): победители из предыдущего lower раунда
+     * 
+     * Formulas:
+     * - Total lower rounds = numRounds * 2 - 2
+     * - Matches in round:
+     *   - If round is odd (1, 3, 5...): matchesInRound = firstRoundMatches / 2^((round+1)/2)
+     *   - If round is even (2, 4, 6...): matchesInRound = firstRoundMatches / 2^(round/2 + 1)
+     */
     const lowerRounds = numRounds * 2 - 2;
 
     for (let round = 1; round <= lowerRounds; round++) {
-      // Количество матчей в нижней сетке вычисляется по специальной формуле
-      // Она учитывает, что команды добавляются из верхней сетки постепенно
-      const matchesInRound = Math.ceil(
-        firstRoundMatches / Math.pow(2, Math.floor((round + 1) / 2))
-      );
+      let matchesInRound: number;
+
+      if (round % 2 === 1) {
+        // Нечётный раунд: losers from upper bracket
+        // L1: firstRoundMatches/2, L3: firstRoundMatches/4, L5: firstRoundMatches/8
+        matchesInRound = Math.pow(2, numRounds - 1 - Math.ceil(round / 2));
+      } else {
+        // Чётный раунд: winners from previous lower round
+        // L2: firstRoundMatches/4, L4: firstRoundMatches/8
+        matchesInRound = Math.pow(2, numRounds - 1 - round / 2);
+      }
 
       for (let i = 0; i < matchesInRound; i++) {
+        const isLowerFinal = round === lowerRounds;
+
         matchesToCreate.push({
           tournament_id: tournamentId,
           round_number: round,
@@ -333,7 +351,7 @@ export function TournamentBracket({
           team2_id: null,
           status: "pending",
           // BO3 для финала нижней сетки, BO1 для остальных
-          best_of: round === lowerRounds ? 3 : 1,
+          best_of: isLowerFinal ? 3 : 1,
         });
       }
     }
@@ -566,8 +584,8 @@ export function TournamentBracket({
               </div>
             )}
 
-            {/* Матч за 3-е место */}
-            {thirdPlaceMatch && (
+            {/* Матч за 3-е место (только для Single Elimination) */}
+            {thirdPlaceMatch && bracketFormat === "single_elimination" && (
               <div className="flex flex-col items-center gap-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Матч за 3-е место</h3>
                 <MatchCard

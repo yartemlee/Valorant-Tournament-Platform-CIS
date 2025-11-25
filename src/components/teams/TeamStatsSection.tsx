@@ -1,19 +1,38 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Target, Award, TrendingUp, Medal } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 interface TeamStatsSectionProps {
   teamId: string;
 }
 
 export function TeamStatsSection({ teamId }: TeamStatsSectionProps) {
-  // TODO: В будущем подключить реальные данные из БД
+  // Загружаем данные команды с медалями
+  const { data: team } = useQuery({
+    queryKey: ["team-medals", teamId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("teams")
+        .select("medals_gold, medals_silver, medals_bronze")
+        .eq("id", teamId)
+        .single();
+      return data;
+    },
+    enabled: !!teamId,
+  });
+
+  // TODO: В будущем подключить реальные данные о турнирах из БД
   const stats = {
     tournamentsPlayed: 0,
-    wins: 0,
-    podiums: 0,
+    wins: team?.medals_gold || 0,
+    podiums: (team?.medals_gold || 0) + (team?.medals_silver || 0) + (team?.medals_bronze || 0),
     winrate: 0,
     recentTournaments: [],
   };
+
+  // Проверяем, есть ли хоть какие-то медали
+  const hasMedals = stats.podiums > 0;
 
   return (
     <Card>
@@ -24,16 +43,40 @@ export function TeamStatsSection({ teamId }: TeamStatsSectionProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {stats.tournamentsPlayed > 0 ? (
+        {hasMedals ? (
           <div className="space-y-6">
-            {/* Основные метрики */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-lg bg-secondary/50 border border-border">
-                <Target className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold">{stats.tournamentsPlayed}</p>
-                <p className="text-xs text-muted-foreground">Турниров сыграно</p>
-              </div>
+            {/* Медали команды */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                <Medal className="h-4 w-4" />
+                Медали команды
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                {/* Золотые медали */}
+                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border border-yellow-500/20">
+                  <div className="text-4xl mb-2">🥇</div>
+                  <p className="text-3xl font-bold text-yellow-500">{team?.medals_gold || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Золото</p>
+                </div>
 
+                {/* Серебряные медали */}
+                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-gray-400/10 to-gray-500/10 border border-gray-400/20">
+                  <div className="text-4xl mb-2">🥈</div>
+                  <p className="text-3xl font-bold text-gray-400">{team?.medals_silver || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Серебро</p>
+                </div>
+
+                {/* Бронзовые медали */}
+                <div className="text-center p-4 rounded-lg bg-gradient-to-br from-orange-600/10 to-orange-700/10 border border-orange-600/20">
+                  <div className="text-4xl mb-2">🥉</div>
+                  <p className="text-3xl font-bold text-orange-600">{team?.medals_bronze || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Бронза</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Основные метрики */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 rounded-lg bg-secondary/50 border border-border">
                 <Trophy className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-yellow-400">{stats.wins}</p>
@@ -44,12 +87,6 @@ export function TeamStatsSection({ teamId }: TeamStatsSectionProps) {
                 <Award className="h-6 w-6 text-orange-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-orange-400">{stats.podiums}</p>
                 <p className="text-xs text-muted-foreground">Подиумов (Top-3)</p>
-              </div>
-
-              <div className="text-center p-4 rounded-lg bg-secondary/50 border border-border">
-                <TrendingUp className="h-6 w-6 text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-green-400">{stats.winrate}%</p>
-                <p className="text-xs text-muted-foreground">Winrate</p>
               </div>
             </div>
 
