@@ -534,6 +534,83 @@ export type Database = {
           },
         ]
       }
+      tournament_matches: {
+        Row: {
+          id: string
+          tournament_id: string
+          round_number: number
+          match_number: number
+          bracket_type: string
+          team1_id: string | null
+          team2_id: string | null
+          winner_id: string | null
+          score_team1: number
+          score_team2: number
+          start_time: string | null
+          status: Database["public"]["Enums"]["match_status"]
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tournament_id: string
+          round_number: number
+          match_number: number
+          bracket_type: string
+          team1_id?: string | null
+          team2_id?: string | null
+          winner_id?: string | null
+          score_team1?: number
+          score_team2?: number
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["match_status"]
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tournament_id?: string
+          round_number?: number
+          match_number?: number
+          bracket_type?: string
+          team1_id?: string | null
+          team2_id?: string | null
+          winner_id?: string | null
+          score_team1?: number
+          score_team2?: number
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["match_status"]
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team1_id_fkey"
+            columns: ["team1_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team2_id_fkey"
+            columns: ["team2_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournaments: {
         Row: {
           banner_url: string | null
