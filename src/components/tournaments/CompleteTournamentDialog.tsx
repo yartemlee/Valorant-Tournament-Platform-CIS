@@ -1,3 +1,14 @@
+/**
+ * CompleteTournamentDialog - Диалог завершения турнира
+ * 
+ * Основные функции:
+ * - Автоматическое определение победителей из турнирной сетки
+ * - Ручной выбор призёров
+ * - Начисление медалей всем участникам команд-победителей
+ * - Сохранение результатов турнира
+ * - Очистка фантомных данных
+ */
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,9 +18,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { cleanupTournamentPhantoms } from "@/lib/phantomData";
 
+/**
+ * Участник турнира (команда)
+ */
 interface Participant {
-  id: string;
-  user_id: string;
+  id: string;           // ID регистрации
+  user_id: string;      // Не используется для командных турниров
+  team_id: string;      // ID команды
   team: {
     name: string;
   } | null;
@@ -32,9 +47,9 @@ export function CompleteTournamentDialog({
 }: CompleteTournamentDialogProps) {
   const [loading, setLoading] = useState(false);
   const [autoDetect, setAutoDetect] = useState(true);
-  const [firstPlace, setFirstPlace] = useState("");
-  const [secondPlace, setSecondPlace] = useState("");
-  const [thirdPlace, setThirdPlace] = useState("");
+  const [firstPlace, setFirstPlace] = useState("");   // team_id
+  const [secondPlace, setSecondPlace] = useState(""); // team_id
+  const [thirdPlace, setThirdPlace] = useState("");   // team_id
 
   useEffect(() => {
     if (open && autoDetect) {
@@ -42,9 +57,12 @@ export function CompleteTournamentDialog({
     }
   }, [open, autoDetect]);
 
+  /**
+   * Определяет победителей автоматически из турнирной сетки
+   */
   const detectWinnersFromBracket = async () => {
     try {
-      // Fetch all matches from bracket
+      // Получаем все завершённые матчи
       const { data: matches } = await supabase
         .from("tournament_matches")
         .select("*")
@@ -57,18 +75,23 @@ export function CompleteTournamentDialog({
         return;
       }
 
-      // Find final match
-      const finalMatch = matches.find((m) => m.bracket_type === "final");
+      // Ищем финальный матч (для single elimination) или гранд-финал (для double elimination)
+      let finalMatch = matches.find((m) => m.bracket_type === "grand_final");
+      if (!finalMatch) {
+        finalMatch = matches.find((m) => m.bracket_type === "final");
+      }
+
       if (finalMatch?.winner_id) {
         setFirstPlace(finalMatch.winner_id);
-        // Second place is the loser of final
-        const secondPlaceId = finalMatch.team1_id === finalMatch.winner_id 
-          ? finalMatch.team2_id 
+
+        // Второе место - проигравший финала
+        const secondPlaceId = finalMatch.team1_id === finalMatch.winner_id
+          ? finalMatch.team2_id
           : finalMatch.team1_id;
         setSecondPlace(secondPlaceId || "");
       }
 
-      // Find third place match
+      // Ищем матч за 3-е место
       const thirdPlaceMatch = matches.find((m) => m.bracket_type === "third_place");
       if (thirdPlaceMatch?.winner_id) {
         setThirdPlace(thirdPlaceMatch.winner_id);
@@ -81,12 +104,57 @@ export function CompleteTournamentDialog({
         setAutoDetect(false);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Ошибка определения призёров:", error);
       toast.error("Ошибка определения призёров");
       setAutoDetect(false);
     }
   };
 
+  /**
+   * Получает всех игроков команды
+   */
+  const getTeamMembers = async (teamId: string): Promise<string[]> => {
+    const { data: members } = await supabase
+      .from("team_members")
+      .select("user_id")
+      .eq("team_id", teamId);
+
+    return members?.map(m => m.user_id) || [];
+  };
+
+  /**
+   * Начисляет медали всем участникам команды
+   */
+  const awardMedalsToTeam = async (
+    teamId: string,
+    medalType: "medals_gold" | "medals_silver" | "medals_bronze"
+  ) => {
+    const memberIds = await getTeamMembers(teamId);
+
+    for (const userId of memberIds) {
+      try {
+        // Получаем текущее количество медалей
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select(medalType)
+          .eq("id", userId)
+          .single();
+
+        // Увеличиваем счётчик медалей
+        await supabase
+          .from("profiles")
+          .update({ [medalType]: (profile?.[medalType] || 0) + 1 })
+          .eq("id", userId);
+      } catch (error) {
+        console.error(`Ошибка начисления медали игроку ${userId}:`, error);
+        // Продолжаем даже если для одного игрока не удалось
+      }
+    }
+  };
+
+  /**
+   * Завершает турнир и начисляет награды
+   */
   const handleComplete = async () => {
     if (!firstPlace) {
       toast.error("Выберите победителя (1 место)");
@@ -96,76 +164,56 @@ export function CompleteTournamentDialog({
     setLoading(true);
 
     try {
-      // Award medals to winners
+      // Получаем ID всех участников команд-победителей
+      const firstPlaceMembers = await getTeamMembers(firstPlace);
+      const secondPlaceMembers = secondPlace ? await getTeamMembers(secondPlace) : [];
+      const thirdPlaceMembers = thirdPlace ? await getTeamMembers(thirdPlace) : [];
+
+      // Начисляем медали командам
       if (firstPlace) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("medals_gold")
-          .eq("id", firstPlace)
-          .single();
-        
-        await supabase
-          .from("profiles")
-          .update({ medals_gold: (profile?.medals_gold || 0) + 1 })
-          .eq("id", firstPlace);
+        await awardMedalsToTeam(firstPlace, "medals_gold");
       }
 
       if (secondPlace) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("medals_silver")
-          .eq("id", secondPlace)
-          .single();
-        
-        await supabase
-          .from("profiles")
-          .update({ medals_silver: (profile?.medals_silver || 0) + 1 })
-          .eq("id", secondPlace);
+        await awardMedalsToTeam(secondPlace, "medals_silver");
       }
 
       if (thirdPlace) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("medals_bronze")
-          .eq("id", thirdPlace)
-          .single();
-        
-        await supabase
-          .from("profiles")
-          .update({ medals_bronze: (profile?.medals_bronze || 0) + 1 })
-          .eq("id", thirdPlace);
+        await awardMedalsToTeam(thirdPlace, "medals_bronze");
       }
 
-      // Save results
+      // Сохраняем результаты турнира
+      // В базу данных сохраняем ID участников команд (user_id), а не team_id
       await supabase.from("tournament_results").insert([
         {
           tournament_id: tournamentId,
-          first_place_team_ids: firstPlace ? [firstPlace] : [],
-          second_place_team_ids: secondPlace ? [secondPlace] : [],
-          third_place_team_ids: thirdPlace ? [thirdPlace] : [],
+          first_place_team_ids: firstPlaceMembers,
+          second_place_team_ids: secondPlaceMembers,
+          third_place_team_ids: thirdPlaceMembers,
         },
       ]);
 
-      // Update tournament status
+      // Обновляем статус турнира
       await supabase
         .from("tournaments")
         .update({ status: "completed" })
         .eq("id", tournamentId);
 
-      // Cleanup phantom data after tournament completion
+      // Очищаем фантомные данные после завершения турнира
       try {
         await cleanupTournamentPhantoms(tournamentId);
         console.log("Фантомные данные турнира очищены");
       } catch (error) {
         console.error("Ошибка очистки фантомных данных:", error);
-        // Don't block tournament completion if cleanup fails
+        // Не блокируем завершение турнира если очистка не удалась
       }
 
-      toast.success("Турнир завершён. Медали начислены!");
+      toast.success("Турнир завершён. Медали начислены всем участникам команд!");
       onSuccess?.();
+      onOpenChange(false);
     } catch (error) {
       toast.error("Ошибка завершения турнира");
-      console.error(error);
+      console.error("Ошибка завершения турнира:", error);
     } finally {
       setLoading(false);
     }
@@ -185,19 +233,20 @@ export function CompleteTournamentDialog({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Выберите победителей турнира. Им будут начислены медали:
+              Выберите команды-победители. Всем участникам команд будут начислены медали.
             </p>
           )}
 
+          {/* Первое место */}
           <div className="space-y-2">
             <Label>🥇 1-е место (обязательно)</Label>
             <Select value={firstPlace} onValueChange={setFirstPlace}>
               <SelectTrigger>
-                <SelectValue placeholder="Выберите игрока" />
+                <SelectValue placeholder="Выберите команду" />
               </SelectTrigger>
               <SelectContent>
                 {participants.map((p) => (
-                  <SelectItem key={p.user_id} value={p.user_id}>
+                  <SelectItem key={p.team_id} value={p.team_id}>
                     {p.team?.name || "Unknown"}
                   </SelectItem>
                 ))}
@@ -205,17 +254,18 @@ export function CompleteTournamentDialog({
             </Select>
           </div>
 
+          {/* Второе место */}
           <div className="space-y-2">
             <Label>🥈 2-е место</Label>
             <Select value={secondPlace} onValueChange={setSecondPlace}>
               <SelectTrigger>
-                <SelectValue placeholder="Выберите игрока" />
+                <SelectValue placeholder="Выберите команду" />
               </SelectTrigger>
               <SelectContent>
                 {participants
-                  .filter((p) => p.user_id !== firstPlace)
+                  .filter((p) => p.team_id !== firstPlace)
                   .map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>
+                    <SelectItem key={p.team_id} value={p.team_id}>
                       {p.team?.name || "Unknown"}
                     </SelectItem>
                   ))}
@@ -223,17 +273,18 @@ export function CompleteTournamentDialog({
             </Select>
           </div>
 
+          {/* Третье место */}
           <div className="space-y-2">
             <Label>🥉 3-е место</Label>
             <Select value={thirdPlace} onValueChange={setThirdPlace}>
               <SelectTrigger>
-                <SelectValue placeholder="Выберите игрока" />
+                <SelectValue placeholder="Выберите команду" />
               </SelectTrigger>
               <SelectContent>
                 {participants
-                  .filter((p) => p.user_id !== firstPlace && p.user_id !== secondPlace)
+                  .filter((p) => p.team_id !== firstPlace && p.team_id !== secondPlace)
                   .map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>
+                    <SelectItem key={p.team_id} value={p.team_id}>
                       {p.team?.name || "Unknown"}
                     </SelectItem>
                   ))}
@@ -241,11 +292,21 @@ export function CompleteTournamentDialog({
             </Select>
           </div>
 
+          {/* Кнопки действий */}
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+            >
               Отмена
             </Button>
-            <Button onClick={handleComplete} disabled={loading || !firstPlace} className="flex-1">
+            <Button
+              onClick={handleComplete}
+              disabled={loading || !firstPlace}
+              className="flex-1"
+            >
               {loading ? "Завершение..." : "Завершить турнир"}
             </Button>
           </div>
