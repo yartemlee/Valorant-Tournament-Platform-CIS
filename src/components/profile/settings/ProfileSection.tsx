@@ -32,14 +32,7 @@ export function ProfileSection({ formData, onChange }: ProfileSectionProps) {
         <CardDescription>Основные данные профиля</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="full_name">Имя и фамилия</Label>
-          <Input
-            id="full_name"
-            value={formData.full_name}
-            onChange={(e) => onChange("full_name", e.target.value)}
-          />
-        </div>
+
 
         <div className="space-y-2">
           <Label htmlFor="country">Страна</Label>

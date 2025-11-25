@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import { valorantApi, ValorantAgent } from "@/services/valorantApi";
+import { ProficiencySelector, ProficiencyLevel, proficiencyLevels } from "./ProficiencySelector";
+import { cn } from "@/lib/utils";
 
 interface AgentSelectorProps {
   userId: string;
@@ -11,34 +13,30 @@ interface AgentSelectorProps {
   isEditable: boolean;
 }
 
-const valorantAgents = [
-  "Jett", "Phoenix", "Sage", "Sova", "Viper", "Cypher", "Reyna", "Killjoy",
-  "Breach", "Omen", "Brimstone", "Raze", "Skye", "Yoru", "Astra", "KAY/O",
-  "Chamber", "Neon", "Fade", "Harbor", "Gekko", "Deadlock", "Iso", "Clove", "Vyse"
-];
-
-const comfortLevels = [
-  { value: 0, label: "Не играл", db: "not_played" },
-  { value: 1, label: "Осваиваю", db: "learning" },
-  { value: 2, label: "Средне", db: "average" },
-  { value: 3, label: "Хорошо", db: "good" },
-  { value: 4, label: "Идеально", db: "perfect" },
-];
-
 export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSelectorProps) {
   const [updating, setUpdating] = useState(false);
+  const [apiAgents, setApiAgents] = useState<ValorantAgent[]>([]);
 
-  const isAgentSelected = (agent: string) => {
-    return agents.some(a => a.agent_name === agent);
+  useEffect(() => {
+    loadApiAgents();
+  }, []);
+
+  const loadApiAgents = async () => {
+    const data = await valorantApi.getAgents();
+    setApiAgents(data);
   };
 
-  const getAgentSkill = (agent: string) => {
-    const agentData = agents.find(a => a.agent_name === agent);
-    if (!agentData) return 0;
-    return comfortLevels.findIndex(l => l.db === agentData.skill_level);
+  const isAgentSelected = (agentName: string) => {
+    return agents.some(a => a.agent_name === agentName);
   };
 
-  const handleAgentToggle = async (agent: string, checked: boolean) => {
+  const getAgentSkill = (agentName: string): ProficiencyLevel => {
+    const agentData = agents.find(a => a.agent_name === agentName);
+    if (!agentData) return "not_played";
+    return agentData.skill_level as ProficiencyLevel;
+  };
+
+  const handleAgentToggle = async (agentName: string, checked: boolean) => {
     if (!isEditable) return;
 
     try {
@@ -47,15 +45,15 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
       if (checked) {
         const { data, error } = await supabase
           .from("player_agents")
-          .insert({ user_id: userId, agent_name: agent, skill_level: "not_played" })
+          .insert({ user_id: userId, agent_name: agentName, skill_level: "not_played" })
           .select()
           .single();
 
         if (error) throw error;
         onUpdate([...agents, data]);
-        toast.success(`Агент ${agent} добавлен`);
+        toast.success(`Агент ${agentName} добавлен`);
       } else {
-        const agentData = agents.find(a => a.agent_name === agent);
+        const agentData = agents.find(a => a.agent_name === agentName);
         if (!agentData) return;
 
         const { error } = await supabase
@@ -65,7 +63,7 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
 
         if (error) throw error;
         onUpdate(agents.filter(a => a.id !== agentData.id));
-        toast.success(`Агент ${agent} удален`);
+        toast.success(`Агент ${agentName} удален`);
       }
     } catch (error: any) {
       console.error("Error toggling agent:", error);
@@ -75,13 +73,12 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
     }
   };
 
-  const handleSkillChange = async (agent: string, value: number[]) => {
+  const handleSkillChange = async (agentName: string, skill: ProficiencyLevel) => {
     if (!isEditable) return;
 
     try {
       setUpdating(true);
-      const skill = comfortLevels[value[0]].db as "not_played" | "learning" | "average" | "good" | "perfect";
-      const agentData = agents.find(a => a.agent_name === agent);
+      const agentData = agents.find(a => a.agent_name === agentName);
       if (!agentData) return;
 
       const { error } = await supabase
@@ -91,7 +88,7 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
 
       if (error) throw error;
 
-      onUpdate(agents.map(a => 
+      onUpdate(agents.map(a =>
         a.id === agentData.id ? { ...a, skill_level: skill } : a
       ));
     } catch (error: any) {
@@ -104,36 +101,39 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {valorantAgents.map(agent => {
-        const isSelected = isAgentSelected(agent);
-        const skillValue = getAgentSkill(agent);
+      {apiAgents.map(agent => {
+        const isSelected = isAgentSelected(agent.displayName);
+        const skillValue = getAgentSkill(agent.displayName);
 
         return (
-          <div key={agent} className="space-y-2 p-3 rounded-lg border bg-card/50">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={(checked) => handleAgentToggle(agent, checked as boolean)}
-                disabled={!isEditable || updating}
-              />
-              <span className="font-medium">{agent}</span>
-            </div>
-            
-            {isSelected && (
-              <div className="space-y-1 pl-6">
-                <Slider
-                  value={[skillValue]}
-                  onValueChange={(value) => handleSkillChange(agent, value)}
-                  max={4}
-                  step={1}
+          <div key={agent.uuid} className="space-y-2 p-3 rounded-lg border bg-card/50 flex items-start gap-3">
+            <img
+              src={agent.displayIcon}
+              alt={agent.displayName}
+              className="w-10 h-10 rounded-md object-cover bg-muted"
+            />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{agent.displayName}</span>
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={(checked) => handleAgentToggle(agent.displayName, checked as boolean)}
                   disabled={!isEditable || updating}
-                  className="w-full"
                 />
-                <div className="text-xs text-muted-foreground">
-                  {comfortLevels[skillValue].label}
-                </div>
               </div>
-            )}
+
+              {isSelected && (
+                <div className="pt-1">
+                  <ProficiencySelector
+                    value={skillValue}
+                    onChange={(value) => handleSkillChange(agent.displayName, value)}
+                    disabled={!isEditable || updating}
+                    className="w-full h-8 text-xs"
+                    variant="agent"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         );
       })}

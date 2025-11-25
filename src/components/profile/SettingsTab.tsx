@@ -26,7 +26,7 @@ const settingsSections = [
 export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
   const [activeSection, setActiveSection] = useState("profile");
   const [formData, setFormData] = useState({
-    full_name: profile.nickname || profile.full_name || "",
+
     country: profile.region || profile.country || "",
     phone_number: profile.phone_number || "",
     status: profile.status || "",
@@ -56,7 +56,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
       setSaving(true);
 
       const updates: any = {
-        nickname: formData.full_name, // Mapping full_name to nickname
+
         bio: formData.about_me,
         social_links: {
           discord: formData.discord_username,
@@ -139,8 +139,8 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
 
         {/* Sticky Save Button */}
         <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t mt-6">
-          <Button 
-            onClick={handleSave} 
+          <Button
+            onClick={handleSave}
             disabled={saving}
             className="w-full"
           >
