@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Slider } from "@/components/ui/slider";
+import { RoleMasterySlider } from "./RoleMasterySlider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { valorantApi, ValorantAgent } from "@/services/valorantApi";
 import {
@@ -52,7 +52,11 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
       const newLevels: Record<string, number> = {};
       Object.keys(roleNames).forEach(role => {
         const roleData = roles.find(r => r.role === role);
-        const level = roleData ? roleData.comfort_level : "not_played";
+        let level = roleData ? roleData.comfort_level : "not_played";
+
+        // Handle legacy 'average' value
+        if (level === 'average') level = 'learning';
+
         const index = roleProficiencyLevels.findIndex(l => l.value === level);
         newLevels[role] = index !== -1 ? index : 0;
       });
@@ -265,20 +269,13 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
                 )}
                 <span className="font-medium">{roleName}</span>
               </div>
-              <div className="space-y-2 pl-8">
-                <Slider
-                  value={[comfortIndex]}
-                  onValueChange={(value) => handleSliderChange(roleKey, value)}
-                  onValueCommit={(value) => handleSliderCommit(roleKey, value)}
-                  max={4}
-                  step={1}
-                  disabled={!isEditable || updating}
-                  className="w-full"
-                />
-                <div className={cn("text-xs text-center font-medium transition-colors", roleProficiencyLevels[comfortIndex]?.color)}>
-                  {roleProficiencyLevels[comfortIndex]?.label}
-                </div>
-              </div>
+              <RoleMasterySlider
+                value={comfortIndex}
+                onValueChange={(value) => handleSliderChange(roleKey, [value])}
+                onValueCommit={(value) => handleSliderCommit(roleKey, [value])}
+                disabled={!isEditable || updating}
+                className="w-full"
+              />
             </div>
 
             {/* Agent icons */}
@@ -328,6 +325,6 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
           </div>
         );
       })}
-    </div>
+    </div >
   );
 }

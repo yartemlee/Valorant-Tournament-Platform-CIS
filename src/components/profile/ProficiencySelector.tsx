@@ -10,16 +10,15 @@ export type AgentProficiencyLevel = "not_played" | "comfortable" | "main";
 export type ProficiencyLevel = RoleProficiencyLevel | AgentProficiencyLevel;
 
 export const roleProficiencyLevels = [
-    { value: "not_played" as const, label: "Не играл", color: "text-muted-foreground" },
-    { value: "learning" as const, label: "Осваиваю", color: "text-yellow-500" },
-    { value: "average" as const, label: "Средне", color: "text-blue-500" },
-    { value: "good" as const, label: "Хорошо", color: "text-green-500" },
+    { value: "not_played" as const, label: "Не играю", color: "text-muted-foreground" },
+    { value: "learning" as const, label: "Иногда", color: "text-yellow-500" },
+    { value: "good" as const, label: "Часто", color: "text-green-500" },
     { value: "perfect" as const, label: "Мейн", color: "text-purple-500" },
 ];
 
 export const agentProficiencyLevels = [
-    { value: "not_played" as const, label: "Не выбран", color: "text-muted-foreground" },
-    { value: "comfortable" as const, label: "Комфортно", color: "text-green-500" },
+    { value: "not_played" as const, label: "Не играю", color: "text-muted-foreground" },
+    { value: "comfortable" as const, label: "Играю", color: "text-green-500" },
     { value: "main" as const, label: "Мейн", color: "text-purple-500" },
 ];
 
