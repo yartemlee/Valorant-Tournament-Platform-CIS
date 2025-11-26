@@ -5,6 +5,8 @@ import { Camera, MessageCircle } from "lucide-react";
 import { SocialLinks } from "./SocialLinks";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { getCountryFlag, getCountryByCode } from "@/lib/countries";
+import { CountryFlag } from "@/components/CountryFlag";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -29,21 +31,12 @@ export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: Profil
       // Upload to Supabase storage (assuming you have an avatars bucket)
       // For now, we'll just show a toast
       toast.success("Загрузка аватара скоро будет доступна");
-      
+
     } catch (error: any) {
       toast.error("Ошибка загрузки аватара");
     } finally {
       setUploading(false);
     }
-  };
-
-  const getCountryFlag = (countryCode: string) => {
-    if (!countryCode) return null;
-    const codePoints = countryCode
-      .toUpperCase()
-      .split('')
-      .map(char => 127397 + char.charCodeAt(0));
-    return String.fromCodePoint(...codePoints);
   };
 
   // Use profile medals directly instead of tournament_medals table
@@ -62,7 +55,7 @@ export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: Profil
               {profile.username?.[0]?.toUpperCase() || "?"}
             </AvatarFallback>
           </Avatar>
-          
+
           {isOwnProfile && (
             <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
               <Camera className="h-8 w-8 text-white" />
@@ -80,16 +73,20 @@ export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: Profil
         {/* Info Section - Vertical Layout */}
         <div className="flex-1 space-y-1.5">
           <h1 className="text-2xl lg:text-3xl font-bold">{profile.username}</h1>
-          
+
           {profile.riot_id && (
             <div className="text-muted-foreground">
               ({profile.riot_id})
             </div>
           )}
-          
+
           {profile.country && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-xl">{getCountryFlag(profile.country)}</span>
+              <CountryFlag code={profile.country} size={24} />
+              {/* <span className="text-xl">{getCountryFlag(profile.country)}</span> */}
+              <span className="text-muted-foreground">
+                {getCountryByCode(profile.country)?.nameRu || profile.country}
+              </span>
             </div>
           )}
 
@@ -109,7 +106,7 @@ export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: Profil
           {profile.show_social_links && (
             <SocialLinks profile={profile} />
           )}
-          
+
           {!isOwnProfile && (
             <Button variant="default" size="sm">
               <MessageCircle className="h-4 w-4 mr-2" />

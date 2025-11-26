@@ -56,7 +56,9 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
       setSaving(true);
 
       const updates: any = {
-
+        country: formData.country,
+        phone_number: formData.phone_number,
+        status: formData.status,
         bio: formData.about_me,
         social_links: {
           discord: formData.discord_username,
@@ -66,6 +68,11 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
           tracker_gg: formData.tracker_gg_username,
           twitter: formData.twitter_username,
         },
+        show_statistics: formData.show_statistics,
+        show_country: formData.show_country,
+        show_social_links: formData.show_social_links,
+        email_notifications: formData.email_notifications,
+        discord_notifications: formData.discord_notifications,
         updated_at: new Date().toISOString(),
       };
 
