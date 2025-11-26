@@ -137,74 +137,6 @@ export function CompleteTournamentDialog({
   };
 
   /**
-   * Получает всех игроков команды
-   */
-  const getTeamMembers = async (teamId: string): Promise<string[]> => {
-    const { data: members } = await supabase
-      .from("team_members")
-      .select("user_id")
-      .eq("team_id", teamId);
-
-    return members?.map(m => m.user_id) || [];
-  };
-
-  /**
-   * Начисляет медали всем участникам команды
-   */
-  const awardMedalsToTeam = async (
-    teamId: string,
-    medalType: "medals_gold" | "medals_silver" | "medals_bronze"
-  ) => {
-    const memberIds = await getTeamMembers(teamId);
-
-    for (const userId of memberIds) {
-      try {
-        // Получаем текущее количество медалей
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select(medalType)
-          .eq("id", userId)
-          .single();
-
-        // Увеличиваем счётчик медалей
-        await supabase
-          .from("profiles")
-          .update({ [medalType]: (profile?.[medalType] || 0) + 1 })
-          .eq("id", userId);
-      } catch (error) {
-        console.error(`Ошибка начисления медали игроку ${userId}:`, error);
-        // Продолжаем даже если для одного игрока не удалось
-      }
-    }
-  };
-
-  /**
-   * Начисляет медаль команде
-   */
-  const awardMedalToTeam = async (
-    teamId: string,
-    medalType: "medals_gold" | "medals_silver" | "medals_bronze"
-  ) => {
-    try {
-      // Получаем текущее количество медалей команды
-      const { data: team } = await supabase
-        .from("teams")
-        .select(medalType)
-        .eq("id", teamId)
-        .single();
-
-      // Увеличиваем счётчик медалей команды
-      await supabase
-        .from("teams")
-        .update({ [medalType]: (team?.[medalType] || 0) + 1 })
-        .eq("id", teamId);
-    } catch (error) {
-      console.error(`Ошибка начисления медали команде ${teamId}:`, error);
-      // Продолжаем даже если для команды не удалось
-    }
-  };
-
-  /**
    * Завершает турнир и начисляет награды
    */
   const handleComplete = async () => {
@@ -216,45 +148,39 @@ export function CompleteTournamentDialog({
     setLoading(true);
 
     try {
-      // Получаем ID всех участников команд-победителей
-      const firstPlaceMembers = await getTeamMembers(firstPlace);
-      const secondPlaceMembers = secondPlace ? await getTeamMembers(secondPlace) : [];
-      const thirdPlaceMembers = thirdPlace ? await getTeamMembers(thirdPlace) : [];
 
-      // Начисляем медали КОМАНДАМ
+      // Начисляем медали (используем RPC для обхода RLS)
       if (firstPlace) {
-        await awardMedalToTeam(firstPlace, "medals_gold");
+        await supabase.rpc("award_tournament_medals", {
+          p_tournament_id: tournamentId,
+          p_team_id: firstPlace,
+          p_medal_type: "gold",
+        });
       }
 
       if (secondPlace) {
-        await awardMedalToTeam(secondPlace, "medals_silver");
+        await supabase.rpc("award_tournament_medals", {
+          p_tournament_id: tournamentId,
+          p_team_id: secondPlace,
+          p_medal_type: "silver",
+        });
       }
 
       if (thirdPlace) {
-        await awardMedalToTeam(thirdPlace, "medals_bronze");
-      }
-
-      // Начисляем медали ИГРОКАМ команд
-      if (firstPlace) {
-        await awardMedalsToTeam(firstPlace, "medals_gold");
-      }
-
-      if (secondPlace) {
-        await awardMedalsToTeam(secondPlace, "medals_silver");
-      }
-
-      if (thirdPlace) {
-        await awardMedalsToTeam(thirdPlace, "medals_bronze");
+        await supabase.rpc("award_tournament_medals", {
+          p_tournament_id: tournamentId,
+          p_team_id: thirdPlace,
+          p_medal_type: "bronze",
+        });
       }
 
       // Сохраняем результаты турнира
-      // В базу данных сохраняем ID участников команд (user_id), а не team_id
       await supabase.from("tournament_results").insert([
         {
           tournament_id: tournamentId,
-          first_place_team_ids: firstPlaceMembers,
-          second_place_team_ids: secondPlaceMembers,
-          third_place_team_ids: thirdPlaceMembers,
+          first_place_team_ids: firstPlace ? [firstPlace] : [],
+          second_place_team_ids: secondPlace ? [secondPlace] : [],
+          third_place_team_ids: thirdPlace ? [thirdPlace] : [],
         },
       ]);
 

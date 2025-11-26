@@ -76,10 +76,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar />
-      
+
       <div className="flex-1 flex flex-col">
         <TopBar />
-        
+
         <main className="flex-1 p-8 overflow-auto">
           <div className="max-w-7xl mx-auto">
             {/* Featured Tournament */}
@@ -141,7 +141,7 @@ const Index = () => {
             {/* News Section */}
             <section className="mb-12">
               <h2 className="text-3xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
-                📰 Последние новости
+                Последние новости(в разработке)
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {news.map((item, index) => (
