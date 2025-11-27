@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { countries, getCountryFlag } from "@/lib/countries";
+import { getSortedCountries, getCountryFlag } from "@/lib/countries";
 
 interface ProfileSectionProps {
   formData: any;
@@ -12,6 +12,8 @@ interface ProfileSectionProps {
 }
 
 export function ProfileSection({ formData, onChange }: ProfileSectionProps) {
+  const sortedCountries = getSortedCountries();
+
   return (
     <Card>
       <CardHeader>
@@ -26,7 +28,7 @@ export function ProfileSection({ formData, onChange }: ProfileSectionProps) {
               <SelectValue placeholder="Выберите страну" />
             </SelectTrigger>
             <SelectContent className="max-h-[300px]">
-              {countries.map(c => (
+              {sortedCountries.map(c => (
                 <SelectItem key={c.code} value={c.code}>
                   <div className="flex items-center gap-2">
                     <span>{getCountryFlag(c.code)}</span>

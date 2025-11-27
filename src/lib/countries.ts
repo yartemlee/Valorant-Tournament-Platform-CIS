@@ -119,6 +119,38 @@ export const countries: Country[] = [
     { code: "VN", name: "Vietnam", nameRu: "Вьетнам", phoneCode: "+84", phoneLength: 9 },
 ];
 
+// CIS (Commonwealth of Independent States) country codes
+export const CIS_COUNTRY_CODES = new Set([
+    "RU", // Russia
+    "BY", // Belarus
+    "KZ", // Kazakhstan
+    "AM", // Armenia
+    "AZ", // Azerbaijan
+    "KG", // Kyrgyzstan
+    "MD", // Moldova
+    "TJ", // Tajikistan
+    "UZ", // Uzbekistan
+    "TM", // Turkmenistan
+    "UA", // Ukraine (включаем для удобства пользователей)
+    "GE", // Georgia (включаем для удобства пользователей)
+]);
+
+/**
+ * Returns countries sorted with CIS countries first, then all others.
+ * Both groups are sorted alphabetically by Russian name (nameRu).
+ */
+export const getSortedCountries = (): Country[] => {
+    const cisCountries = countries
+        .filter(c => CIS_COUNTRY_CODES.has(c.code))
+        .sort((a, b) => a.nameRu.localeCompare(b.nameRu, 'ru'));
+
+    const otherCountries = countries
+        .filter(c => !CIS_COUNTRY_CODES.has(c.code))
+        .sort((a, b) => a.nameRu.localeCompare(b.nameRu, 'ru'));
+
+    return [...cisCountries, ...otherCountries];
+};
+
 export const getCountryByCode = (code: string): Country | undefined => {
     return countries.find(c => c.code === code);
 };

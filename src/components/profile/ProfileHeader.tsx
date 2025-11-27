@@ -103,9 +103,7 @@ export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: Profil
 
         {/* Social Links and Actions */}
         <div className="flex flex-col gap-3 items-start lg:items-end">
-          {profile.show_social_links && (
-            <SocialLinks profile={profile} />
-          )}
+          <SocialLinks profile={profile} />
 
           {!isOwnProfile && (
             <Button variant="default" size="sm">

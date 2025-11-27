@@ -1,4 +1,4 @@
-import { SiDiscord, SiTwitch, SiYoutube, SiTiktok, SiX } from "react-icons/si";
+import { SiDiscord, SiTwitch, SiYoutube, SiTiktok, SiInstagram, SiX } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 
 interface SocialLinksProps {
@@ -6,45 +6,66 @@ interface SocialLinksProps {
 }
 
 export function SocialLinks({ profile }: SocialLinksProps) {
-  const socials = [
-    { 
-      name: "Discord", 
-      username: profile.discord_username, 
-      icon: SiDiscord,
-      url: profile.discord_username ? `https://discord.com/users/${profile.discord_username}` : null
-    },
-    { 
-      name: "Twitch", 
-      username: profile.twitch_username, 
-      icon: SiTwitch,
-      url: profile.twitch_username ? `https://twitch.tv/${profile.twitch_username}` : null
-    },
-    { 
-      name: "YouTube", 
-      username: profile.youtube_username, 
-      icon: SiYoutube,
-      url: profile.youtube_username ? `https://youtube.com/@${profile.youtube_username}` : null
-    },
-    { 
-      name: "TikTok", 
-      username: profile.tiktok_username, 
-      icon: SiTiktok,
-      url: profile.tiktok_username ? `https://tiktok.com/@${profile.tiktok_username}` : null
-    },
-    { 
-      name: "Twitter", 
-      username: profile.twitter_username, 
-      icon: SiX,
-      url: profile.twitter_username ? `https://twitter.com/${profile.twitter_username}` : null
-    },
-    { 
-      name: "Tracker.gg", 
-      username: profile.tracker_gg_username, 
-      icon: null,
-      url: profile.tracker_gg_username ? `https://tracker.gg/valorant/profile/riot/${profile.tracker_gg_username}` : null,
-      text: "TRN"
-    },
-  ];
+  const socials: {
+    name: string;
+    username: string | null | undefined;
+    icon: any;
+    url: string | null;
+    text?: string;
+  }[] = [
+      {
+        name: "Discord",
+        username: profile.social_links?.discord,
+        icon: SiDiscord,
+        url: profile.social_links?.discord ? `https://discord.com/users/${profile.social_links.discord}` : null
+      },
+      {
+        name: "Twitch",
+        username: profile.social_links?.twitch,
+        icon: SiTwitch,
+        url: profile.social_links?.twitch ? `https://twitch.tv/${profile.social_links.twitch}` : null
+      },
+      {
+        name: "YouTube",
+        username: profile.social_links?.youtube,
+        icon: SiYoutube,
+        url: profile.social_links?.youtube ? `https://youtube.com/${profile.social_links.youtube}` : null
+      },
+      {
+        name: "TikTok",
+        username: profile.social_links?.tiktok,
+        icon: SiTiktok,
+        url: profile.social_links?.tiktok ? `https://tiktok.com/${profile.social_links.tiktok}` : null
+      },
+      {
+        name: "Instagram",
+        username: profile.instagram_username,
+        icon: SiInstagram,
+        url: profile.instagram_username ? `https://instagram.com/${profile.instagram_username}` : null
+      },
+      {
+        name: "Twitter",
+        username: profile.social_links?.twitter,
+        icon: SiX,
+        url: profile.social_links?.twitter ? `https://twitter.com/${profile.social_links.twitter}` : null
+      },
+    ];
+
+  // Add Tracker.gg if enabled and Riot ID is present
+  if (profile.show_tracker && (profile.riot_id_name || profile.riot_id)) {
+    const riotIdName = profile.riot_id_name || profile.riot_id?.split('#')[0];
+    const riotIdTag = profile.riot_id_tag || profile.riot_id?.split('#')[1];
+
+    if (riotIdName && riotIdTag) {
+      socials.push({
+        name: "Tracker.gg",
+        username: `${riotIdName}#${riotIdTag}`,
+        icon: null,
+        url: `https://tracker.gg/valorant/profile/riot/${riotIdName}%23${riotIdTag}`,
+        text: "TRN"
+      } as any);
+    }
+  }
 
   const activeSocials = socials.filter(s => s.username);
 

@@ -8,7 +8,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { countries, getCountryByCode, getCountryFlag } from "@/lib/countries";
+import { getSortedCountries, getCountryByCode, getCountryFlag } from "@/lib/countries";
 
 interface PhoneInputProps {
     value: string; // Full phone number with country code, e.g., "+79991234567"
@@ -17,12 +17,14 @@ interface PhoneInputProps {
 }
 
 export function PhoneInput({ value, onChange, defaultCountryCode = "RU" }: PhoneInputProps) {
+    const sortedCountries = getSortedCountries();
+
     // Parse existing value
     const parsePhoneNumber = (phoneNumber: string) => {
         if (!phoneNumber) return { countryCode: defaultCountryCode, number: "" };
 
         // Find matching country by phone code
-        for (const country of countries) {
+        for (const country of sortedCountries) {
             if (phoneNumber.startsWith(country.phoneCode)) {
                 return {
                     countryCode: country.code,
@@ -58,7 +60,7 @@ export function PhoneInput({ value, onChange, defaultCountryCode = "RU" }: Phone
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = e.target.value;
         // Only allow digits
-        const digitsOnly = inputValue.replace(/\D/g, "");
+        const digitsOnly = inputValue.replace(/\\D/g, "");
 
         const country = getCountryByCode(selectedCountryCode);
         if (!country) return;
@@ -91,7 +93,7 @@ export function PhoneInput({ value, onChange, defaultCountryCode = "RU" }: Phone
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-[300px]">
-                        {countries.map((country) => (
+                        {sortedCountries.map((country) => (
                             <SelectItem key={country.code} value={country.code}>
                                 <div className="flex items-center gap-2">
                                     <span>{getCountryFlag(country.code)}</span>
