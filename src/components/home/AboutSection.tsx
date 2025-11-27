@@ -1,3 +1,4 @@
+// @deprecated This component is currently unused.
 import { Button } from "@/components/ui/button";
 import { Target, TrendingUp, Zap } from "lucide-react";
 
@@ -36,8 +37,8 @@ const AboutSection = () => {
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="group p-6 rounded-lg border border-border bg-background hover:border-primary/50 hover:shadow-glow-primary transition-all duration-300"
               >
                 <div className="mb-4 w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center shadow-glow-primary group-hover:scale-110 transition-transform">

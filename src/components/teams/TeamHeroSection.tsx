@@ -1,3 +1,4 @@
+import { TeamWithMembers } from '@/types/common.types';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Settings, UserPlus, Users, Calendar } from "lucide-react";
@@ -5,7 +6,7 @@ import { LeaveTeamButton } from "./LeaveTeamButton";
 import { PhantomPlayersControls } from "./PhantomPlayersControls";
 
 interface TeamHeroSectionProps {
-  team: any;
+  team: TeamWithMembers;
   memberCount: number;
   canApply: boolean;
   isOwner: boolean;

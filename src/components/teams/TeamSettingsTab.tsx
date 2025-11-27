@@ -1,3 +1,4 @@
+import { TeamWithMembers } from '@/types/common.types';
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -23,7 +24,7 @@ import {
 import { Trash2, Upload, X } from "lucide-react";
 
 interface TeamSettingsTabProps {
-  team: any;
+  team: TeamWithMembers;
   isOwner: boolean;
   isCoach?: boolean;
 }
@@ -82,7 +83,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
       setFormData({ ...formData, logo_url: publicUrl });
 
       toast.success("Логотип загружен. Не забудьте сохранить изменения");
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Ошибка загрузки логотипа");
     } finally {
       setIsUploading(false);
@@ -114,7 +115,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
 
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Ошибка обновления настроек");
     } finally {
       setIsUpdating(false);
@@ -124,7 +125,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
   const handleDisband = async () => {
     try {
       // Update all members' current_team_id to null
-      const memberIds = team.team_members?.map((m: any) => m.user_id) || [];
+      const memberIds = team.team_members?.map((m) => m.user_id) || [];
       if (memberIds.length > 0) {
         const { error: profileError } = await supabase
           .from("profiles")
@@ -141,7 +142,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
       toast.success("Команда распущена. Все участники освобождены");
 
       navigate("/teams");
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Ошибка при распускании команды");
     }
   };

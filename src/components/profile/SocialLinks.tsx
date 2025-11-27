@@ -1,8 +1,9 @@
+import { Profile } from '@/types/common.types';
 import { SiDiscord, SiTwitch, SiYoutube, SiTiktok, SiInstagram, SiX } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 
 interface SocialLinksProps {
-  profile: any;
+  profile: Profile;
 }
 
 export function SocialLinks({ profile }: SocialLinksProps) {

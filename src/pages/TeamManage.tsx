@@ -1,3 +1,4 @@
+import { Profile, Tournament, Match } from '@/types/common.types';
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";

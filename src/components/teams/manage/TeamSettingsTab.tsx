@@ -1,3 +1,4 @@
+import { TeamWithMembers } from '@/types/common.types';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -23,7 +24,7 @@ import {
 import { Trash2 } from "lucide-react";
 
 interface TeamSettingsTabProps {
-  team: any;
+  team: TeamWithMembers;
   isOwner: boolean;
   isCaptain?: boolean;
   isCoach?: boolean;
@@ -99,7 +100,7 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
 
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Не удалось обновить настройки команды");
     } finally {
       setIsUpdating(false);
@@ -125,7 +126,7 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
       if (invitesError) throw invitesError;
 
       // 3. Обнуляем current_team_id у всех участников
-      const memberIds = team.team_members?.map((m: any) => m.user_id) || [];
+      const memberIds = team.team_members?.map((m) => m.user_id) || [];
       if (memberIds.length > 0) {
         const { error: profileError } = await supabase
           .from("profiles")
@@ -157,7 +158,7 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       navigate("/teams");
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Ошибка при распускании команды");
     }
   };

@@ -1,3 +1,4 @@
+import { TeamWithMembers } from '@/types/common.types';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUserProfile } from "@/hooks/useCurrentUserProfile";
 
 interface TeamCardProps {
-  team: any;
+  team: TeamWithMembers;
   isUserTeam?: boolean;
 }
 
@@ -107,7 +108,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
         queryClient.invalidateQueries({ queryKey: ["team-applications", team.id] }),
         queryClient.invalidateQueries({ queryKey: ["team-applications-count"] }),
       ]);
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Ошибка при отправке заявки. Не удалось отправить заявку. Попробуйте ещё раз");
     } finally {
       setIsApplying(false);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ const CreateTeam = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       teamSchema.parse(formData);
       setErrors({});
@@ -84,16 +84,16 @@ const CreateTeam = () => {
       });
 
       navigate(`/teams/${teamId}`);
-    } catch (error: any) {
+    } catch (error) {
       let errorMessage = error.message;
-      
+
       // Handle duplicate name/tag errors
       if (error.message?.includes("teams_name_key")) {
         errorMessage = "Команда с таким названием уже существует";
       } else if (error.message?.includes("teams_tag_key")) {
         errorMessage = "Команда с таким тегом уже существует";
       }
-      
+
       toast({
         title: "Ошибка",
         description: errorMessage,

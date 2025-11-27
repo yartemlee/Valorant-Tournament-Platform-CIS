@@ -1,3 +1,4 @@
+import { PlayerRole, PlayerAgent, Profile } from '@/types/common.types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MedalsDisplayProps {

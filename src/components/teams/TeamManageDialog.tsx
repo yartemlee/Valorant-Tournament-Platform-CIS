@@ -1,3 +1,4 @@
+import { TeamWithMembers } from '@/types/common.types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Mail, Settings } from "lucide-react";
@@ -10,7 +11,7 @@ import { supabase } from "@/lib/supabase";
 interface TeamManageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  team: any;
+  team: TeamWithMembers;
   isOwner: boolean;
   isCaptain?: boolean;
   isCoach?: boolean;

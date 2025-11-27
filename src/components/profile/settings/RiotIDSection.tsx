@@ -1,3 +1,4 @@
+import { Profile } from '@/types/common.types';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +7,8 @@ import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 interface RiotIDSectionProps {
-  formData: any;
-  onChange: (field: string, value: any) => void;
+  formData: Record<string, unknown>;
+  onChange: (field: string, value: unknown) => void;
 }
 
 export function RiotIDSection({ formData, onChange }: RiotIDSectionProps) {

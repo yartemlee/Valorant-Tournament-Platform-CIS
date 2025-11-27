@@ -1,3 +1,4 @@
+import { Match, Tournament } from '@/types/common.types';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Edit3, Clock, Play, CheckCircle } from "lucide-react";
 
 interface MatchCardProps {
-  match: any;
+  match: Match;
   isOwner: boolean;
   onEdit: () => void;
 }

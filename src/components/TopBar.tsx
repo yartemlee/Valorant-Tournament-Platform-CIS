@@ -18,10 +18,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeTeamInvitations } from "@/hooks/useRealtimeTeamInvitations";
 import { useRealtimeTeamApplications } from "@/hooks/useRealtimeTeamApplications";
 import { useRealtimeProfiles } from "@/hooks/useRealtimeProfiles";
+import { Profile } from "@/types/common.types";
 
 const TopBar = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();

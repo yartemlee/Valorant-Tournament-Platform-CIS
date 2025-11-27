@@ -26,7 +26,7 @@ export function PhantomPlayersControls({ teamId, onUpdate }: PhantomPlayersContr
       
       setFillDialogOpen(false);
       onUpdate();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Fill team roster error:", error);
       toast.error("Ошибка пополнения состава", {
         description: error.message || "Не удалось добавить фантомных игроков",
@@ -47,7 +47,7 @@ export function PhantomPlayersControls({ teamId, onUpdate }: PhantomPlayersContr
       
       setCleanupDialogOpen(false);
       onUpdate();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Cleanup team phantoms error:", error);
       toast.error("Ошибка удаления фантомных игроков", {
         description: error.message || "Не удалось удалить фантомных игроков",

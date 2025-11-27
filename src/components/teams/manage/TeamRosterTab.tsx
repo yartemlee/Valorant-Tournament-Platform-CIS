@@ -1,3 +1,4 @@
+import { TeamWithMembers } from '@/types/common.types';
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -26,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserMinus, Crown, Shield } from "lucide-react";
 
 interface TeamRosterTabProps {
-  team: any;
+  team: TeamWithMembers;
   isOwner: boolean;
   isCaptain?: boolean;
   isCoach?: boolean;
@@ -70,7 +71,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
       queryClient.invalidateQueries({ queryKey: ["team-member"] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Ошибка изменения роли");
     } finally {
       setUpdatingRole(null);
@@ -118,7 +119,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
       if (onCaptainTransferred) {
         onCaptainTransferred();
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Ошибка передачи капитанства");
       setTransferringCaptaincy(null);
     }
@@ -156,7 +157,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
       ]);
       
       setRemovingMember(null);
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Ошибка удаления игрока");
       setRemovingMember(null);
     }
@@ -165,7 +166,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
   return (
     <Card>
       <CardContent className="pt-6 space-y-3">
-        {team.team_members?.map((member: any) => (
+        {team.team_members?.map((member) => (
           <div
             key={member.id}
             className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border"

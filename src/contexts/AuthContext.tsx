@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { SignInCredentials, SignUpCredentials } from '@/types/common.types';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   authLoading: boolean;
-  signIn: (data: any) => Promise<{ data: any; error: AuthError | null }>;
-  signUp: (data: any) => Promise<{ data: any; error: AuthError | null }>;
+  signIn: (credentials: SignInCredentials) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>;
+  signUp: (credentials: SignUpCredentials) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   signInWithOAuth: (provider: 'google' | 'discord') => Promise<{ error: AuthError | null }>;
 }
@@ -45,11 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async ({ email, password }: any) => {
+  const signIn = async ({ email, password }: SignInCredentials) => {
     return await supabase.auth.signInWithPassword({ email, password });
   };
 
-  const signUp = async ({ email, password, options }: any) => {
+  const signUp = async ({ email, password, options }: SignUpCredentials) => {
     return await supabase.auth.signUp({ email, password, options });
   };
 

@@ -23,7 +23,7 @@ export function TeamRosterSection({ members, memberCount }: TeamRosterSectionPro
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Участники */}
-          {(members || []).map((member: any) => (
+          {(members || []).map((member) => (
             <div
               key={member.id}
               className="group relative p-4 rounded-lg bg-secondary/50 border border-border hover:bg-secondary hover:border-primary/30 transition-all duration-300 cursor-pointer"

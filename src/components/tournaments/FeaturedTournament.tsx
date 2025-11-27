@@ -1,3 +1,4 @@
+// @deprecated This component is currently unused. Logic is inline in Index.tsx.
 import { Button } from "@/components/ui/button";
 import { Calendar, Trophy, Users } from "lucide-react";
 
@@ -42,7 +43,7 @@ const FeaturedTournament = () => {
         </div>
 
         <p className="text-muted-foreground mb-6 max-w-3xl">
-          Присоединяйтесь к крупнейшему турниру по Valorant в регионе СНГ. 
+          Присоединяйтесь к крупнейшему турниру по Valorant в регионе СНГ.
           Соревнуйтесь с лучшими командами, зарабатывайте токены и получайте призы!
         </p>
 

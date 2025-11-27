@@ -86,7 +86,7 @@ export function LeaveTeamButton({ teamId, userId, isCaptain, onLeave }: LeaveTea
       if (onLeave) {
         onLeave();
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Не удалось покинуть команду");
     } finally {
       setIsLeaving(false);

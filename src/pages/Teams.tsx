@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Search, Plus } from "lucide-react";
 import { TeamCard } from "@/components/teams/TeamCard";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import { useRealtimeTeams } from "@/hooks/useRealtimeTeams";
 
 const Teams = () => {
@@ -68,12 +68,12 @@ const Teams = () => {
         query = query.order('created_at', { ascending: false });
 
         const { data, error } = await query;
-        
+
         if (error) {
           console.error('fetchTeams failed:', error);
           throw error;
         }
-        
+
         console.timeEnd('fetchTeams');
         return data || [];
       } catch (error) {

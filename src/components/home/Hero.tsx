@@ -1,10 +1,11 @@
+// @deprecated This component is currently unused.
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-bg.jpg";
 
 const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      <div 
+      <div
         className="absolute inset-0 z-0"
         style={{
           backgroundImage: `url(${heroImage})`,
@@ -19,7 +20,7 @@ const Hero = () => {
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary-glow to-accent-glow bg-clip-text text-transparent animate-fade-in">
           Play. Compete. Grow the Valorant CIS scene.
         </h1>
-        
+
         <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
           Join the first competitive hub for Valorant players in CIS. Participate in tournaments, track stats, and connect with other players.
         </p>
@@ -48,7 +49,7 @@ const Hero = () => {
 
 const MessageCircle = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
   </svg>
 );
 

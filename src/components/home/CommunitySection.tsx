@@ -1,3 +1,4 @@
+// @deprecated This component is currently unused.
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageCircle, Users } from "lucide-react";
@@ -9,14 +10,14 @@ const CommunitySection = () => {
         <Card className="max-w-4xl mx-auto border-2 border-accent/30 bg-gradient-to-br from-card to-card/50 shadow-glow-accent overflow-hidden">
           <div className="relative p-12 text-center">
             <div className="absolute inset-0 bg-gradient-accent opacity-5"></div>
-            
+
             <div className="relative z-10">
               <MessageCircle className="h-16 w-16 text-accent mx-auto mb-6" />
-              
+
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 💬 Join Our Discord Community
               </h2>
-              
+
               <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
                 Find teammates, get tournament updates, and chat with other Valorant players from across the CIS region.
               </p>

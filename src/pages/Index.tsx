@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
-import NewsCard from "@/components/NewsCard";
+import NewsCard from "@/components/home/NewsCard";
 import { TournamentCard } from "@/components/tournaments/TournamentCard";
 import { Button } from "@/components/ui/button";
 import { Trophy, Plus } from "lucide-react";
@@ -94,7 +94,7 @@ const Index = () => {
                     <div className="absolute inset-0 opacity-20">
                       <img
                         src={featuredTournament.banner_url}
-                        alt={featuredTournament.name}
+                        alt={featuredTournament.title}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -104,7 +104,7 @@ const Index = () => {
                       <Trophy className="h-6 w-6 text-primary" />
                       <span className="text-sm font-semibold text-primary">Избранный турнир</span>
                     </div>
-                    <h2 className="text-4xl font-bold mb-4">{featuredTournament.name}</h2>
+                    <h2 className="text-4xl font-bold mb-4">{featuredTournament.title}</h2>
                     {featuredTournament.description && (
                       <p className="text-lg text-muted-foreground mb-6">{featuredTournament.description}</p>
                     )}

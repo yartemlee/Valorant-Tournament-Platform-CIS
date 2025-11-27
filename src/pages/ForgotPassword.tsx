@@ -28,7 +28,7 @@ const ForgotPassword = () => {
 
       setSent(true);
       toast.success("Ссылка для сброса пароля отправлена на email");
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Произошла ошибка");
     } finally {
       setLoading(false);

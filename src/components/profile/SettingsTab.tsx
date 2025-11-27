@@ -1,3 +1,4 @@
+import { Profile , PlayerRole, PlayerAgent} from '@/types/common.types';
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,8 @@ import { PrivacySection } from "./settings/PrivacySection";
 import { NotificationsSection } from "./settings/NotificationsSection";
 
 interface SettingsTabProps {
-  profile: any;
-  onProfileUpdate: (profile: any) => void;
+  profile: Profile;
+  onProfileUpdate: (profile: Profile) => void;
 }
 
 const settingsSections = [
@@ -59,7 +60,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
     try {
       setSaving(true);
 
-      const updates: any = {
+      const updates: unknown = {
         country: formData.country,
         phone_number: formData.phone_number,
         status: formData.status,
@@ -103,7 +104,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
 
       onProfileUpdate(data);
       toast.success("Настройки сохранены");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Ошибка сохранения настроек");
     } finally {

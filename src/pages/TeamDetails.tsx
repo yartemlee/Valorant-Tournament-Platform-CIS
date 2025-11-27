@@ -1,3 +1,4 @@
+import { Profile, Tournament, Match } from '@/types/common.types';
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -5,7 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import { useState } from "react";
 import { TeamHeroSection } from "@/components/teams/TeamHeroSection";
 import { TeamRosterSection } from "@/components/teams/TeamRosterSection";
@@ -24,12 +25,12 @@ const TeamDetails = () => {
   const [isApplying, setIsApplying] = useState(false);
   const [manageDialogOpen, setManageDialogOpen] = useState(false);
 
-  const { 
-    id: currentUserId, 
+  const {
+    id: currentUserId,
     profile,
-    current_team_id, 
-    isCaptainOfThisTeam, 
-    isMemberOfThisTeam, 
+    current_team_id,
+    isCaptainOfThisTeam,
+    isMemberOfThisTeam,
     isCoachOfThisTeam,
     isManager,
     refetch: refetchUserProfile
@@ -43,7 +44,7 @@ const TeamDetails = () => {
     queryKey: ["team", id],
     queryFn: async () => {
       if (!id) return null;
-      
+
       const { data, error } = await supabase
         .from("teams")
         .select(`
@@ -62,17 +63,17 @@ const TeamDetails = () => {
         `)
         .eq("id", id)
         .maybeSingle();
-      
+
       if (error) {
         console.error("Error fetching team:", error);
         return null;
       }
-      
+
       // Ensure team_members is always an array
       if (data) {
         data.team_members = data.team_members || [];
       }
-      
+
       return data;
     },
     enabled: !!id,
@@ -119,16 +120,16 @@ const TeamDetails = () => {
       }
 
       // Используем безопасный RPC для подачи заявки с DB-валидацией
-      const { data, error } = await supabase.rpc('rpc_apply_to_team', {
+      const { error } = await (supabase.rpc as any)('rpc_apply_to_team', {
         target_team_id: id!,
         note: null
       });
 
       if (error) {
         console.error("RPC error:", error);
-        
+
         // Обрабатываем известные ошибки с понятными сообщениями
-        if (error.message.includes('already_in_team')) {
+        if (error.message?.includes('already_in_team')) {
           toast({
             title: "Вы уже состоите в команде",
             description: "Чтобы вступить в другую — сначала покиньте текущую.",
@@ -137,16 +138,16 @@ const TeamDetails = () => {
           queryClient.invalidateQueries({ queryKey: ["profile"] });
           return;
         }
-        
-        if (error.message.includes('duplicate_pending')) {
+
+        if (error.message?.includes('duplicate_pending')) {
           toast({
             title: "Вы уже подали заявку в эту команду",
             description: "Ожидайте ответа от капитана команды",
           });
           return;
         }
-        
-        if (error.message.includes('not_authenticated')) {
+
+        if (error.message?.includes('not_authenticated')) {
           toast({
             title: "Требуется авторизация",
             description: "Войдите, чтобы подать заявку",
@@ -155,7 +156,7 @@ const TeamDetails = () => {
           return;
         }
 
-        if (error.message.includes('team_not_recruiting')) {
+        if (error.message?.includes('team_not_recruiting')) {
           toast({
             title: "Набор в команду закрыт",
             description: "Эта команда больше не принимает новых участников",
@@ -165,7 +166,7 @@ const TeamDetails = () => {
           return;
         }
 
-        if (error.message.includes('team_full')) {
+        if (error.message?.includes('team_full')) {
           toast({
             title: "Команда заполнена",
             description: "В команде уже максимальное количество участников (10)",
@@ -183,7 +184,7 @@ const TeamDetails = () => {
           });
           return;
         }
-        
+
         // Неизвестная ошибка
         throw error;
       }
@@ -201,7 +202,7 @@ const TeamDetails = () => {
         queryClient.invalidateQueries({ queryKey: ["team-applications", id] }),
         queryClient.invalidateQueries({ queryKey: ["team-applications-count"] }),
       ]);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Application process error:", error);
       toast({
         title: "Ошибка при отправке заявки",

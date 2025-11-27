@@ -1,5 +1,6 @@
+// @deprecated This component is currently unused. Logic is inline in Index.tsx.
 import { Button } from "@/components/ui/button";
-import TournamentCard from "./TournamentCard";
+import { TournamentCard } from "@/components/tournaments/TournamentCard";
 
 const TournamentsSection = () => {
   const tournaments = [
@@ -50,7 +51,7 @@ const TournamentsSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {tournaments.map((tournament, index) => (
-            <TournamentCard key={index} {...tournament} />
+            <TournamentCard key={index} tournament={tournament as unknown as never} />
           ))}
         </div>
 

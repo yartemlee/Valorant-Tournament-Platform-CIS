@@ -1,11 +1,12 @@
+import { Profile } from '@/types/common.types';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface LinkedAccountsSectionProps {
-  formData: any;
-  onChange: (field: string, value: any) => void;
+  formData: Record<string, unknown>;
+  onChange: (field: string, value: unknown) => void;
 }
 
 export function LinkedAccountsSection({ formData, onChange }: LinkedAccountsSectionProps) {

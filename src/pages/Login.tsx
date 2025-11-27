@@ -52,7 +52,7 @@ const Login = () => {
 
       toast.success("Добро пожаловать!");
       navigate("/");
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Произошла ошибка при входе");
     } finally {
       setLoading(false);
@@ -70,7 +70,7 @@ const Login = () => {
       });
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Ошибка входа через Google");
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ const Login = () => {
       });
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Ошибка входа через Discord");
     } finally {
       setLoading(false);

@@ -1,3 +1,4 @@
+import { Match, Tournament } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -14,7 +15,7 @@ import { Trash2 } from "lucide-react";
 interface EditTournamentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tournament: any;
+  tournament: Tournament | null;
   onSuccess?: () => void;
 }
 

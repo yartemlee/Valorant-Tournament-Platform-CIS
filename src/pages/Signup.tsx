@@ -98,7 +98,7 @@ const Signup = () => {
         toast.success("Аккаунт создан! Добро пожаловать в Valorant Tournament Platform!");
         navigate("/");
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Произошла ошибка при регистрации");
     } finally {
       setLoading(false);
@@ -116,7 +116,7 @@ const Signup = () => {
       });
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Ошибка регистрации через Google");
     } finally {
       setLoading(false);
@@ -134,7 +134,7 @@ const Signup = () => {
       });
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Ошибка регистрации через Discord");
     } finally {
       setLoading(false);

@@ -1,3 +1,4 @@
+import { Profile } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,9 @@ import { getCountryFlag, getCountryByCode } from "@/lib/countries";
 import { CountryFlag } from "@/components/CountryFlag";
 
 interface ProfileHeaderProps {
-  profile: any;
+  profile: Profile;
   isOwnProfile: boolean;
-  onProfileUpdate: (profile: any) => void;
+  onProfileUpdate: (profile: Profile) => void;
 }
 
 export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: ProfileHeaderProps) {
@@ -32,7 +33,7 @@ export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: Profil
       // For now, we'll just show a toast
       toast.success("Загрузка аватара скоро будет доступна");
 
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Ошибка загрузки аватара");
     } finally {
       setUploading(false);

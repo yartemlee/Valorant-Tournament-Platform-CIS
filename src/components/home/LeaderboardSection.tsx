@@ -1,3 +1,4 @@
+// @deprecated This component is currently unused.
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trophy, Medal } from "lucide-react";
@@ -49,8 +50,8 @@ const LeaderboardSection = () => {
               </thead>
               <tbody>
                 {topPlayers.map((player) => (
-                  <tr 
-                    key={player.rank} 
+                  <tr
+                    key={player.rank}
                     className="border-b border-border/50 hover:bg-secondary/50 transition-colors"
                   >
                     <td className="p-4">

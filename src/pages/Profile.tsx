@@ -1,3 +1,4 @@
+import { Profile, Tournament, Match } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -14,7 +15,7 @@ export default function Profile() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
 
@@ -52,7 +53,7 @@ export default function Profile() {
 
         if (error) throw error;
         setProfile(profileData);
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Ошибка загрузки профиля");
       } finally {
         setLoading(false);

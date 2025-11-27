@@ -5,11 +5,12 @@ import { toast } from "sonner";
 import { valorantApi, ValorantAgent } from "@/services/valorantApi";
 import { ProficiencySelector, ProficiencyLevel, proficiencyLevels } from "./ProficiencySelector";
 import { cn } from "@/lib/utils";
+import { PlayerAgent } from "@/types/common.types";
 
 interface AgentSelectorProps {
   userId: string;
-  agents: any[];
-  onUpdate: (agents: any[]) => void;
+  agents: PlayerAgent[];
+  onUpdate: (agents: PlayerAgent[]) => void;
   isEditable: boolean;
 }
 
@@ -65,7 +66,7 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
         onUpdate(agents.filter(a => a.id !== agentData.id));
         toast.success(`Агент ${agentName} удален`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error toggling agent:", error);
       toast.error("Ошибка обновления агента");
     } finally {
@@ -91,7 +92,7 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
       onUpdate(agents.map(a =>
         a.id === agentData.id ? { ...a, skill_level: skill } : a
       ));
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating skill:", error);
       toast.error("Ошибка обновления уровня");
     } finally {

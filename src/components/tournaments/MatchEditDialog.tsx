@@ -1,3 +1,4 @@
+import { Match, Tournament } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { toast } from "sonner";
 import { Play, CheckCircle, Edit3, Trophy } from "lucide-react";
 
 interface MatchEditDialogProps {
-  match: any;
+  match: Match;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
@@ -81,7 +82,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
       toast.success("Матч обновлён");
       onSuccess();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating match:", error);
       toast.error("Ошибка обновления матча");
     } finally {

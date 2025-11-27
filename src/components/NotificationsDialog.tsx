@@ -126,7 +126,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Произошла ошибка");
     }
   };
@@ -156,7 +156,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
       toast.success("Уведомление удалено");
       queryClient.invalidateQueries({ queryKey: ["my-team-applications"] });
       queryClient.invalidateQueries({ queryKey: ["notifications-count"] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Не удалось удалить уведомление");
     }
   };
@@ -184,7 +184,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
       toast.success("Все уведомления удалены");
       queryClient.invalidateQueries({ queryKey: ["my-team-applications"] });
       queryClient.invalidateQueries({ queryKey: ["notifications-count"] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Не удалось очистить уведомления");
     }
   };

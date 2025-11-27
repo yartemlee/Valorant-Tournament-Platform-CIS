@@ -1,3 +1,4 @@
+import { Profile } from '@/types/common.types';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,8 +8,8 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { getSortedCountries, getCountryFlag } from "@/lib/countries";
 
 interface ProfileSectionProps {
-  formData: any;
-  onChange: (field: string, value: any) => void;
+  formData: Record<string, unknown>;
+  onChange: (field: string, value: unknown) => void;
 }
 
 export function ProfileSection({ formData, onChange }: ProfileSectionProps) {

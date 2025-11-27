@@ -136,7 +136,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Не удалось обработать заявку");
     } finally {
       setProcessingId(null);
@@ -156,7 +156,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
 
       queryClient.invalidateQueries({ queryKey: ["team-invites-sent"] });
       queryClient.invalidateQueries({ queryKey: ["team-applications-count"] });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || "Не удалось отменить приглашение");
     }
   };
@@ -200,7 +200,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
               </p>
             </div>
           ) : applications && applications.length > 0 ? (
-            applications.map((app: any) => (
+            applications.map((app) => (
               <div
                 key={app.id}
                 className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border"

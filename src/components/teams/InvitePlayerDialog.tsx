@@ -88,7 +88,7 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
       queryClient.invalidateQueries({ queryKey: ["team-invites-sent"] });
       onOpenChange(false);
       setSearch("");
-    } catch (error: any) {
+    } catch (error) {
       // Если ошибка связана с дублированием или RLS, показываем дружественное сообщение
       if (error.code === "23505" || error.message?.includes("row-level security")) {
         toast.error("Этот игрок уже приглашен в команду");
@@ -123,7 +123,7 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
 
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {players && players.length > 0 ? (
-              players.map((player: any) => (
+              players.map((player) => (
                 <div
                   key={player.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
