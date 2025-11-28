@@ -1,8 +1,14 @@
-import { PlayerRole, PlayerAgent, Profile } from '@/types/common.types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+interface Medal {
+  id: string;
+  placement: number;
+  tournament_name: string;
+  tournament_date: string;
+}
+
 interface MedalsDisplayProps {
-  medals: any[];
+  medals: Medal[];
 }
 
 const medalEmojis = {
@@ -32,7 +38,7 @@ export function MedalsDisplay({ medals }: MedalsDisplayProps) {
         {[1, 2, 3].map(place => {
           const count = medalCounts[place] || 0;
           if (count === 0) return null;
-          
+
           return (
             <div key={place} className="flex items-center gap-2">
               <span className="text-3xl">{medalEmojis[place as keyof typeof medalEmojis]}</span>
@@ -64,10 +70,10 @@ export function MedalsDisplay({ medals }: MedalsDisplayProps) {
                   {medal.placement === 1 ? "Победа" : medal.placement === 2 ? "2 место" : "3 место"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {new Date(medal.tournament_date).toLocaleDateString('ru-RU', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {new Date(medal.tournament_date).toLocaleDateString('ru-RU', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                   })}
                 </p>
               </TooltipContent>

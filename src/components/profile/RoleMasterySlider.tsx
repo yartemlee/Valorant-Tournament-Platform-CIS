@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import { cn } from "@/lib/utils";
-import { roleProficiencyLevels } from "./ProficiencySelector";
+import { roleProficiencyLevels } from "@/constants/proficiency";
 
 interface RoleMasterySliderProps {
     value: number;
@@ -30,7 +30,7 @@ export function RoleMasterySlider({
             // This is a track click, enable animation
             setIsAnimating(true);
             // Disable animation after it completes
-            const timer = setTimeout(() => setIsAnimating(false), 400);
+            const timer = setTimeout(() => setIsAnimating(false), 300);
             return () => clearTimeout(timer);
         }
         prevValueRef.current = value;
@@ -85,7 +85,7 @@ export function RoleMasterySlider({
                     <SliderPrimitive.Range
                         className={cn(
                             "absolute h-full rounded-full bg-gradient-to-r from-purple-500/50 to-purple-500 opacity-80",
-                            isAnimating && !isDragging && "transition-all duration-[400ms] ease-out"
+                            isAnimating && !isDragging && "transition-all duration-300 ease-out"
                         )}
                     />
                 </SliderPrimitive.Track>
@@ -96,7 +96,7 @@ export function RoleMasterySlider({
                     className={cn(
                         "block h-7 w-7 rounded-full border-2 border-neutral-700 bg-neutral-800 shadow-lg",
                         "transition-[transform,box-shadow,border-color] duration-200 ease-out",
-                        isAnimating && !isDragging && "!transition-all !duration-[400ms] !ease-out",
+                        isAnimating && !isDragging && "!transition-all !duration-300 !ease-out",
                         "hover:scale-110 hover:border-purple-500 hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900",
                         "disabled:pointer-events-none disabled:opacity-50",

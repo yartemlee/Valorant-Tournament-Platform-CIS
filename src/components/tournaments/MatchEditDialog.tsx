@@ -58,7 +58,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
         loserId = winnerId === match.team1_id ? match.team2_id : match.team1_id;
       }
 
-      const updates: any = {
+      const updates = {
         best_of: bestOf,
         status,
         team1_score: team1Score,
@@ -94,7 +94,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
    * Продвигает команды в следующие матчи после завершения текущего
    * Обрабатывает все сценарии: обычные раунды, полуфиналы, финалы
    */
-  const advanceWinner = async (currentMatch: any, winnerId: string, loserId: string | null) => {
+  const advanceWinner = async (currentMatch, winnerId: string, loserId: string | null) => {
     try {
       // Получить информацию о турнире
       const { data: tournament } = await supabase

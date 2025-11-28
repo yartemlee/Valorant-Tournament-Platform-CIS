@@ -12,49 +12,31 @@ interface ProfileTabProps {
   isOwnProfile: boolean;
 }
 
-export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
-  const [roles, setRoles] = useState<PlayerRole[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  
-    $match = import { PlayerRole, PlayerAgent, Profile } from '@/types/common.types';
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RoleSelector } from "./RoleSelector";
-import { RankDisplay } from "./RankDisplay";
-import { MedalsDisplay } from "./MedalsDisplay";
-import { toast } from "sonner";
-
-interface ProfileTabProps {
-  profile: Profile;
-  isOwnProfile: boolean;
-}
 
 export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
   const [roles, setRoles] = useState<PlayerRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const loadProfileData = async () => {
+      try {
+        // Load roles
+        const { data: rolesData } = await supabase
+          .from("player_roles")
+          .select("*")
+          .eq("user_id", profile.id);
+
+        setRoles((rolesData as unknown as PlayerRole[]) || []);
+      } catch (error) {
+        toast.error("Ошибка загрузки данных профиля");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadProfileData();
   }, [profile.id]);
 
-  const loadProfileData = async () => {
-    try {
-      // Load roles
-      const { data: rolesData } = await supabase
-        .from("player_roles")
-        .select("*")
-        .eq("user_id", profile.id);
-
-      setRoles(rolesData || []);
-    } catch (error) {
-      toast.error("Ошибка загрузки данных профиля");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (loading) {
     return <div className="animate-pulse">Загрузка...</div>;
   }
@@ -69,9 +51,8 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
             <CardTitle>Ранги</CardTitle>
           </CardHeader>
           <CardContent>
-            <RankDisplay 
-              currentRank={profile.current_rank} 
-              peakRank={profile.peak_rank} 
+            <RankDisplay
+              currentRank={profile.rank}
             />
           </CardContent>
         </Card>
@@ -83,7 +64,7 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {profile.about_me || (isOwnProfile ? "Расскажите о себе в настройках профиля" : "")}
+              {profile.bio || (isOwnProfile ? "Расскажите о себе в настройках профиля" : "")}
             </p>
           </CardContent>
         </Card>
@@ -96,86 +77,9 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
             <CardTitle>Игровые роли и агенты</CardTitle>
           </CardHeader>
           <CardContent>
-            <RoleSelector 
-              userId={profile.id} 
-              roles={roles} 
-              onUpdate={setRoles}
-              isEditable={isOwnProfile}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-.Value
-    $deps = $matches[1]
-    if ($match -match '(load\w+|fetch\w+|detect\w+|parsePhoneNumber)\(\)') {
-      $funcName = $matches[1]
-      $match -replace "useEffect\(\(\) => \{", "useEffect(() => {`r`n    // eslint-disable-next-line react-hooks/exhaustive-deps"
-    } else { $match }
-  
-
-  const loadProfileData = async () => {
-    try {
-      // Load roles
-      const { data: rolesData } = await supabase
-        .from("player_roles")
-        .select("*")
-        .eq("user_id", profile.id);
-
-      setRoles(rolesData || []);
-    } catch (error) {
-      toast.error("Ошибка загрузки данных профиля");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return <div className="animate-pulse">Загрузка...</div>;
-  }
-
-  return (
-    <div className="flex gap-6">
-      {/* Left Side - Ranks and About */}
-      <div className="flex-1 space-y-6">
-        {/* Ranks Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ранги</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RankDisplay 
-              currentRank={profile.current_rank} 
-              peakRank={profile.peak_rank} 
-            />
-          </CardContent>
-        </Card>
-
-        {/* About Me Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>О себе</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {profile.about_me || (isOwnProfile ? "Расскажите о себе в настройках профиля" : "")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Right Side - Roles & Agents (30% width) */}
-      <div className="w-[30%] flex-shrink-0">
-        <Card className="sticky top-6">
-          <CardHeader>
-            <CardTitle>Игровые роли и агенты</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RoleSelector 
-              userId={profile.id} 
-              roles={roles} 
+            <RoleSelector
+              userId={profile.id}
+              roles={roles}
               onUpdate={setRoles}
               isEditable={isOwnProfile}
             />

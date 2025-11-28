@@ -98,7 +98,7 @@ export function TeamStatsSection({ teamId }: TeamStatsSectionProps) {
                   Последние турниры
                 </h3>
                 <div className="space-y-2">
-                  {stats.recentTournaments.map((tournament: any, i: number) => (
+                  {stats.recentTournaments.map((tournament, i: number) => (
                     <div
                       key={i}
                       className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border"

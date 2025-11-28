@@ -7,7 +7,7 @@ interface TeamActivitySectionProps {
 
 export function TeamActivitySection({ teamId }: TeamActivitySectionProps) {
   // TODO: В будущем подключить реальные события из БД
-  const activities: any[] = [];
+  const activities: unknown[] = [];
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -35,7 +35,7 @@ export function TeamActivitySection({ teamId }: TeamActivitySectionProps) {
       <CardContent>
         {activities.length > 0 ? (
           <div className="space-y-3">
-            {activities.map((activity: any, i: number) => (
+            {activities.map((activity, i: number) => (
               <div
                 key={i}
                 className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30 border border-border hover:bg-secondary/50 transition-colors"

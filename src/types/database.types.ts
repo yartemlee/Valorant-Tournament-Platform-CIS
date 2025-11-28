@@ -571,6 +571,89 @@ export type Database = {
           },
         ]
       }
+      tournament_matches: {
+        Row: {
+          best_of: number
+          bracket_position: number | null
+          bracket_type: string
+          created_at: string
+          id: string
+          match_number: number
+          round_number: number
+          score_team1: number | null
+          score_team2: number | null
+          start_time: string | null
+          status: Database["public"]["Enums"]["match_status"] | null
+          team1_id: string | null
+          team2_id: string | null
+          tournament_id: string
+          winner_id: string | null
+        }
+        Insert: {
+          best_of?: number
+          bracket_position?: number | null
+          bracket_type: string
+          created_at?: string
+          id?: string
+          match_number: number
+          round_number: number
+          score_team1?: number | null
+          score_team2?: number | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["match_status"] | null
+          team1_id?: string | null
+          team2_id?: string | null
+          tournament_id: string
+          winner_id?: string | null
+        }
+        Update: {
+          best_of?: number
+          bracket_position?: number | null
+          bracket_type?: string
+          created_at?: string
+          id?: string
+          match_number?: number
+          round_number?: number
+          score_team1?: number | null
+          score_team2?: number | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["match_status"] | null
+          team1_id?: string | null
+          team2_id?: string | null
+          tournament_id?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_team1_id_fkey"
+            columns: ["team1_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team2_id_fkey"
+            columns: ["team2_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_registrations: {
         Row: {
           id: string
@@ -613,6 +696,7 @@ export type Database = {
       tournaments: {
         Row: {
           banner_url: string | null
+          bracket_generated: boolean | null
           created_at: string
           description: string | null
           format: Database["public"]["Enums"]["tournament_format"]
@@ -629,6 +713,7 @@ export type Database = {
         }
         Insert: {
           banner_url?: string | null
+          bracket_generated?: boolean | null
           created_at?: string
           description?: string | null
           format?: Database["public"]["Enums"]["tournament_format"]
@@ -645,6 +730,7 @@ export type Database = {
         }
         Update: {
           banner_url?: string | null
+          bracket_generated?: boolean | null
           created_at?: string
           description?: string | null
           format?: Database["public"]["Enums"]["tournament_format"]
@@ -896,48 +982,48 @@ export type CompositeTypes<
   ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
   : never
 export const Constants = {
-    public: {
-        Enums: {
-            app_role: ["admin", "publisher", "organizer", "player"],
-            match_status: ["scheduled", "live", "completed", "cancelled"],
-            scrim_status: ["searching", "in_progress", "finished", "cancelled"],
-            team_role: ["captain", "coach", "member"],
-            tournament_format: ["single_elimination", "double_elimination"],
-            tournament_status: [
-                "draft",
-                "registration",
-                "active",
-                "completed",
-                "cancelled",
-            ],
-            valorant_rank: [
-                "Iron 1",
-                "Iron 2",
-                "Iron 3",
-                "Bronze 1",
-                "Bronze 2",
-                "Bronze 3",
-                "Silver 1",
-                "Silver 2",
-                "Silver 3",
-                "Gold 1",
-                "Gold 2",
-                "Gold 3",
-                "Platinum 1",
-                "Platinum 2",
-                "Platinum 3",
-                "Diamond 1",
-                "Diamond 2",
-                "Diamond 3",
-                "Ascendant 1",
-                "Ascendant 2",
-                "Ascendant 3",
-                "Immortal 1",
-                "Immortal 2",
-                "Immortal 3",
-                "Radiant",
-            ],
-            valorant_region: ["eu", "na", "ap", "kr", "br", "latam"],
-        },
+  public: {
+    Enums: {
+      app_role: ["admin", "publisher", "organizer", "player"],
+      match_status: ["scheduled", "live", "completed", "cancelled"],
+      scrim_status: ["searching", "in_progress", "finished", "cancelled"],
+      team_role: ["captain", "coach", "member"],
+      tournament_format: ["single_elimination", "double_elimination"],
+      tournament_status: [
+        "draft",
+        "registration",
+        "active",
+        "completed",
+        "cancelled",
+      ],
+      valorant_rank: [
+        "Iron 1",
+        "Iron 2",
+        "Iron 3",
+        "Bronze 1",
+        "Bronze 2",
+        "Bronze 3",
+        "Silver 1",
+        "Silver 2",
+        "Silver 3",
+        "Gold 1",
+        "Gold 2",
+        "Gold 3",
+        "Platinum 1",
+        "Platinum 2",
+        "Platinum 3",
+        "Diamond 1",
+        "Diamond 2",
+        "Diamond 3",
+        "Ascendant 1",
+        "Ascendant 2",
+        "Ascendant 3",
+        "Immortal 1",
+        "Immortal 2",
+        "Immortal 3",
+        "Radiant",
+      ],
+      valorant_region: ["eu", "na", "ap", "kr", "br", "latam"],
     },
+  },
 } as const;

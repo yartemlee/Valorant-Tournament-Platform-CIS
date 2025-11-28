@@ -59,7 +59,7 @@ const TeamManage = () => {
   });
 
   const isOwner = session?.user?.id === team?.captain_id;
-  const userMember = team?.team_members?.find((m: any) => m.user_id === session?.user?.id);
+  const userMember = team?.team_members?.find((m) => m.user_id === session?.user?.id);
   const isCaptain = userMember?.role === "captain";
   const isCoach = userMember?.role === "coach";
   // Доступ только для владельца, капитана или тренера

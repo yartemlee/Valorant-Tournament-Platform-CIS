@@ -46,7 +46,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
       return data || [];
     },
     enabled: !!session?.user,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Retry only on network errors
       return failureCount < 2 && (!error?.code || error.code === 'PGRST301');
     },
@@ -86,7 +86,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
       return data || [];
     },
     enabled: !!session?.user,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Retry only on network errors
       return failureCount < 2 && (!error?.code || error.code === 'PGRST301');
     },
@@ -268,7 +268,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
               </p>
             </div>
           ) : invites && invites.length > 0 ? (
-            invites.map((invite: any) => (
+            invites.map((invite) => (
               <div
                 key={invite.id}
                 className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border"

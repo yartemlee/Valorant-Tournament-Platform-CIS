@@ -120,7 +120,7 @@ const TeamDetails = () => {
       }
 
       // Используем безопасный RPC для подачи заявки с DB-валидацией
-      const { error } = await (supabase.rpc as any)('rpc_apply_to_team', {
+      const { error } = await (supabase.rpc)('rpc_apply_to_team', {
         target_team_id: id!,
         note: null
       });

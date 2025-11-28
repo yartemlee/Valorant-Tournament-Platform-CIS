@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,10 +17,10 @@ interface PhoneInputProps {
 }
 
 export function PhoneInput({ value, onChange, defaultCountryCode = "RU" }: PhoneInputProps) {
-    const sortedCountries = getSortedCountries();
+    const sortedCountries = useMemo(() => getSortedCountries(), []);
 
     // Parse existing value
-    const parsePhoneNumber = (phoneNumber: string) => {
+    const parsePhoneNumber = useCallback((phoneNumber: string) => {
         if (!phoneNumber) return { countryCode: defaultCountryCode, number: "" };
 
         // Find matching country by phone code
@@ -34,7 +34,7 @@ export function PhoneInput({ value, onChange, defaultCountryCode = "RU" }: Phone
         }
 
         return { countryCode: defaultCountryCode, number: phoneNumber };
-    };
+    }, [defaultCountryCode, sortedCountries]);
 
     const { countryCode: initialCountryCode, number: initialNumber } = parsePhoneNumber(value);
     const [selectedCountryCode, setSelectedCountryCode] = useState(initialCountryCode);
@@ -45,7 +45,7 @@ export function PhoneInput({ value, onChange, defaultCountryCode = "RU" }: Phone
         const { countryCode, number } = parsePhoneNumber(value);
         setSelectedCountryCode(countryCode);
         setPhoneNumber(number);
-    }, [value]);
+    }, [value, parsePhoneNumber]);
 
     const handleCountryChange = (newCountryCode: string) => {
         setSelectedCountryCode(newCountryCode);

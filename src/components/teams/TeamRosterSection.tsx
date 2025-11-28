@@ -5,7 +5,7 @@ import { Users, Crown, Shield as ShieldIcon, CheckCircle2, XCircle } from "lucid
 import { useNavigate } from "react-router-dom";
 
 interface TeamRosterSectionProps {
-  members: any[];
+  members: unknown[];
   memberCount: number;
 }
 

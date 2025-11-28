@@ -52,7 +52,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
   });
   const [saving, setSaving] = useState(false);
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

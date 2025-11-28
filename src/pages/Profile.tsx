@@ -11,10 +11,12 @@ import { AwardsTab } from "@/components/profile/AwardsTab";
 import { SettingsTab } from "@/components/profile/SettingsTab";
 import { toast } from "sonner";
 
+import { User } from "@supabase/supabase-js";
+
 export default function Profile() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");

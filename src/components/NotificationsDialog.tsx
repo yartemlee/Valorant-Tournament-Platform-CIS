@@ -15,6 +15,34 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
+interface TeamInviteWithTeam {
+  id: string;
+  team_id: string;
+  invited_user_id: string;
+  status: string;
+  created_at: string;
+  teams: {
+    id: string;
+    name: string;
+    tag: string;
+    logo_url: string;
+  } | null;
+}
+
+interface TeamApplicationWithTeam {
+  id: string;
+  team_id: string;
+  user_id: string;
+  status: string;
+  created_at: string;
+  teams: {
+    id: string;
+    name: string;
+    tag: string;
+    logo_url: string;
+  } | null;
+}
+
 interface NotificationsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -85,7 +113,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
     try {
       if (accept) {
         // Используем RPC функцию для безопасного принятия приглашения
-        const { data, error } = await (supabase.rpc as any)("accept_team_invitation", {
+        const { data, error } = await supabase.rpc("accept_team_invitation", {
           invitation_id_input: inviteId,
         });
 
@@ -102,7 +130,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
         toast.success("Приглашение принято, вы вступили в команду!");
       } else {
         // Используем RPC функцию для отклонения приглашения
-        const { data, error } = await (supabase.rpc as any)("decline_team_invitation", {
+        const { data, error } = await supabase.rpc("decline_team_invitation", {
           invitation_id_input: inviteId,
         });
 
@@ -166,8 +194,8 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
 
     try {
       const applicationIds = myApplications
-        .filter((app: any) => app.status !== "pending")
-        .map((app: any) => app.id);
+        .filter((app) => app.status !== "pending")
+        .map((app) => app.id);
 
       if (applicationIds.length === 0) {
         toast.error("Нет завершенных уведомлений для удаления");
@@ -207,7 +235,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
               <p className="text-sm text-muted-foreground">Загрузка...</p>
             ) : invites && invites.length > 0 ? (
               <div className="space-y-3">
-                {invites.map((invite: any) => (
+                {invites.map((invite: TeamInviteWithTeam) => (
                   <div
                     key={invite.id}
                     className="flex items-center gap-4 p-4 border rounded-lg bg-card"
@@ -267,7 +295,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
               <p className="text-sm text-muted-foreground">Загрузка...</p>
             ) : myApplications && myApplications.length > 0 ? (
               <div className="space-y-3">
-                {myApplications.map((app: any) => (
+                {myApplications.map((app: TeamApplicationWithTeam) => (
                   <div
                     key={app.id}
                     className="flex items-center gap-4 p-4 border rounded-lg bg-card"

@@ -10,7 +10,7 @@ export function SocialLinks({ profile }: SocialLinksProps) {
   const socials: {
     name: string;
     username: string | null | undefined;
-    icon: any;
+    icon: React.ComponentType<{ className?: string }> | null;
     url: string | null;
     text?: string;
   }[] = [
@@ -64,7 +64,7 @@ export function SocialLinks({ profile }: SocialLinksProps) {
         icon: null,
         url: `https://tracker.gg/valorant/profile/riot/${riotIdName}%23${riotIdTag}`,
         text: "TRN"
-      } as any);
+      });
     }
   }
 
