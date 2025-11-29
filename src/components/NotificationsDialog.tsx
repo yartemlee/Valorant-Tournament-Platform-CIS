@@ -94,6 +94,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
         .from("team_applications")
         .select(`
           *,
+          user_id:applicant_id,
           teams:team_id (
             id,
             name,

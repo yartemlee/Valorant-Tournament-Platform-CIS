@@ -42,9 +42,9 @@ export function ProfileSection({ formData, onChange }: ProfileSectionProps) {
         </div>
 
         <PhoneInput
-          value={formData.phone_number}
+          value={formData.phone_number as string}
           onChange={(value) => onChange("phone_number", value)}
-          defaultCountryCode={formData.country || "RU"}
+          defaultCountryCode={(formData.country as string) || "RU"}
         />
 
         <div className="space-y-2">
@@ -52,7 +52,7 @@ export function ProfileSection({ formData, onChange }: ProfileSectionProps) {
           <Input
             id="status"
             placeholder="Соревнуюсь с 2021 года"
-            value={formData.status}
+            value={(formData.status as string) || ""}
             onChange={(e) => onChange("status", e.target.value)}
           />
         </div>

@@ -133,6 +133,15 @@ export interface SocialLinksData {
     vk_url?: string;
 }
 
+export interface SocialLinks {
+    discord?: string;
+    twitch?: string;
+    youtube?: string;
+    tiktok?: string;
+    tracker_gg?: string;
+    twitter?: string;
+}
+
 export interface BracketMatch extends Match {
     match_number: number;
     bracket_type: string;

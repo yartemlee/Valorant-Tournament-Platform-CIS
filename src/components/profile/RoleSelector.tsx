@@ -51,7 +51,7 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
         .from("player_agents")
         .select("*")
         .eq("user_id", userId);
-      setAgents(data || []);
+      setAgents((data as unknown as PlayerAgent[]) || []);
 
       // Load API agents
       const fetchedAgents = await valorantApi.getAgents();

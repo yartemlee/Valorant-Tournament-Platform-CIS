@@ -4,8 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Crown, Shield as ShieldIcon, CheckCircle2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { Profile, TeamMember } from "@/types/common.types";
+
+interface TeamMemberWithProfile extends TeamMember {
+  profiles: Profile | null;
+}
+
 interface TeamRosterSectionProps {
-  members: unknown[];
+  members: TeamMemberWithProfile[];
   memberCount: number;
 }
 
@@ -41,7 +47,7 @@ export function TeamRosterSection({ members, memberCount }: TeamRosterSectionPro
                 {/* Инфо */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                <p className="font-semibold truncate">
+                    <p className="font-semibold truncate">
                       {member.profiles?.username || "Игрок"}
                     </p>
                     {/* Индикатор Riot ID */}
@@ -55,7 +61,6 @@ export function TeamRosterSection({ members, memberCount }: TeamRosterSectionPro
                   {member.profiles?.riot_id && (
                     <p className="text-sm text-muted-foreground truncate">
                       {member.profiles.riot_id}
-                      {member.profiles.riot_tag && `#${member.profiles.riot_tag}`}
                     </p>
                   )}
 
@@ -71,8 +76,8 @@ export function TeamRosterSection({ members, memberCount }: TeamRosterSectionPro
                     member.role === "captain"
                       ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-400 border-yellow-500/30"
                       : member.role === "coach"
-                      ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30"
-                      : ""
+                        ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border-blue-500/30"
+                        : ""
                   }
                 >
                   {member.role === "captain" ? (

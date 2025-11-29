@@ -1,5 +1,5 @@
-import { Profile } from '@/types/common.types';
-import { SiDiscord, SiTwitch, SiYoutube, SiTiktok, SiInstagram, SiX } from "react-icons/si";
+import { Profile, SocialLinks } from '@/types/common.types';
+import { SiDiscord, SiTwitch, SiYoutube, SiTiktok, SiInstagram, SiX, SiValorant } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 
 interface SocialLinksProps {
@@ -16,27 +16,27 @@ export function SocialLinks({ profile }: SocialLinksProps) {
   }[] = [
       {
         name: "Discord",
-        username: profile.social_links?.discord,
+        username: (profile.social_links as unknown as SocialLinks)?.discord,
         icon: SiDiscord,
-        url: profile.social_links?.discord ? `https://discord.com/users/${profile.social_links.discord}` : null
+        url: (profile.social_links as unknown as SocialLinks)?.discord ? `https://discord.com/users/${(profile.social_links as unknown as SocialLinks).discord}` : null
       },
       {
         name: "Twitch",
-        username: profile.social_links?.twitch,
+        username: (profile.social_links as unknown as SocialLinks)?.twitch,
         icon: SiTwitch,
-        url: profile.social_links?.twitch ? `https://twitch.tv/${profile.social_links.twitch}` : null
+        url: (profile.social_links as unknown as SocialLinks)?.twitch ? `https://twitch.tv/${(profile.social_links as unknown as SocialLinks).twitch}` : null
       },
       {
         name: "YouTube",
-        username: profile.social_links?.youtube,
+        username: (profile.social_links as unknown as SocialLinks)?.youtube,
         icon: SiYoutube,
-        url: profile.social_links?.youtube ? `https://youtube.com/${profile.social_links.youtube}` : null
+        url: (profile.social_links as unknown as SocialLinks)?.youtube ? `https://youtube.com/@${(profile.social_links as unknown as SocialLinks).youtube}` : null
       },
       {
         name: "TikTok",
-        username: profile.social_links?.tiktok,
+        username: (profile.social_links as unknown as SocialLinks)?.tiktok,
         icon: SiTiktok,
-        url: profile.social_links?.tiktok ? `https://tiktok.com/${profile.social_links.tiktok}` : null
+        url: (profile.social_links as unknown as SocialLinks)?.tiktok ? `https://tiktok.com/@${(profile.social_links as unknown as SocialLinks).tiktok}` : null
       },
       {
         name: "Instagram",
@@ -46,9 +46,9 @@ export function SocialLinks({ profile }: SocialLinksProps) {
       },
       {
         name: "Twitter",
-        username: profile.social_links?.twitter,
+        username: (profile.social_links as unknown as SocialLinks)?.twitter,
         icon: SiX,
-        url: profile.social_links?.twitter ? `https://twitter.com/${profile.social_links.twitter}` : null
+        url: (profile.social_links as unknown as SocialLinks)?.twitter ? `https://twitter.com/${(profile.social_links as unknown as SocialLinks).twitter}` : null
       },
     ];
 
@@ -61,8 +61,8 @@ export function SocialLinks({ profile }: SocialLinksProps) {
       socials.push({
         name: "Tracker.gg",
         username: `${riotIdName}#${riotIdTag}`,
-        icon: null,
-        url: `https://tracker.gg/valorant/profile/riot/${riotIdName}%23${riotIdTag}`,
+        icon: SiValorant,
+        url: `https://tracker.gg/valorant/profile/riot/${riotIdName}%23${riotIdTag}/overview`,
         text: "TRN"
       });
     }

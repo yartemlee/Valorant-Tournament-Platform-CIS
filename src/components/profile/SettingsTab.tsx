@@ -1,4 +1,4 @@
-import { Profile , PlayerRole, PlayerAgent} from '@/types/common.types';
+import { Profile, SocialLinks } from '@/types/common.types';
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -35,14 +35,14 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
     riot_tag: (profile.riot_id || "").split("#")[1] || "",
     riot_id_name: profile.riot_id_name || (profile.riot_id || "").split("#")[0],
     riot_id_tag: profile.riot_id_tag || (profile.riot_id || "").split("#")[1] || "",
-    about_me: profile.bio || profile.about_me || "",
-    discord_username: profile.social_links?.discord || "",
-    twitch_username: profile.social_links?.twitch || "",
-    youtube_username: profile.social_links?.youtube || "",
-    tiktok_username: profile.social_links?.tiktok || "",
-    tracker_gg_username: profile.social_links?.tracker_gg || "",
+    about_me: profile.bio || "",
+    discord_username: (profile.social_links as unknown as SocialLinks)?.discord || "",
+    twitch_username: (profile.social_links as unknown as SocialLinks)?.twitch || "",
+    youtube_username: (profile.social_links as unknown as SocialLinks)?.youtube || "",
+    tiktok_username: (profile.social_links as unknown as SocialLinks)?.tiktok || "",
+    tracker_gg_username: (profile.social_links as unknown as SocialLinks)?.tracker_gg || "",
     instagram_username: profile.instagram_username || "",
-    twitter_username: profile.social_links?.twitter || "",
+    twitter_username: (profile.social_links as unknown as SocialLinks)?.twitter || "",
     show_statistics: profile.show_statistics ?? true,
     show_country: profile.show_country ?? true,
     show_social_links: profile.show_social_links ?? true,

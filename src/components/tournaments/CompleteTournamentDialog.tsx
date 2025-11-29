@@ -176,7 +176,8 @@ export function CompleteTournamentDialog({
       }
 
       // Сохраняем результаты турнира
-      await supabase.from("tournament_results").insert([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await supabase.from("tournament_results" as any).insert([
         {
           tournament_id: tournamentId,
           first_place_team_ids: firstPlace ? [firstPlace] : [],

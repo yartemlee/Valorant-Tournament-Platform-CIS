@@ -52,7 +52,7 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
           .single();
 
         if (error) throw error;
-        onUpdate([...agents, data]);
+        onUpdate([...agents, data as unknown as PlayerAgent]);
         toast.success(`Агент ${agentName} добавлен`);
       } else {
         const agentData = agents.find(a => a.agent_name === agentName);

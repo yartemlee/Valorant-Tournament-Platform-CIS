@@ -60,7 +60,7 @@ export function RiotIDSection({ formData, onChange }: RiotIDSectionProps) {
               <Label htmlFor="riot_id">Riot ID</Label>
               <Input
                 id="riot_id"
-                value={formData.riot_id || ""}
+                value={(formData.riot_id as string) || ""}
                 onChange={(e) => handleRiotIdChange("riot_id", e.target.value)}
                 placeholder="YourName"
               />
@@ -70,7 +70,7 @@ export function RiotIDSection({ formData, onChange }: RiotIDSectionProps) {
               <Input
                 id="riot_tag"
                 placeholder="0000"
-                value={formData.riot_tag || ""}
+                value={(formData.riot_tag as string) || ""}
                 onChange={(e) => handleRiotIdChange("riot_tag", e.target.value)}
                 maxLength={5}
               />

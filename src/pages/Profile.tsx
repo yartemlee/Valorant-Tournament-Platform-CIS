@@ -1,4 +1,4 @@
-import { Profile, Tournament, Match } from '@/types/common.types';
+import { Profile as ProfileType, Tournament, Match } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -17,7 +17,7 @@ export default function Profile() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
 
