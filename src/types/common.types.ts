@@ -77,12 +77,15 @@ export function getErrorMessage(error: unknown): string {
 }
 
 // Player agents type
+import type { AgentProficiencyLevel, RoleProficiencyLevel } from '@/constants/proficiency';
+
 export interface PlayerAgent {
     id: string;
     user_id: string;
     agent_name: string;
-    skill_level: 'not_played' | 'beginner' | 'intermediate' | 'advanced' | 'expert';
+    skill_level: AgentProficiencyLevel;
     created_at: string;
+    updated_at?: string;
 }
 
 // Player roles type
@@ -90,8 +93,9 @@ export interface PlayerRole {
     id: string;
     user_id: string;
     role: 'duelist' | 'initiator' | 'controller' | 'sentinel';
-    comfort_level: string;
+    comfort_level: RoleProficiencyLevel;
     created_at: string;
+    updated_at?: string;
 }
 
 // Achievement types
