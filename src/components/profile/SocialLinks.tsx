@@ -4,9 +4,16 @@ import { Button } from "@/components/ui/button";
 
 interface SocialLinksProps {
   profile: Profile;
+  isTeamMember?: boolean;
+  isOwnProfile?: boolean;
 }
 
-export function SocialLinks({ profile }: SocialLinksProps) {
+export function SocialLinks({ profile, isTeamMember, isOwnProfile }: SocialLinksProps) {
+  // If socials are team only, hide if not team member and not owner
+  if (profile.socials_team_only && !isTeamMember && !isOwnProfile) {
+    return null;
+  }
+
   const socials: {
     name: string;
     username: string | null | undefined;
@@ -52,21 +59,7 @@ export function SocialLinks({ profile }: SocialLinksProps) {
       },
     ];
 
-  // Add Tracker.gg if enabled and Riot ID is present
-  if (profile.show_tracker && (profile.riot_id_name || profile.riot_id)) {
-    const riotIdName = profile.riot_id_name || profile.riot_id?.split('#')[0];
-    const riotIdTag = profile.riot_id_tag || profile.riot_id?.split('#')[1];
 
-    if (riotIdName && riotIdTag) {
-      socials.push({
-        name: "Tracker.gg",
-        username: `${riotIdName}#${riotIdTag}`,
-        icon: SiValorant,
-        url: `https://tracker.gg/valorant/profile/riot/${riotIdName}%23${riotIdTag}/overview`,
-        text: "TRN"
-      });
-    }
-  }
 
   const activeSocials = socials.filter(s => s.username);
 

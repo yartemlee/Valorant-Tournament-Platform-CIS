@@ -72,19 +72,27 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
 
       {/* Right Side - Roles & Agents (30% width) */}
       <div className="w-[30%] flex-shrink-0">
-        <Card className="sticky top-6">
-          <CardHeader>
-            <CardTitle>Игровые роли и агенты</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RoleSelector
-              userId={profile.id}
-              roles={roles}
-              onUpdate={setRoles}
-              isEditable={isOwnProfile}
-            />
-          </CardContent>
-        </Card>
+        {(profile.show_roles || isOwnProfile) ? (
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle>Игровые роли и агенты</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RoleSelector
+                userId={profile.id}
+                roles={roles}
+                onUpdate={setRoles}
+                isEditable={isOwnProfile}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="sticky top-6">
+            <CardContent className="p-6 text-center text-muted-foreground">
+              <p>Пользователь скрыл игровые роли</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

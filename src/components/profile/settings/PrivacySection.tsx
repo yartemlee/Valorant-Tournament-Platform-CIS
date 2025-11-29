@@ -10,9 +10,9 @@ interface PrivacySectionProps {
 
 export function PrivacySection({ formData, onChange }: PrivacySectionProps) {
   const privacySettings = [
-    { field: "show_statistics", label: "Показывать статистику", desc: "Другие пользователи смогут видеть вашу статистику" },
-    { field: "show_country", label: "Показывать страну", desc: "Страна будет видна в профиле" },
-    { field: "show_social_links", label: "Показывать социальные сети", desc: "Ссылки на соцсети будут видны другим" },
+    { field: "show_roles", label: "Показывать игровые роли", desc: "Блок с ролями и агентами будет виден в профиле" },
+    { field: "allow_invites", label: "Разрешить приглашения", desc: "Разрешить приглашать вас в команды" },
+    { field: "socials_team_only", label: "Соцсети только для команды", desc: "Ваши социальные сети будут видеть только участники вашей команды" },
   ];
 
   return (

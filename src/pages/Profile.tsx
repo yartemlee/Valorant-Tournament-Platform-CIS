@@ -1,6 +1,6 @@
 import { Profile as ProfileType, Tournament, Match } from '@/types/common.types';
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Sidebar from "@/components/Sidebar";
@@ -16,10 +16,13 @@ import { User } from "@supabase/supabase-js";
 export default function Profile() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [currentUserTeamId, setCurrentUserTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -42,9 +45,16 @@ export default function Profile() {
         }
 
         if (!targetUserId) {
+          // If no user and no username, redirect to login
+          if (!user) {
+            navigate("/login");
+            return;
+          }
           toast.error("Профиль не найден");
           return;
         }
+
+        setIsOwnProfile(user?.id === targetUserId);
 
         // Load profile data
         const { data: profileData, error } = await supabase
@@ -55,7 +65,27 @@ export default function Profile() {
 
         if (error) throw error;
         setProfile(profileData);
+
+        // If viewing someone else's profile, check if we are in the same team
+        if (user && user.id !== targetUserId && profileData.current_team_id) {
+          const { data: currentUserProfile } = await supabase
+            .from("profiles")
+            .select("current_team_id")
+            .eq("id", user.id)
+            .single();
+
+          if (currentUserProfile) {
+            console.log("Checking team membership:", {
+              currentUserTeam: currentUserProfile.current_team_id,
+              targetUserTeam: profileData.current_team_id,
+              match: currentUserProfile.current_team_id === profileData.current_team_id
+            });
+            setCurrentUserTeamId(currentUserProfile.current_team_id);
+          }
+        }
+
       } catch (error) {
+        console.error("Error loading profile:", error);
         toast.error("Ошибка загрузки профиля");
       } finally {
         setLoading(false);
@@ -63,7 +93,7 @@ export default function Profile() {
     };
 
     loadProfile();
-  }, [username]);
+  }, [username, navigate]);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -71,8 +101,6 @@ export default function Profile() {
       setActiveTab(tab);
     }
   }, [searchParams]);
-
-  const isOwnProfile = currentUser?.id === profile?.id;
 
   if (loading) {
     return (
@@ -113,6 +141,7 @@ export default function Profile() {
             <ProfileHeader
               profile={profile}
               isOwnProfile={isOwnProfile}
+              isTeamMember={currentUserTeamId === profile.current_team_id && !!profile.current_team_id}
               onProfileUpdate={setProfile}
             />
 

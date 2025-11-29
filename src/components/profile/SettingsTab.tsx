@@ -43,10 +43,9 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
     tracker_gg_username: (profile.social_links as unknown as SocialLinks)?.tracker_gg || "",
     instagram_username: profile.instagram_username || "",
     twitter_username: (profile.social_links as unknown as SocialLinks)?.twitter || "",
-    show_statistics: profile.show_statistics ?? true,
-    show_country: profile.show_country ?? true,
-    show_social_links: profile.show_social_links ?? true,
-    show_tracker: profile.show_tracker ?? false,
+    show_roles: profile.show_roles ?? true,
+    allow_invites: profile.allow_invites ?? true,
+    socials_team_only: profile.socials_team_only ?? false,
     email_notifications: profile.email_notifications ?? true,
     discord_notifications: profile.discord_notifications ?? false,
   });
@@ -68,7 +67,6 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
         instagram_username: formData.instagram_username,
         riot_id_name: formData.riot_id, // We use the form field 'riot_id' for name
         riot_id_tag: formData.riot_tag,
-        show_tracker: formData.show_tracker,
         social_links: {
           discord: formData.discord_username,
           twitch: formData.twitch_username,
@@ -77,9 +75,9 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
           tracker_gg: formData.tracker_gg_username,
           twitter: formData.twitter_username,
         },
-        show_statistics: formData.show_statistics,
-        show_country: formData.show_country,
-        show_social_links: formData.show_social_links,
+        show_roles: formData.show_roles,
+        allow_invites: formData.allow_invites,
+        socials_team_only: formData.socials_team_only,
         email_notifications: formData.email_notifications,
         discord_notifications: formData.discord_notifications,
         updated_at: new Date().toISOString(),
@@ -87,10 +85,10 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
 
       // Only update riot_id if both fields are present or if clearing
       if (formData.riot_id && formData.riot_tag) {
-        updates.riot_id = `${formData.riot_id}#${formData.riot_tag}`;
+        (updates as any).riot_id = `${formData.riot_id}#${formData.riot_tag}`;
       } else if (formData.riot_id) {
         // Fallback if only ID is provided
-        updates.riot_id = formData.riot_id;
+        (updates as any).riot_id = formData.riot_id;
       }
 
       const { data, error } = await supabase

@@ -12,10 +12,11 @@ import { CountryFlag } from "@/components/CountryFlag";
 interface ProfileHeaderProps {
   profile: Profile;
   isOwnProfile: boolean;
+  isTeamMember?: boolean;
   onProfileUpdate: (profile: Profile) => void;
 }
 
-export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isOwnProfile, isTeamMember, onProfileUpdate }: ProfileHeaderProps) {
   const [uploading, setUploading] = useState(false);
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,7 +105,11 @@ export function ProfileHeader({ profile, isOwnProfile, onProfileUpdate }: Profil
 
         {/* Social Links and Actions */}
         <div className="flex flex-col gap-3 items-start lg:items-end">
-          <SocialLinks profile={profile} />
+          <SocialLinks
+            profile={profile}
+            isTeamMember={isTeamMember}
+            isOwnProfile={isOwnProfile}
+          />
 
           {!isOwnProfile && (
             <Button variant="default" size="sm">

@@ -60,6 +60,18 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
         return;
       }
 
+      // Check if user allows invites
+      const { data: targetProfile } = await supabase
+        .from("profiles")
+        .select("allow_invites")
+        .eq("id", playerId)
+        .single();
+
+      if (targetProfile && targetProfile.allow_invites === false) {
+        toast.error("Этот игрок запретил приглашения в команды");
+        return;
+      }
+
       // Отменяем все старые приглашения перед созданием нового
       await supabase
         .from("team_invitations")

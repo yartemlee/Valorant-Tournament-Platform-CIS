@@ -69,7 +69,25 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
     };
 
     loadData();
+    loadData();
   }, [userId]);
+
+  // Sync local state with props when roles change
+  useEffect(() => {
+    const newComfortLevels: Record<string, number> = {};
+
+    Object.keys(roleNames).forEach(roleKey => {
+      const roleData = roles.find(r => r.role === roleKey);
+      if (roleData) {
+        const index = roleProficiencyLevels.findIndex(l => l.value === roleData.comfort_level);
+        newComfortLevels[roleKey] = index !== -1 ? index : 0;
+      } else {
+        newComfortLevels[roleKey] = 0;
+      }
+    });
+
+    setLocalComfortLevels(newComfortLevels);
+  }, [roles]);
 
   const getRoleComfort = (role: string) => {
     const roleData = roles.find(r => r.role === role);
