@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <div>
             <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-4">
-              VTP CIS
+              ValoHub
             </div>
             <p className="text-muted-foreground text-sm">
               Платформа для проведения любительских и полупрофессиональных турниров по Valorant в СНГ.
@@ -64,26 +64,26 @@ const Footer = () => {
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            © 2025 Valorant Tournament Platform CIS. All rights reserved.
+            © 2025 ValoHub. All rights reserved.
           </div>
 
           <div className="flex items-center gap-4">
-            <a 
-              href="#" 
+            <a
+              href="#"
               className="text-muted-foreground hover:text-accent transition-colors"
               aria-label="Discord"
             >
               <MessageCircle className="h-5 w-5" />
             </a>
-            <a 
-              href="#" 
+            <a
+              href="#"
               className="text-muted-foreground hover:text-accent transition-colors"
               aria-label="Twitch"
             >
               <Twitch className="h-5 w-5" />
             </a>
-            <a 
-              href="#" 
+            <a
+              href="#"
               className="text-muted-foreground hover:text-accent transition-colors"
               aria-label="YouTube"
             >

@@ -19,6 +19,11 @@ import CreateTeam from "./pages/CreateTeam";
 import TeamDetails from "./pages/TeamDetails";
 import TeamManage from "./pages/TeamManage";
 import NotFound from "./pages/NotFound";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminTeams from "./pages/admin/AdminTeams";
+import AdminTournaments from "./pages/admin/AdminTournaments";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,12 +43,12 @@ const App = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         const currentUserId = session?.user?.id || null;
-        
+
         // Сброс кэша при смене пользователя (вход или выход)
         if (previousUserId !== currentUserId) {
           queryClient.clear();
         }
-        
+
         previousUserId = currentUserId;
       }
     );
@@ -79,6 +84,14 @@ const App = () => {
               <Route path="/teams/create" element={<CreateTeam />} />
               <Route path="/teams/:id" element={<TeamDetails />} />
               <Route path="/teams/:id/manage" element={<TeamManage />} />
+
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="teams" element={<AdminTeams />} />
+                <Route path="tournaments" element={<AdminTournaments />} />
+              </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

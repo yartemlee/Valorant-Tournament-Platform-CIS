@@ -1,5 +1,6 @@
 import { Profile, Tournament, Match, ParticipantWithTeam } from '@/types/common.types';
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/Sidebar";
@@ -35,6 +36,22 @@ const TournamentDetails = () => {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [startDialogOpen, setStartDialogOpen] = useState(false);
+
+  // Check if user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user?.id,
+  });
 
 
   useEffect(() => {
@@ -274,7 +291,9 @@ const TournamentDetails = () => {
 
   if (!tournament) return null;
 
-  const isOwner = user?.id === tournament.organizer_id;
+
+
+  const isOwner = user?.id === tournament.organizer_id || isAdmin;
 
   const statusColors = {
     draft: "bg-muted text-muted-foreground",
