@@ -280,7 +280,6 @@ const TeamDetails = () => {
               userProfile={profile}
               onApply={handleApply}
               onManage={() => setManageDialogOpen(true)}
-              onPhantomUpdate={() => queryClient.invalidateQueries({ queryKey: ["team", id] })}
             />
 
             {/* Сетка из 3 блоков */}

@@ -47,10 +47,6 @@ export function TeamStatsSection({ teamId }: TeamStatsSectionProps) {
           <div className="space-y-6">
             {/* Медали команды */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                <Medal className="h-4 w-4" />
-                Медали команды
-              </h3>
               <div className="grid grid-cols-3 gap-3">
                 {/* Золотые медали */}
                 <div className="text-center p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border border-yellow-500/20">
@@ -72,21 +68,6 @@ export function TeamStatsSection({ teamId }: TeamStatsSectionProps) {
                   <p className="text-3xl font-bold text-orange-600">{team?.medals_bronze || 0}</p>
                   <p className="text-xs text-muted-foreground mt-1">Бронза</p>
                 </div>
-              </div>
-            </div>
-
-            {/* Основные метрики */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 rounded-lg bg-secondary/50 border border-border">
-                <Trophy className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-yellow-400">{stats.wins}</p>
-                <p className="text-xs text-muted-foreground">Побед (🥇)</p>
-              </div>
-
-              <div className="text-center p-4 rounded-lg bg-secondary/50 border border-border">
-                <Award className="h-6 w-6 text-orange-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-orange-400">{stats.podiums}</p>
-                <p className="text-xs text-muted-foreground">Подиумов (Top-3)</p>
               </div>
             </div>
 

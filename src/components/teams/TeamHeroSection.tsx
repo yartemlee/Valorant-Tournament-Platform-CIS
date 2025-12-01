@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Settings, UserPlus, Users, Calendar } from "lucide-react";
 import { LeaveTeamButton } from "./LeaveTeamButton";
-import { PhantomPlayersControls } from "./PhantomPlayersControls";
 
 interface TeamHeroSectionProps {
   team: TeamWithMembers;
@@ -18,7 +17,6 @@ interface TeamHeroSectionProps {
   userProfile?: unknown;
   onApply: () => void;
   onManage: () => void;
-  onPhantomUpdate?: () => void;
 }
 
 export function TeamHeroSection({
@@ -34,7 +32,6 @@ export function TeamHeroSection({
   userProfile,
   onApply,
   onManage,
-  onPhantomUpdate,
 }: TeamHeroSectionProps) {
   const isFull = memberCount >= 10;
 
@@ -42,7 +39,7 @@ export function TeamHeroSection({
     <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-background via-background to-primary/5 p-8">
       {/* Неоновый эффект */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-50" />
-      
+
       <div className="relative flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
         {/* Левая часть: лого + инфо */}
         <div className="flex gap-6 items-start">
@@ -92,7 +89,7 @@ export function TeamHeroSection({
 
               <Badge variant="outline" className="border-muted">
                 <Calendar className="h-3 w-3 mr-1" />
-                {new Date(team.created_at).toLocaleDateString('ru-RU', { 
+                {new Date(team.created_at).toLocaleDateString('ru-RU', {
                   day: 'numeric',
                   month: 'long',
                   year: 'numeric'
@@ -120,9 +117,9 @@ export function TeamHeroSection({
           )}
 
           {!isCaptain && isMember && currentUserId && (
-            <LeaveTeamButton 
-              teamId={team.id} 
-              userId={currentUserId} 
+            <LeaveTeamButton
+              teamId={team.id}
+              userId={currentUserId}
               isCaptain={!!isCaptain}
             />
           )}
@@ -133,7 +130,7 @@ export function TeamHeroSection({
               {isApplying ? "Отправка..." : "Подать заявку"}
             </Button>
           )}
-          
+
           {!canApply && !isMember && userProfile?.current_team_id && (
             <p className="text-xs text-muted-foreground text-center leading-relaxed px-2">
               Вы уже состоите в команде. Чтобы вступить в другую — сначала покиньте текущую.
@@ -141,19 +138,7 @@ export function TeamHeroSection({
           )}
         </div>
       </div>
-      
-      {/* Phantom Players Controls for Captain */}
-      {isCaptain && onPhantomUpdate && (
-        <div className="mt-6 pt-6 border-t border-border relative z-10">
-          <p className="text-sm text-muted-foreground mb-3">
-            Инструменты для тестирования состава
-          </p>
-          <PhantomPlayersControls 
-            teamId={team.id} 
-            onUpdate={onPhantomUpdate}
-          />
-        </div>
-      )}
+
     </div>
   );
 }

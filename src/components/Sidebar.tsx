@@ -143,7 +143,7 @@ const Sidebar = () => {
         <div className="p-6 border-t border-border">
           <div className="flex gap-4 justify-center">
             <a
-              href="https://discord.gg"
+              href="https://discord.gg/TB4YnDB2"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-accent transition-colors"
