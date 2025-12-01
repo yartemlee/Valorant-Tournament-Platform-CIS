@@ -48,7 +48,7 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
         {/* Ranks Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Ранги</CardTitle>
+            <CardTitle>Ранги(В разработке)</CardTitle>
           </CardHeader>
           <CardContent>
             <RankDisplay

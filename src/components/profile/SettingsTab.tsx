@@ -46,6 +46,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
     show_roles: profile.show_roles ?? true,
     allow_invites: profile.allow_invites ?? true,
     socials_team_only: profile.socials_team_only ?? false,
+    show_tracker: profile.show_tracker ?? false,
     email_notifications: profile.email_notifications ?? true,
     discord_notifications: profile.discord_notifications ?? false,
   });
@@ -78,6 +79,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
         show_roles: formData.show_roles,
         allow_invites: formData.allow_invites,
         socials_team_only: formData.socials_team_only,
+        show_tracker: formData.show_tracker,
         email_notifications: formData.email_notifications,
         discord_notifications: formData.discord_notifications,
         updated_at: new Date().toISOString(),
