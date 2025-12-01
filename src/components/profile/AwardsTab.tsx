@@ -20,13 +20,13 @@ export function AwardsTab({ userId }: AwardsTabProps) {
     const loadAchievements = async () => {
       try {
         const { data, error } = await supabase
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .from("user_achievements" as any)
+          .from("user_achievements")
           .select(`
             *,
             achievement:achievements(*)
           `)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .returns<UserAchievement[]>();
 
         if (error) throw error;
         setAchievements(data || []);

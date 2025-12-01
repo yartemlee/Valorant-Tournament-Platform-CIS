@@ -99,23 +99,12 @@ export interface PlayerRole {
 }
 
 // Achievement types
-export interface Achievement {
-    id: string;
-    name: string;
-    description: string;
-    category: string;
-    icon_url?: string;
-    created_at: string;
-}
+// Achievement types
+export type Achievement = Database['public']['Tables']['achievements']['Row'];
 
-export interface UserAchievement {
-    id: string;
-    user_id: string;
-    achievement_id: string;
-    earned_at: string;
-    tournament_name?: string;
-    achievement?: Achievement;
-}
+export type UserAchievement = Database['public']['Tables']['user_achievements']['Row'] & {
+    achievement: Achievement | null;
+};
 
 // Form data types for settings
 export interface ProfileFormData {
