@@ -112,7 +112,7 @@ const Login = () => {
           </div>
 
           {/* OAuth Buttons */}
-          <div className="space-y-3 mb-6">
+          {/* <div className="space-y-3 mb-6">
             <Button
               type="button"
               variant="outline"
@@ -142,7 +142,7 @@ const Login = () => {
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-card text-muted-foreground">или</span>
             </div>
-          </div>
+          </div> */}
 
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
