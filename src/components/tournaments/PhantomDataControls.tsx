@@ -9,27 +9,47 @@ import { fillTournamentWithPhantoms, cleanupTournamentPhantoms } from "@/lib/pha
 interface PhantomDataControlsProps {
   tournamentId: string;
   onUpdate: () => void;
+  currentTeamsCount: number;
+  maxTeams: number | null;
 }
 
-export function PhantomDataControls({ tournamentId, onUpdate }: PhantomDataControlsProps) {
+export function PhantomDataControls({ tournamentId, onUpdate, currentTeamsCount, maxTeams }: PhantomDataControlsProps) {
   const [fillDialogOpen, setFillDialogOpen] = useState(false);
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>("auto");
 
   const handleFill = async () => {
+    // Проверка на переполнение
+    if (maxTeams && currentTeamsCount >= maxTeams) {
+      toast.error("Турнир уже заполнен", {
+        description: `Максимальное количество команд: ${maxTeams}`
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const size = selectedSize === "auto" ? undefined : parseInt(selectedSize);
+
+      // Дополнительная проверка для выбранного размера
+      if (size && maxTeams && (currentTeamsCount + size > maxTeams)) {
+        toast.error("Недостаточно мест", {
+          description: `Доступно мест: ${maxTeams - currentTeamsCount}, вы пытаетесь добавить: ${size}`
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const result = await fillTournamentWithPhantoms(tournamentId, size);
-      
+
       toast.success(
         `Турнир заполнен фантомными командами`,
         {
           description: `Создано команд: ${result.createdTeams}, игроков: ${result.createdUsers}`,
         }
       );
-      
+
       setFillDialogOpen(false);
       onUpdate();
     } catch (error) {
@@ -46,11 +66,11 @@ export function PhantomDataControls({ tournamentId, onUpdate }: PhantomDataContr
     setIsLoading(true);
     try {
       const result = await cleanupTournamentPhantoms(tournamentId);
-      
+
       toast.success("Фантомные данные турнира удалены", {
         description: `Удалено команд: ${result.removedTeams}, игроков: ${result.removedUsers}`,
       });
-      
+
       setCleanupDialogOpen(false);
       onUpdate();
     } catch (error) {

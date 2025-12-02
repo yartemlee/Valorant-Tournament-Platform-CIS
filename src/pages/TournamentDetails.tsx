@@ -43,7 +43,7 @@ const TournamentDetails = () => {
     queryFn: async () => {
       if (!user?.id) return false;
       const { data } = await supabase
-        .from("user_roles")
+        .from("user_roles" as any)
         .select("role")
         .eq("user_id", user.id)
         .eq("role", "admin")
@@ -58,6 +58,35 @@ const TournamentDetails = () => {
     checkAuth();
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Real-time subscription for tournament registrations
+  useEffect(() => {
+    if (!id) return;
+
+    // Subscribe to changes in tournament_registrations
+    const channel = supabase
+      .channel(`tournament_${id}_registrations`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `tournament_id=eq.${id}`
+        },
+        (payload) => {
+          console.log('Real-time update:', payload);
+          // Refetch participants when any change occurs
+          refetchParticipants();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   // Auto-join after data is loaded
@@ -75,23 +104,9 @@ const TournamentDetails = () => {
     setUser(user);
   };
 
-  const fetchData = async () => {
-    setLoading(true);
-
-    // Fetch tournament
-    const { data: tournamentData, error: tournamentError } = await supabase
-      .from("tournaments")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (tournamentError || !tournamentData) {
-      toast.error("Турнир не найден");
-      navigate("/tournaments");
-      return;
-    }
-
-    setTournament(tournamentData);
+  // Separate function to refetch participants for real-time updates
+  const refetchParticipants = async () => {
+    if (!id) return;
 
     // Fetch participants (registrations)
     const { data: participantsData } = await supabase
@@ -120,9 +135,46 @@ const TournamentDetails = () => {
         })
       );
       setParticipants(participantsWithTeams);
+
+      // Check if current user's team is participant
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: anyTeamMember } = await supabase
+          .from("team_members")
+          .select("team_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (anyTeamMember?.team_id) {
+          const isJoined = participantsData?.some((p) => p.team_id === anyTeamMember.team_id);
+          setIsParticipant(!!isJoined);
+        }
+      }
+    }
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+
+    // Fetch tournament
+    const { data: tournamentData, error: tournamentError } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (tournamentError || !tournamentData) {
+      toast.error("Турнир не найден");
+      navigate("/tournaments");
+      return;
     }
 
-    // Check if current user's team is participant and user role
+    setTournament(tournamentData);
+
+    // Fetch participants using the new function
+    await refetchParticipants();
+
+    // Check if current user is team leader
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       // Check if user is captain or coach
@@ -134,18 +186,6 @@ const TournamentDetails = () => {
         .maybeSingle();
 
       setIsTeamLeader(!!leaderRole);
-
-      // Check if user's team (any role) is registered
-      const { data: anyTeamMember } = await supabase
-        .from("team_members")
-        .select("team_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (anyTeamMember?.team_id) {
-        const isJoined = participantsData?.some((p) => p.team_id === anyTeamMember.team_id);
-        setIsParticipant(!!isJoined);
-      }
     }
 
     setLoading(false);
@@ -205,6 +245,14 @@ const TournamentDetails = () => {
 
     if (tournament?.status !== "registration") {
       toast.error("Регистрация закрыта");
+      return;
+    }
+
+    // Проверка на максимальное количество команд
+    if (tournament.max_teams && participants.length >= tournament.max_teams) {
+      toast.error("Турнир заполнен", {
+        description: `Максимальное количество команд: ${tournament.max_teams}`
+      });
       return;
     }
 
@@ -272,7 +320,7 @@ const TournamentDetails = () => {
     }
 
     toast.success("Команда снята с турнира");
-    fetchData();
+    // Realtime subscription will automatically update the participants list
   };
 
   if (loading) {
@@ -406,6 +454,8 @@ const TournamentDetails = () => {
                     <PhantomDataControls
                       tournamentId={id!}
                       onUpdate={fetchData}
+                      currentTeamsCount={participants.length}
+                      maxTeams={tournament.max_teams}
                     />
                   </div>
                 )}
@@ -516,8 +566,10 @@ const TournamentDetails = () => {
                       <TournamentBracket
                         tournamentId={tournament.id}
                         isOwner={isOwner}
+                        isAdmin={!!isAdmin}
                         bracketFormat={tournament.format}
                         participants={participants}
+                        tournamentStatus={tournament.status}
                       />
                     ) : (
                       <p className="text-center text-muted-foreground py-8">

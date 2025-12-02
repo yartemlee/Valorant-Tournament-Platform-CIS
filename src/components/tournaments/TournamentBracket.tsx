@@ -22,13 +22,20 @@ import { Shuffle, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { MatchCard } from "./MatchCard";
 import { MatchEditDialog } from "./MatchEditDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ============================================================================
 // ТИПЫ ДАННЫХ
 // ============================================================================
-
-
-
 
 /**
  * Пропсы компонента турнирной сетки
@@ -36,20 +43,23 @@ import { MatchEditDialog } from "./MatchEditDialog";
 interface TournamentBracketProps {
   tournamentId: string;          // ID турнира
   isOwner: boolean;              // Является ли пользователь владельцем турнира
+  isAdmin?: boolean;             // Является ли пользователь администратором платформы
   bracketFormat: string;         // single_elimination или double_elimination
   participants: ParticipantWithTeam[];           // Массив участников турнира
+  tournamentStatus: string;      // Статус турнира
 }
 
 // ============================================================================
 // ОСНОВНОЙ КОМПОНЕНТ
 // ============================================================================
 
-
 export function TournamentBracket({
   tournamentId,
   isOwner,
+  isAdmin,
   bracketFormat,
-  participants
+  participants,
+  tournamentStatus
 }: TournamentBracketProps) {
 
   // ============================================================================
@@ -59,6 +69,7 @@ export function TournamentBracket({
   const [matches, setMatches] = useState<BracketMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
   // ============================================================================
@@ -74,7 +85,7 @@ export function TournamentBracket({
    */
   const fetchMatches = useCallback(async () => {
     const { data, error } = await supabase
-      .from("tournament_matches")
+      .from("tournament_matches" as any)
       .select("*")
       .eq("tournament_id", tournamentId)
       .order("round_number", { ascending: true })
@@ -124,28 +135,31 @@ export function TournamentBracket({
 
   /**
    * Генерирует турнирную сетку на основе участников
-   * Вызывается только владельцем турнира
+   * Вызывается владельцем турнира или администратором
    */
   const generateBracket = async () => {
-    if (!isOwner) return;
+    if (!isOwner && !isAdmin) return;
+
+    // Запрещаем пересоздание сетки, если она уже есть (если не админ)
+    if (matches.length > 0 && !isAdmin) {
+      toast.error("Сетка уже создана и не может быть пересоздана");
+      return;
+    }
 
     setLoading(true);
     try {
-      // Удаляем старую сетку
-      await supabase
-        .from("tournament_matches")
-        .delete()
-        .eq("tournament_id", tournamentId);
+      // Случайная расстановка команд (Random Seeding)
+      const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
 
       // Вычисляем количество раундов на основе количества участников
       // Например, для 8 команд: log2(8) = 3 раунда
-      const numRounds = Math.ceil(Math.log2(participants.length));
+      const numRounds = Math.ceil(Math.log2(shuffledParticipants.length));
 
       // Генерируем сетку в зависимости от формата
       if (bracketFormat === "single_elimination") {
-        await generateSingleElimination(numRounds);
+        await generateSingleElimination(numRounds, shuffledParticipants);
       } else {
-        await generateDoubleElimination(numRounds);
+        await generateDoubleElimination(numRounds, shuffledParticipants);
       }
 
       // Помечаем турнир как имеющий сгенерированную сетку
@@ -165,6 +179,38 @@ export function TournamentBracket({
   };
 
   /**
+   * Пересоздает турнирную сетку (только для администраторов)
+   * Удаляет текущую сетку и создает новую без подтверждения
+   */
+  const recreateBracket = async () => {
+    if (!isAdmin) return;
+
+    setLoading(true);
+    try {
+      // 1. Удаляем существующие матчи
+      const { error: deleteError } = await supabase
+        .from("tournament_matches" as any)
+        .delete()
+        .eq("tournament_id", tournamentId);
+
+      if (deleteError) throw deleteError;
+
+      // 2. Очищаем локальное состояние
+      setMatches([]);
+
+      // 3. Генерируем новую сетку
+      // Вызываем generateBracket, который теперь сработает, так как matches.length === 0
+      // и у нас есть права админа
+      await generateBracket();
+
+    } catch (error) {
+      toast.error("Ошибка пересоздания сетки");
+      console.error("Ошибка пересоздания сетки:", error);
+      setLoading(false);
+    }
+  };
+
+  /**
    * Генерирует сетку одиночного выбывания
    * 
    * Структура:
@@ -174,8 +220,9 @@ export function TournamentBracket({
    * - Матч за 3-е место: между проигравшими в полуфинале
    * 
    * @param numRounds - Количество раундов
+   * @param participantsList - Список участников (уже перемешанный)
    */
-  async function generateSingleElimination(numRounds: number) {
+  async function generateSingleElimination(numRounds: number, participantsList: ParticipantWithTeam[]) {
     const matchesToCreate: Database['public']['Tables']['tournament_matches']['Insert'][] = [];
 
     // Количество матчей в первом раунде = половина участников
@@ -185,8 +232,8 @@ export function TournamentBracket({
     // ========== ПЕРВЫЙ РАУНД ==========
     // Распределяем участников по парам
     for (let i = 0; i < firstRoundMatches; i++) {
-      const participant1 = participants[i * 2];        // Участник 0, 2, 4, ...
-      const participant2 = participants[i * 2 + 1];    // Участник 1, 3, 5, ...
+      const participant1 = participantsList[i * 2];        // Участник 0, 2, 4, ...
+      const participant2 = participantsList[i * 2 + 1];    // Участник 1, 3, 5, ...
 
       matchesToCreate.push({
         tournament_id: tournamentId,
@@ -236,7 +283,7 @@ export function TournamentBracket({
     });
 
     // Сохраняем все матчи в базу данных
-    await supabase.from("tournament_matches").insert(matchesToCreate);
+    await supabase.from("tournament_matches" as any).insert(matchesToCreate);
   }
 
   /**
@@ -249,15 +296,16 @@ export function TournamentBracket({
    * - НЕТ отдельного матча за 3-е место (3-е место = проигравший LB Final)
    * 
    * @param numRounds - Количество раундов в верхней сетке
+   * @param participantsList - Список участников (уже перемешанный)
    */
-  async function generateDoubleElimination(numRounds: number) {
+  async function generateDoubleElimination(numRounds: number, participantsList: ParticipantWithTeam[]) {
     const matchesToCreate: Database['public']['Tables']['tournament_matches']['Insert'][] = [];
     const firstRoundMatches = Math.pow(2, numRounds - 1);
 
     // ========== ВЕРХНЯЯ СЕТКА - ПЕРВЫЙ РАУНД ==========
     for (let i = 0; i < firstRoundMatches; i++) {
-      const participant1 = participants[i * 2];
-      const participant2 = participants[i * 2 + 1];
+      const participant1 = participantsList[i * 2];
+      const participant2 = participantsList[i * 2 + 1];
 
       matchesToCreate.push({
         tournament_id: tournamentId,
@@ -347,7 +395,7 @@ export function TournamentBracket({
       best_of: 5,  // Гранд-финал всегда BO5
     });
 
-    await supabase.from("tournament_matches").insert(matchesToCreate);
+    await supabase.from("tournament_matches" as any).insert(matchesToCreate);
   }
 
   // ============================================================================
@@ -355,42 +403,16 @@ export function TournamentBracket({
   // ============================================================================
 
   /**
-   * Случайная расстановка команд в первом раунде
-   * Полезно для "жеребьёвки"
-   */
-  const shuffleParticipants = async () => {
-    if (!isOwner) return;
-
-    // Перемешиваем участников
-    const shuffled = [...participants].sort(() => Math.random() - 0.5);
-
-    // Находим все матчи первого раунда
-    const firstRoundMatches = matches.filter(
-      (m) => m.round_number === 1 && m.bracket_type === "upper"
-    );
-
-    // Обновляем команды в каждом матче
-    for (let i = 0; i < firstRoundMatches.length; i++) {
-      await supabase
-        .from("tournament_matches")
-        .update({
-          team1_id: shuffled[i * 2]?.team_id || null,
-          team2_id: shuffled[i * 2 + 1]?.team_id || null,
-        })
-        .eq("id", firstRoundMatches[i].id);
-    }
-
-    toast.success("Команды расставлены случайно");
-    fetchMatches();
-  };
-
-  /**
    * Открывает диалог редактирования матча
    */
   const handleEditMatch = useCallback((match: Match) => {
+    if (tournamentStatus !== 'active') {
+      toast.error("Редактирование сетки доступно только после начала турнира");
+      return;
+    }
     setSelectedMatch(match);
     setEditDialogOpen(true);
-  }, []);
+  }, [tournamentStatus]);
 
   // ============================================================================
   // ОБРАБОТКА ДАННЫХ ДЛЯ ОТОБРАЖЕНИЯ
@@ -508,7 +530,7 @@ export function TournamentBracket({
       <div className="text-center py-8 space-y-4">
         <p className="text-muted-foreground">Сетка ещё не создана</p>
         {isOwner && (
-          <Button onClick={generateBracket}>
+          <Button onClick={() => setConfirmDialogOpen(true)}>
             Создать сетку
           </Button>
         )}
@@ -519,19 +541,25 @@ export function TournamentBracket({
   // Основной интерфейс с турнирной сеткой
   return (
     <div className="space-y-6">
-      {/* Кнопки управления (только для владельца) */}
-      {isOwner && (
-        <div className="flex gap-3">
-          <Button onClick={shuffleParticipants} variant="outline">
-            <Shuffle className="h-4 w-4 mr-2" />
-            Расставить команды случайно
+      {/* Кнопки управления */}
+      <div className="flex gap-3">
+        {isOwner && matches.length === 0 && (
+          <Button onClick={() => setConfirmDialogOpen(true)}>
+            Создать сетку
           </Button>
-          <Button onClick={generateBracket} variant="outline">
+        )}
+
+        {isAdmin && matches.length > 0 && (
+          <Button
+            onClick={recreateBracket}
+            variant="destructive"
+            disabled={loading}
+          >
             <Zap className="h-4 w-4 mr-2" />
             Пересоздать сетку
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Верхняя сетка (или основная для single elimination) */}
       {renderBracketSection(
@@ -584,6 +612,34 @@ export function TournamentBracket({
         onOpenChange={setEditDialogOpen}
         onSuccess={fetchMatches}
       />
+
+      {/* Диалог подтверждения создания сетки */}
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Создать турнирную сетку?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Вы собираетесь создать турнирную сетку. После этого действия:
+              </p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Нельзя будет изменить лимит команд</li>
+                <li>Регистрация новых команд будет закрыта</li>
+                <li>Сетку нельзя будет пересоздать</li>
+              </ul>
+              <p className="font-medium text-destructive mt-2">
+                Это действие необратимо.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={generateBracket}>
+              Создать сетку
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
