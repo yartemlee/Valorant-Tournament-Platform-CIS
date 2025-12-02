@@ -18,6 +18,7 @@ interface CreateTournamentDialogProps {
 export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: CreateTournamentDialogProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [userCoins, setUserCoins] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -26,8 +27,33 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
     prize_pool: "",
     max_teams: 16,
     rules: "",
-    banner_url: "",
   });
+
+  // Fetch user coins when dialog opens
+  const fetchUserCoins = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('coins')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        setUserCoins(data.coins);
+      }
+    }
+  };
+
+  // Fetch coins when dialog opens
+  if (open && userCoins === null) {
+    fetchUserCoins();
+  }
+
+  const prizePoolAmount = parseInt(formData.prize_pool) || 0;
+  const commission = 1;
+  const totalCost = prizePoolAmount + commission;
+  const canAfford = userCoins !== null && userCoins >= totalCost;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,40 +79,51 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
 
     // Check if date is in the past
     const selectedDate = new Date(formData.start_time);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    
-    if (selectedDate < tomorrow) {
+    const now = new Date();
+
+    if (selectedDate < now) {
       toast.error("Дата начала турнира должна быть в будущем");
+      return;
+    }
+
+    if (!canAfford) {
+      toast.error("Недостаточно средств для создания турнира");
       return;
     }
 
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("tournaments")
-      .insert([
-        {
-          ...formData,
-          organizer_id: user.id,
-          status: "registration",
-        },
-      ])
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('create_tournament_with_payment', {
+      p_title: formData.title,
+      p_description: formData.description,
+      p_format: formData.format as any,
+      p_start_time: formData.start_time,
+      p_prize_pool: formData.prize_pool, // Pass as string, RPC handles parsing
+      p_max_teams: formData.max_teams,
+      p_rules: formData.rules,
+
+    });
 
     setLoading(false);
 
     if (error) {
-      toast.error("Ошибка создания турнира");
+      toast.error("Ошибка создания турнира: " + error.message);
       console.error(error);
       return;
     }
 
-    toast.success("Турнир создан");
+    toast.success(`Турнир создан! Списано ${totalCost} VP`);
     onSuccess?.();
-    navigate(`/tournaments/${data.id}`);
+    // RPC returns the new tournament ID in the response
+    // The response structure from RPC is JSONB, so we might need to cast or access carefully
+    // Based on our RPC: RETURN jsonb_build_object('id', v_tournament_id, ...)
+    const newTournamentId = (data as any)?.id;
+    if (newTournamentId) {
+      navigate(`/tournaments/${newTournamentId}`);
+    } else {
+      // Fallback if ID not found (shouldn't happen if RPC works)
+      navigate('/tournaments');
+    }
   };
 
   return (
@@ -151,24 +188,28 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
                 type="datetime-local"
                 value={formData.start_time}
                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16)}
+                min={new Date().toISOString().slice(0, 16)}
                 required
+                className="[color-scheme:dark] w-full block"
               />
-              <p className="text-xs text-muted-foreground">
-                Минимум: завтра
-              </p>
+
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="prize_pool">Призовой фонд</Label>
+              <Label htmlFor="prize_pool">Призовой фонд (VP)</Label>
               <Input
                 id="prize_pool"
+                type="number"
+                min="0"
                 value={formData.prize_pool}
                 onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })}
-                placeholder="Например: $500"
+                placeholder="0"
               />
+              <p className="text-xs text-muted-foreground">
+                Комиссия платформы: 1 VP
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -184,6 +225,33 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
             </div>
           </div>
 
+          {/* Cost Summary */}
+          <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Ваш баланс:</span>
+              <span className="font-medium">{userCoins !== null ? `${userCoins} VP` : 'Загрузка...'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Призовой фонд:</span>
+              <span>{prizePoolAmount} VP</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Комиссия:</span>
+              <span>{commission} VP</span>
+            </div>
+            <div className="border-t pt-2 flex justify-between font-bold">
+              <span>Итого к списанию:</span>
+              <span className={canAfford ? "text-primary" : "text-destructive"}>
+                {totalCost} VP
+              </span>
+            </div>
+            {!canAfford && userCoins !== null && (
+              <p className="text-xs text-destructive font-medium text-center pt-1">
+                Недостаточно средств на балансе
+              </p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="rules">Правила турнира</Label>
             <Textarea
@@ -195,23 +263,14 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="banner_url">URL обложки</Label>
-            <Input
-              id="banner_url"
-              type="url"
-              value={formData.banner_url}
-              onChange={(e) => setFormData({ ...formData, banner_url: e.target.value })}
-              placeholder="https://example.com/banner.jpg"
-            />
-          </div>
+
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Отмена
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? "Создание..." : "Создать турнир"}
+            <Button type="submit" disabled={loading || !canAfford} className="flex-1">
+              {loading ? "Создание..." : `Создать за ${totalCost} VP`}
             </Button>
           </div>
         </form>

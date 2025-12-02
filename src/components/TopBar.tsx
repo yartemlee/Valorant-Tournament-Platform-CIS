@@ -118,7 +118,7 @@ const TopBar = () => {
           <div className="flex items-center gap-2 px-4 py-2 bg-gradient-primary rounded-lg shadow-glow-primary">
             <Coins className="h-5 w-5 text-primary-foreground" />
             <span className="font-bold text-primary-foreground">
-              {profile.token_balance?.toLocaleString() || 0}
+              {profile.coins?.toLocaleString() || 0}
             </span>
           </div>
         )}

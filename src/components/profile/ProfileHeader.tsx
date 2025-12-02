@@ -196,6 +196,8 @@ export function ProfileHeader({ profile, isOwnProfile, isTeamMember, onProfileUp
             <p className="text-sm text-muted-foreground">{profile.status}</p>
           )}
 
+
+
           {!profile.riot_id && isOwnProfile && (
             <div className="bg-destructive/10 text-destructive text-sm px-3 py-2 rounded-md border border-destructive/20 mt-2">
               ⚠️ Привяжите Riot ID, чтобы участвовать в турнирах
