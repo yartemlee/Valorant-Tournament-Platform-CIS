@@ -104,7 +104,7 @@ const Login = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-              Вход в VTP CIS
+              Вход в ValoHub
             </h1>
             <p className="text-muted-foreground">
               Присоединяйся к киберспортивному сообществу

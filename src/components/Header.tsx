@@ -8,7 +8,7 @@ const Header = () => {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              VTP CIS
+              ValoHub
             </div>
           </div>
 

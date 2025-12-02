@@ -95,7 +95,7 @@ const Signup = () => {
       }
 
       if (data.user) {
-        toast.success("Аккаунт создан! Добро пожаловать в Valorant Tournament Platform!");
+        toast.success("Аккаунт создан! Добро пожаловать в ValoHub!");
         navigate("/");
       }
     } catch (error) {
