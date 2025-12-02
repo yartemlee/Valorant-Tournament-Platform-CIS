@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { AvatarEditorDialog } from "../profile/AvatarEditorDialog";
 import { Camera, Trash2 } from "lucide-react";
+import { logTeamActivity } from "@/lib/team-activity";
 
 interface TeamHeroSectionProps {
   team: TeamWithMembers;
@@ -99,6 +100,12 @@ export function TeamHeroSection({
 
       queryClient.invalidateQueries({ queryKey: ["team", team.id] });
       queryClient.invalidateQueries({ queryKey: ["teams"] });
+
+      logTeamActivity({
+        teamId: team.id,
+        type: "logo_updated",
+        description: "Обновлен логотип команды"
+      });
 
       toast.success("Логотип команды обновлен");
       setSelectedImage(null);

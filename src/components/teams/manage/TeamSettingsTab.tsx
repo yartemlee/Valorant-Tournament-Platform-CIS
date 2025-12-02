@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { logTeamActivity } from "@/lib/team-activity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +98,17 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
       }
 
       toast.success("Настройки команды обновлены");
+
+      logTeamActivity({
+        teamId: team.id,
+        type: "team_updated",
+        description: "Обновлены настройки команды",
+        data: {
+          name: formData.name,
+          tag: formData.tag,
+          is_recruiting: formData.is_recruiting
+        }
+      });
 
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });

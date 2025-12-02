@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { logTeamActivity } from "@/lib/team-activity";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -48,9 +49,9 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
     try {
       // Use secure RPC that validates captain role
       const { data, error } = await supabase.rpc('set_member_role', {
-        team_id_input: team.id,
-        member_user_id: memberUserId,
-        new_role: newRole,
+        team_id: team.id,
+        user_id: memberUserId,
+        new_role: newRole as any,
       });
 
       if (error) {
@@ -63,6 +64,13 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
         }
         throw error;
       }
+
+      logTeamActivity({
+        teamId: team.id,
+        type: "role_updated",
+        description: `Роль участника изменена на ${newRole === 'coach' ? 'тренера' : 'игрока'}`,
+        data: { memberUserId, newRole }
+      });
 
       toast.success("Роль обновлена");
 
@@ -82,8 +90,8 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
     try {
       // Call atomic RPC function
       const { data, error } = await supabase.rpc('transfer_captain', {
-        target_team_id: team.id,
-        new_captain_user_id: newCaptainUserId
+        team_id: team.id,
+        new_captain_id: newCaptainUserId
       });
 
       if (error) {
@@ -100,6 +108,13 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
 
       toast.success("Капитанство передано");
 
+      logTeamActivity({
+        teamId: team.id,
+        type: "captain_transferred",
+        description: `Капитанство передано новому участнику`,
+        data: { newCaptainUserId }
+      });
+
       // Invalidate all relevant caches for immediate UI update, including team-member
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["team-manage", team.id] }),
@@ -112,9 +127,9 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
         queryClient.invalidateQueries({ queryKey: ["team-member"] }),
         queryClient.invalidateQueries({ queryKey: ["session"] }),
       ]);
-      
+
       setTransferringCaptaincy(null);
-      
+
       // Close the management modal immediately and trigger parent refetch
       if (onCaptainTransferred) {
         onCaptainTransferred();
@@ -129,8 +144,8 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
     try {
       // Use secure RPC that validates captain role and prevents self-kick
       const { data, error } = await supabase.rpc('kick_member', {
-        team_id_input: team.id,
-        member_user_id: userId,
+        team_id: team.id,
+        user_id: userId,
       });
 
       if (error) {
@@ -146,6 +161,13 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
 
       toast.success("Игрок удалён из команды");
 
+      logTeamActivity({
+        teamId: team.id,
+        type: "member_kicked",
+        description: `Игрок удален из команды`,
+        data: { kickedUserId: userId }
+      });
+
       // Инвалидируем все связанные кэши для мгновенного обновления UI
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["team-manage"] }),
@@ -155,7 +177,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
         queryClient.invalidateQueries({ queryKey: ["team-member"] }),
         queryClient.invalidateQueries({ queryKey: ["session"] }),
       ]);
-      
+
       setRemovingMember(null);
     } catch (error) {
       toast.error(error.message || "Ошибка удаления игрока");
@@ -199,7 +221,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="player">Игрок</SelectItem>
+                    <SelectItem value="member">Игрок</SelectItem>
                     <SelectItem value="coach">Тренер</SelectItem>
                   </SelectContent>
                 </Select>
