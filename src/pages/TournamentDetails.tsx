@@ -36,6 +36,7 @@ const TournamentDetails = () => {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [startDialogOpen, setStartDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("description");
 
   // Check if user is admin
   const { data: isAdmin } = useQuery({
@@ -453,7 +454,7 @@ const TournamentDetails = () => {
                     </p>
                     <PhantomDataControls
                       tournamentId={id!}
-                      onUpdate={fetchData}
+                      onUpdate={refetchParticipants}
                       currentTeamsCount={participants.length}
                       maxTeams={tournament.max_teams}
                     />
@@ -463,7 +464,7 @@ const TournamentDetails = () => {
             </div>
 
             {/* Tabs */}
-            <Tabs defaultValue="description" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList>
                 <TabsTrigger value="description">Описание</TabsTrigger>
                 <TabsTrigger value="participants">

@@ -4,7 +4,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { fillTournamentWithPhantoms, cleanupTournamentPhantoms } from "@/lib/phantomData";
+import { fillTournamentWithPhantoms, cleanupAllPhantomData } from "@/lib/phantomData";
 
 interface PhantomDataControlsProps {
   tournamentId: string;
@@ -65,16 +65,16 @@ export function PhantomDataControls({ tournamentId, onUpdate, currentTeamsCount,
   const handleCleanup = async () => {
     setIsLoading(true);
     try {
-      const result = await cleanupTournamentPhantoms(tournamentId);
+      const result = await cleanupAllPhantomData();
 
-      toast.success("Фантомные данные турнира удалены", {
+      toast.success("Все фантомные данные удалены", {
         description: `Удалено команд: ${result.removedTeams}, игроков: ${result.removedUsers}`,
       });
 
       setCleanupDialogOpen(false);
       onUpdate();
     } catch (error) {
-      console.error("Cleanup tournament error:", error);
+      console.error("Cleanup all phantoms error:", error);
       toast.error("Ошибка удаления фантомных данных", {
         description: error.message || "Не удалось удалить фантомные данные",
       });
@@ -164,7 +164,8 @@ export function PhantomDataControls({ tournamentId, onUpdate, currentTeamsCount,
           <AlertDialogHeader>
             <AlertDialogTitle>Удалить фантомные данные?</AlertDialogTitle>
             <AlertDialogDescription>
-              Будут удалены фантомные регистрации, команды и игроки, созданные для тестирования.
+              Будут удалены ВСЕ фантомные регистрации, команды и игроки из базы данных.
+              Это включает фантомные данные из всех турниров, даже удаленных.
               Реальные команды и игроки останутся без изменений.
             </AlertDialogDescription>
           </AlertDialogHeader>

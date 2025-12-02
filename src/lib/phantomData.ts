@@ -70,3 +70,15 @@ export async function cleanupTeamPhantoms(teamId: string): Promise<CleanupTeamRe
   if (error) throw error;
   return data as unknown as CleanupTeamResult;
 }
+
+/**
+ * Removes ALL phantom data from the entire database
+ * This includes all phantom teams, users, and registrations
+ */
+export async function cleanupAllPhantomData(): Promise<CleanupTournamentResult> {
+  const { data, error } = await supabase.rpc("rpc_cleanup_all_phantoms");
+
+  if (error) throw error;
+  return data as unknown as CleanupTournamentResult;
+}
+
