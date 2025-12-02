@@ -19,7 +19,7 @@ export function TeamActivitySection({ teamId }: TeamActivitySectionProps) {
         .select("*")
         .eq("team_id", teamId)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(5);
 
       if (error) throw error;
       return data;

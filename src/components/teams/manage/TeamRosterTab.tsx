@@ -161,13 +161,6 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
 
       toast.success("Игрок удалён из команды");
 
-      logTeamActivity({
-        teamId: team.id,
-        type: "member_kicked",
-        description: `Игрок удален из команды`,
-        data: { kickedUserId: userId }
-      });
-
       // Инвалидируем все связанные кэши для мгновенного обновления UI
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["team-manage"] }),
