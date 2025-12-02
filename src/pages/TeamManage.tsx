@@ -1,4 +1,4 @@
-import { Profile, Tournament, Match } from '@/types/common.types';
+import { Profile, Tournament, Match, TeamWithMembers } from '@/types/common.types';
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -53,15 +53,15 @@ const TeamManage = () => {
         `)
         .eq("id", id)
         .single();
-      return data;
+      return data as unknown as TeamWithMembers;
     },
     // Убрали refetchInterval - теперь используем Realtime
   });
 
   const isOwner = session?.user?.id === team?.captain_id;
   const userMember = team?.team_members?.find((m) => m.user_id === session?.user?.id);
-  const isCaptain = userMember?.role === "captain";
-  const isCoach = userMember?.role === "coach";
+  const isCaptain = (userMember?.role as unknown as string) === "captain";
+  const isCoach = (userMember?.role as unknown as string) === "coach";
   // Доступ только для владельца, капитана или тренера
   const isManager = isOwner || isCaptain || isCoach;
 
@@ -127,9 +127,9 @@ const TeamManage = () => {
               </TabsList>
 
               <TabsContent value="roster" className="space-y-4">
-                <TeamRosterTab 
-                  team={team} 
-                  isOwner={isOwner} 
+                <TeamRosterTab
+                  team={team}
+                  isOwner={isOwner}
                   isCaptain={isCaptain}
                   isCoach={isCoach}
                   currentUserId={session?.user?.id}

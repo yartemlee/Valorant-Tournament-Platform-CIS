@@ -3,6 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Settings, UserPlus, Users, Calendar } from "lucide-react";
 import { LeaveTeamButton } from "./LeaveTeamButton";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { AvatarEditorDialog } from "../profile/AvatarEditorDialog";
+import { Camera, Trash2 } from "lucide-react";
 
 interface TeamHeroSectionProps {
   team: TeamWithMembers;
@@ -34,6 +40,102 @@ export function TeamHeroSection({
   onManage,
 }: TeamHeroSectionProps) {
   const isFull = memberCount >= 10;
+  const [uploading, setUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Размер файла не должен превышать 5MB");
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        toast.error("Пожалуйста, загрузите изображение");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setSelectedImage(reader.result as string);
+        setIsEditorOpen(true);
+      });
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+  };
+
+  const handleSaveCroppedImage = async (blob: Blob) => {
+    try {
+      setUploading(true);
+      setIsEditorOpen(false);
+
+      const fileExt = 'png';
+      const fileName = `teams/${team.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, blob, {
+          contentType: 'image/png',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('teams')
+        .update({ logo_url: publicUrl })
+        .eq('id', team.id);
+
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ["team", team.id] });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+
+      toast.success("Логотип команды обновлен");
+      setSelectedImage(null);
+
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error("Ошибка при загрузке логотипа");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteLogo = async () => {
+    if (!confirm("Вы уверены, что хотите удалить логотип?")) return;
+
+    try {
+      setUploading(true);
+
+      const { error: updateError } = await supabase
+        .from('teams')
+        .update({ logo_url: null })
+        .eq('id', team.id);
+
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ["team", team.id] });
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+
+      toast.success("Логотип удален");
+
+    } catch (error) {
+      console.error('Error deleting logo:', error);
+      toast.error("Ошибка при удалении логотипа");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-background via-background to-primary/5 p-8">
@@ -44,17 +146,51 @@ export function TeamHeroSection({
         {/* Левая часть: лого + инфо */}
         <div className="flex gap-6 items-start">
           {/* Логотип */}
-          {team.logo_url ? (
-            <img
-              src={team.logo_url}
-              alt={team.name}
-              className="h-24 w-24 rounded-xl object-cover border-2 border-primary/30 shadow-lg"
-            />
-          ) : (
-            <div className="h-24 w-24 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border-2 border-primary/30 shadow-lg">
-              <Shield className="h-12 w-12 text-primary" />
-            </div>
-          )}
+          {/* Логотип */}
+          <div className="relative group">
+            {team.logo_url ? (
+              <div className="h-24 w-24 rounded-full border-2 border-primary/30 shadow-lg bg-background flex items-center justify-center overflow-hidden">
+                <img
+                  src={team.logo_url}
+                  alt={team.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border-2 border-primary/30 shadow-lg">
+                <span className="text-2xl font-bold text-primary">
+                  {team.tag.replace(/[aeiouаеёиоуыэюя]/gi, '').slice(0, 2).toUpperCase() || team.tag.slice(0, 2).toUpperCase()}
+                </span>
+              </div>
+            )}
+
+            {isManager && (
+              <>
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10">
+                  <Camera className="h-8 w-8 text-white" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                    disabled={uploading}
+                  />
+                </label>
+
+                {team.logo_url && (
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={handleDeleteLogo}
+                    disabled={uploading}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
 
           {/* Название и метаданные */}
           <div className="space-y-3">
@@ -139,6 +275,15 @@ export function TeamHeroSection({
         </div>
       </div>
 
-    </div>
+
+
+      <AvatarEditorDialog
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        imageSrc={selectedImage}
+        onSave={handleSaveCroppedImage}
+        outputFormat="image/png"
+      />
+    </div >
   );
 }

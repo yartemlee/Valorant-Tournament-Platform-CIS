@@ -10,9 +10,10 @@ interface AvatarEditorDialogProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (croppedImageBlob: Blob) => void;
+    outputFormat?: 'image/jpeg' | 'image/png';
 }
 
-export function AvatarEditorDialog({ imageSrc, isOpen, onClose, onSave }: AvatarEditorDialogProps) {
+export function AvatarEditorDialog({ imageSrc, isOpen, onClose, onSave, outputFormat = 'image/jpeg' }: AvatarEditorDialogProps) {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -27,7 +28,7 @@ export function AvatarEditorDialog({ imageSrc, isOpen, onClose, onSave }: Avatar
 
         try {
             setLoading(true);
-            const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+            const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels, outputFormat);
             if (croppedImageBlob) {
                 onSave(croppedImageBlob);
             }
@@ -42,7 +43,7 @@ export function AvatarEditorDialog({ imageSrc, isOpen, onClose, onSave }: Avatar
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Редактирование аватара</DialogTitle>
+                    <DialogTitle>Редактирование изображения</DialogTitle>
                 </DialogHeader>
 
                 <div className="relative h-[300px] w-full bg-black/5 rounded-md overflow-hidden mt-4">
@@ -89,7 +90,7 @@ export function AvatarEditorDialog({ imageSrc, isOpen, onClose, onSave }: Avatar
 }
 
 // Helper function to crop image
-async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob | null> {
+async function getCroppedImg(imageSrc: string, pixelCrop: Area, outputFormat: string = 'image/jpeg'): Promise<Blob | null> {
     const image = await createImage(imageSrc);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -116,7 +117,7 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob | 
     return new Promise((resolve) => {
         canvas.toBlob((blob) => {
             resolve(blob);
-        }, 'image/jpeg', 0.95);
+        }, outputFormat, 0.95);
     });
 }
 

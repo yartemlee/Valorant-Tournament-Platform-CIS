@@ -50,7 +50,7 @@ const Teams = () => {
       try {
         let query = supabase
           .from('teams')
-          .select('id, name, tag, logo_url, is_recruiting, created_at')
+          .select('id, name, tag, logo_url, is_recruiting, created_at, team_members(id)')
           .abortSignal(controller.signal);
 
         // Apply status filter
@@ -196,7 +196,7 @@ const Teams = () => {
                   {sortedTeams.map((team) => (
                     <TeamCard
                       key={team.id}
-                      team={team}
+                      team={team as any}
                       isUserTeam={team.id === profile?.current_team_id}
                     />
                   ))}

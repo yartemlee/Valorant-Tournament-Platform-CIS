@@ -1,4 +1,4 @@
-import { Profile, Tournament, Match } from '@/types/common.types';
+import { Profile, Tournament, Match, TeamWithMembers } from '@/types/common.types';
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -74,7 +74,7 @@ const TeamDetails = () => {
         data.team_members = data.team_members || [];
       }
 
-      return data;
+      return data as unknown as TeamWithMembers;
     },
     enabled: !!id,
   });

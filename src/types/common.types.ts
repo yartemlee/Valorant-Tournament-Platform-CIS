@@ -3,7 +3,7 @@ export type { Database };
 
 // Common database table types
 export type Profile = Database['public']['Tables']['profiles']['Row'];
-export type Team = Database['public']['Tables']['teams']['Row'];
+export type Team = Database['public']['Tables']['teams']['Row'] & { is_recruiting: boolean };
 export type Tournament = Database['public']['Tables']['tournaments']['Row'] & {
     bracket_generated?: boolean;
 };

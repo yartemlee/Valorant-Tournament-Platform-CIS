@@ -1,4 +1,4 @@
-import { TeamWithMembers } from '@/types/common.types';
+import { Team, TeamWithMembers } from '@/types/common.types';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentUserProfile } from "@/hooks/useCurrentUserProfile";
 
 interface TeamCardProps {
-  team: TeamWithMembers;
+  team: Team & {
+    team_members: { id: string }[] | null;
+    is_recruiting: boolean;
+  };
   isUserTeam?: boolean;
 }
 
@@ -60,19 +63,19 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
 
       if (error) {
         console.error("RPC error:", error);
-        
+
         // Обрабатываем известные ошибки с понятными сообщениями
         if (error.message.includes('already_in_team')) {
           toast.error("Вы уже состоите в команде. Чтобы вступить в другую — сначала покиньте текущую");
           queryClient.invalidateQueries({ queryKey: ["profile"] });
           return;
         }
-        
+
         if (error.message.includes('duplicate_pending')) {
           toast.error("Вы уже подали заявку в эту команду. Ожидайте ответа от капитана команды");
           return;
         }
-        
+
         if (error.message.includes('not_authenticated')) {
           toast.error("Требуется авторизация. Войдите, чтобы подать заявку");
           return;
@@ -94,7 +97,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
           toast.error("Не удалось отправить заявку. Проверьте, что вы не состоите в команде");
           return;
         }
-        
+
         // Неизвестная ошибка
         throw error;
       }
@@ -117,10 +120,10 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
 
   // Unified button logic
   const showManageButton = isManager;
-  const showApplyButton = currentUserId && 
-    !isMemberOfThisTeam && 
-    !current_team_id && 
-    isRecruiting && 
+  const showApplyButton = currentUserId &&
+    !isMemberOfThisTeam &&
+    !current_team_id &&
+    isRecruiting &&
     !isFull;
   const showAlreadyInTeam = currentUserId && current_team_id && !isMemberOfThisTeam;
   const showRecruitmentClosed = !isRecruiting && !isMemberOfThisTeam;
@@ -154,7 +157,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
         {team.description && (
           <p className="text-sm text-muted-foreground line-clamp-2">{team.description}</p>
         )}
-        
+
         <div className="flex items-center gap-2 text-sm">
           <Users className="h-4 w-4 text-muted-foreground" />
           <span className={memberCount >= 10 ? "text-destructive font-semibold" : ""}>
