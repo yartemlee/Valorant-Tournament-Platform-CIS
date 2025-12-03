@@ -136,10 +136,23 @@ export interface SocialLinks {
     twitter?: string;
 }
 
-export interface BracketMatch extends Match {
+export interface BracketMatch {
+    id: string;
+    tournament_id: string;
+    round_number: number;
     match_number: number;
     bracket_type: string;
+    team1_id: string | null;
+    team2_id: string | null;
+    team1_score: number;
+    team2_score: number;
+    winner_id: string | null;
+    loser_id: string | null;
+    status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+    best_of: number;
+    start_time: string | null;
     bracket_position: number | null;
+    created_at: string;
     team1?: {
         name: string;
         tag: string;

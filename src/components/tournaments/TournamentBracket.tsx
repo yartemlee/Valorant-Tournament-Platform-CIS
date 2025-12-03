@@ -70,7 +70,7 @@ export function TournamentBracket({
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<BracketMatch | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // ============================================================================
@@ -422,7 +422,7 @@ export function TournamentBracket({
   /**
    * Открывает диалог редактирования матча
    */
-  const handleEditMatch = useCallback((match: Match) => {
+  const handleEditMatch = useCallback((match: BracketMatch) => {
     if (tournamentStatus !== 'active') {
       toast.error("Редактирование сетки доступно только после начала турнира");
       return;

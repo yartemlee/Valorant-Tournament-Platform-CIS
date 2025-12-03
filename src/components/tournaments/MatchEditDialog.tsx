@@ -1,4 +1,4 @@
-import { Match, Tournament } from '@/types/common.types';
+import { Match, Tournament, BracketMatch } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Play, CheckCircle, Edit3, Trophy } from "lucide-react";
 
 interface MatchEditDialogProps {
-  match: Match;
+  match: BracketMatch | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;

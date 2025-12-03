@@ -1,4 +1,4 @@
-import { Match, Tournament } from '@/types/common.types';
+import { Match, Tournament, BracketMatch } from '@/types/common.types';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Edit3, Clock, Play, CheckCircle } from "lucide-react";
 
 interface MatchCardProps {
-  match: Match;
+  match: BracketMatch;
   isOwner: boolean;
   onEdit: () => void;
 }
@@ -15,8 +15,8 @@ interface MatchCardProps {
 export function MatchCard({ match, isOwner, onEdit }: MatchCardProps) {
   const getTeamRowClass = (teamId: string | null) => {
     if (!match.winner_id) return "bg-card border border-border";
-    return match.winner_id === teamId 
-      ? "bg-green-500/10 border-green-500/50 border" 
+    return match.winner_id === teamId
+      ? "bg-green-500/10 border-green-500/50 border"
       : "bg-card border border-border opacity-60";
   };
 
@@ -88,56 +88,60 @@ export function MatchCard({ match, isOwner, onEdit }: MatchCardProps) {
             )}
           </div>
 
-        {/* Команда 1 */}
-        <div className={`flex items-center justify-between px-3 py-2.5 transition-all ${getTeamRowClass(match.team1_id)}`}>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={match.team1?.logo_url || ""} />
-              <AvatarFallback className="text-xs">
-                {match.team1?.tag || "?"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold truncate">
-                {match.team1?.tag || "TBD"}
-              </span>
+          {/* Команда 1 */}
+          <div className={`flex items-center justify-between px-3 py-2.5 transition-all ${getTeamRowClass(match.team1_id)}`}>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={match.team1?.logo_url || ""} />
+                <AvatarFallback className="text-xs">
+                  {match.team1?.tag || "?"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-bold truncate">
+                  {match.team1?.tag || "TBD"}
+                </span>
+              </div>
             </div>
+            {match.team1 && (
+              <Badge
+                variant={match.winner_id === match.team1_id ? "default" : "outline"}
+                className="ml-2 min-w-[2rem] justify-center font-bold"
+              >
+                {match.team1_score}
+              </Badge>
+            )}
           </div>
-          <Badge 
-            variant={match.winner_id === match.team1_id ? "default" : "outline"}
-            className="ml-2 min-w-[2rem] justify-center font-bold"
-          >
-            {match.team1_score}
-          </Badge>
-        </div>
 
-        {/* Разделитель */}
-        <div className="h-px bg-border" />
+          {/* Разделитель */}
+          <div className="h-px bg-border" />
 
-        {/* Команда 2 */}
-        <div className={`flex items-center justify-between px-3 py-2.5 transition-all ${getTeamRowClass(match.team2_id)}`}>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={match.team2?.logo_url || ""} />
-              <AvatarFallback className="text-xs">
-                {match.team2?.tag || "?"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold truncate">
-                {match.team2?.tag || "TBD"}
-              </span>
+          {/* Команда 2 */}
+          <div className={`flex items-center justify-between px-3 py-2.5 transition-all ${getTeamRowClass(match.team2_id)}`}>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={match.team2?.logo_url || ""} />
+                <AvatarFallback className="text-xs">
+                  {match.team2?.tag || "?"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-bold truncate">
+                  {match.team2?.tag || "TBD"}
+                </span>
+              </div>
             </div>
+            {match.team2 && (
+              <Badge
+                variant={match.winner_id === match.team2_id ? "default" : "outline"}
+                className="ml-2 min-w-[2rem] justify-center font-bold"
+              >
+                {match.team2_score}
+              </Badge>
+            )}
           </div>
-          <Badge 
-            variant={match.winner_id === match.team2_id ? "default" : "outline"}
-            className="ml-2 min-w-[2rem] justify-center font-bold"
-          >
-            {match.team2_score}
-          </Badge>
-        </div>
-      </Card>
-    </div>
+        </Card>
+      </div>
     </TooltipProvider>
   );
 }
