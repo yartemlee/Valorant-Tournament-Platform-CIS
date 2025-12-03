@@ -130,8 +130,32 @@ export function TournamentBracket({
   /**
    * Загружаем матчи при монтировании компонента или изменении tournamentId
    */
+  // ============================================================================
+  // REALTIME SUBSCRIPTION
+  // ============================================================================
+
   useEffect(() => {
     fetchMatches();
+
+    const channel = supabase
+      .channel(`tournament_matches_${tournamentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_matches',
+          filter: `tournament_id=eq.${tournamentId}`
+        },
+        () => {
+          fetchMatches();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [tournamentId, fetchMatches]);
 
   // ============================================================================
@@ -504,7 +528,7 @@ export function TournamentBracket({
     return (
       <div className="mb-12">
         <h2 className="text-xl font-bold mb-6">{title}</h2>
-        <div className="overflow-x-auto pb-6">
+        <div className="overflow-x-auto pb-6 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50">
           <div className="flex gap-16 min-w-max px-4">
             {rounds.map((round, roundIndex) => {
               const roundMatches = matchesList
