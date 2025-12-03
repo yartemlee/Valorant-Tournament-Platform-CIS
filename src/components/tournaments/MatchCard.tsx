@@ -56,7 +56,7 @@ export function MatchCard({ match, isOwner, onEdit }: MatchCardProps) {
   };
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={0}>
       <div className="relative">
         <Card className="w-[260px] p-0 overflow-hidden bg-background/50 backdrop-blur">
           {/* Заголовок матча */}
