@@ -18,7 +18,7 @@ import { Match, Tournament, ParticipantWithTeam, BracketMatch, Database } from '
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Shuffle, Zap } from "lucide-react";
+import { Shuffle, Zap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { MatchCard } from "./MatchCard";
 import { MatchEditDialog } from "./MatchEditDialog";
@@ -71,10 +71,15 @@ export function TournamentBracket({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // ============================================================================
   // ЭФФЕКТЫ
   // ============================================================================
+
+  useEffect(() => {
+    console.log("confirmDialogOpen changed:", confirmDialogOpen);
+  }, [confirmDialogOpen]);
 
 
 
@@ -138,6 +143,10 @@ export function TournamentBracket({
    * Вызывается владельцем турнира или администратором
    */
   const generateBracket = async () => {
+    console.log("generateBracket called");
+    console.log("Participants:", participants);
+    console.log("isOwner:", isOwner, "isAdmin:", isAdmin);
+
     if (!isOwner && !isAdmin) return;
 
     // Запрещаем пересоздание сетки, если она уже есть (если не админ)
@@ -146,7 +155,14 @@ export function TournamentBracket({
       return;
     }
 
-    setLoading(true);
+    if (participants.length < 2) {
+      toast.error("Недостаточно участников", {
+        description: "Для создания сетки необходимо минимум 2 команды"
+      });
+      return;
+    }
+
+    setIsGenerating(true);
     try {
       // Случайная расстановка команд (Random Seeding)
       const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
@@ -170,11 +186,12 @@ export function TournamentBracket({
 
       toast.success("Сетка создана");
       fetchMatches();
+      setConfirmDialogOpen(false);
     } catch (error) {
       toast.error("Ошибка создания сетки");
       console.error("Ошибка генерации сетки:", error);
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -525,84 +542,93 @@ export function TournamentBracket({
   }
 
   // Нет сгенерированной сетки
-  if (matches.length === 0) {
-    return (
-      <div className="text-center py-8 space-y-4">
-        <p className="text-muted-foreground">Сетка ещё не создана</p>
-        {isOwner && (
-          <Button onClick={() => setConfirmDialogOpen(true)}>
-            Создать сетку
-          </Button>
-        )}
-      </div>
-    );
-  }
+
 
   // Основной интерфейс с турнирной сеткой
   return (
     <div className="space-y-6">
-      {/* Кнопки управления */}
-      <div className="flex gap-3">
-        {isOwner && matches.length === 0 && (
-          <Button onClick={() => setConfirmDialogOpen(true)}>
-            Создать сетку
-          </Button>
-        )}
-
-        {isAdmin && matches.length > 0 && (
-          <Button
-            onClick={recreateBracket}
-            variant="destructive"
-            disabled={loading}
-          >
-            <Zap className="h-4 w-4 mr-2" />
-            Пересоздать сетку
-          </Button>
-        )}
-      </div>
-
-      {/* Верхняя сетка (или основная для single elimination) */}
-      {renderBracketSection(
-        upperRounds,
-        upperMatches,
-        bracketFormat === "double_elimination" ? "Верхняя сетка" : "Турнирная сетка"
-      )}
-
-      {/* Нижняя сетка (только для double elimination) */}
-      {bracketFormat === "double_elimination" && lowerMatches.length > 0 &&
-        renderBracketSection(lowerRounds, lowerMatches, "Нижняя сетка")
-      }
-
-      {/* Секция финалов */}
-      {(grandFinalMatch || thirdPlaceMatch) && (
-        <div className="mt-12 pt-8 border-t">
-          <h2 className="text-xl font-bold mb-6 text-center">Финалы</h2>
-          <div className="flex flex-wrap justify-center gap-12">
-            {/* Гранд-финал (только для double elimination) */}
-            {grandFinalMatch && (
-              <div className="flex flex-col items-center gap-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Гранд-финал</h3>
-                <MatchCard
-                  match={grandFinalMatch}
-                  isOwner={isOwner}
-                  onEdit={() => handleEditMatch(grandFinalMatch)}
-                />
-              </div>
+      {matches.length === 0 ? (
+        <div className="text-center py-8 space-y-4">
+          <p className="text-muted-foreground">Сетка ещё не создана</p>
+          {isOwner && (
+            <Button onClick={() => {
+              console.log("Open dialog button clicked");
+              setConfirmDialogOpen(true);
+            }}>
+              Создать сетку
+            </Button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Кнопки управления */}
+          <div className="flex gap-3">
+            {isOwner && matches.length === 0 && (
+              <Button onClick={() => {
+                console.log("Open dialog button (top) clicked");
+                setConfirmDialogOpen(true);
+              }}>
+                Создать сетку
+              </Button>
             )}
 
-            {/* Матч за 3-е место (только для Single Elimination) */}
-            {thirdPlaceMatch && bracketFormat === "single_elimination" && (
-              <div className="flex flex-col items-center gap-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Матч за 3-е место</h3>
-                <MatchCard
-                  match={thirdPlaceMatch}
-                  isOwner={isOwner}
-                  onEdit={() => handleEditMatch(thirdPlaceMatch)}
-                />
-              </div>
+            {isAdmin && matches.length > 0 && (
+              <Button
+                onClick={recreateBracket}
+                variant="destructive"
+                disabled={loading}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Пересоздать сетку
+              </Button>
             )}
           </div>
-        </div>
+
+          {/* Верхняя сетка (или основная для single elimination) */}
+          {renderBracketSection(
+            upperRounds,
+            upperMatches,
+            bracketFormat === "double_elimination" ? "Верхняя сетка" : "Турнирная сетка"
+          )}
+
+          {/* Нижняя сетка (только для double elimination) */}
+          {bracketFormat === "double_elimination" && lowerMatches.length > 0 &&
+            renderBracketSection(lowerRounds, lowerMatches, "Нижняя сетка")
+          }
+
+          {/* Секция финалов */}
+          {(grandFinalMatch || thirdPlaceMatch) && (
+            <div className="mt-12 pt-8 border-t">
+              <h2 className="text-xl font-bold mb-6 text-center">Финалы</h2>
+              <div className="flex flex-wrap justify-center gap-12">
+                {/* Гранд-финал (только для double elimination) */}
+                {grandFinalMatch && (
+                  <div className="flex flex-col items-center gap-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">Гранд-финал</h3>
+                    <MatchCard
+                      match={grandFinalMatch}
+                      isOwner={isOwner}
+                      onEdit={() => handleEditMatch(grandFinalMatch)}
+                    />
+                  </div>
+                )}
+
+                {/* Матч за 3-е место (только для Single Elimination) */}
+                {thirdPlaceMatch && bracketFormat === "single_elimination" && (
+                  <div className="flex flex-col items-center gap-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">Матч за 3-е место</h3>
+                    <MatchCard
+                      match={thirdPlaceMatch}
+                      isOwner={isOwner}
+                      onEdit={() => handleEditMatch(thirdPlaceMatch)}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+        </>
       )}
 
       {/* Диалог редактирования матча */}
@@ -633,10 +659,21 @@ export function TournamentBracket({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
-            <AlertDialogAction onClick={generateBracket}>
-              Создать сетку
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={isGenerating}>Отмена</AlertDialogCancel>
+            <Button onClick={(e) => {
+              console.log("Button clicked");
+              e.preventDefault();
+              generateBracket();
+            }} disabled={isGenerating}>
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Создание...
+                </>
+              ) : (
+                "Создать сетку"
+              )}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
