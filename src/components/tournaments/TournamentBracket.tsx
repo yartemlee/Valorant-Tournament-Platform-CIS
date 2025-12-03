@@ -438,12 +438,24 @@ export function TournamentBracket({
   /**
    * Мемоизированные группы матчей для оптимизации производительности
    */
-  const { upperMatches, lowerMatches, grandFinalMatch, thirdPlaceMatch, upperRounds, lowerRounds } = useMemo(() => {
+  const { upperMatches, lowerMatches, upperRounds, lowerRounds } = useMemo(() => {
     // Группируем матчи по типам
     const upper = matches.filter((m) => m.bracket_type === "upper" || m.bracket_type === "final");
     const lower = matches.filter((m) => m.bracket_type === "lower");
     const grandFinal = matches.find((m) => m.bracket_type === "grand_final");
     const thirdPlace = matches.find((m) => m.bracket_type === "third_place");
+
+    // Если есть гранд-финал (Double Elimination), добавляем его как следующий раунд верхней сетки
+    if (grandFinal) {
+      const maxRound = Math.max(...upper.map(m => m.round_number), 0);
+      upper.push({ ...grandFinal, round_number: maxRound + 1 });
+    }
+
+    // Если есть матч за 3-е место, добавляем его в отдельный "визуальный" раунд
+    if (thirdPlace) {
+      const maxRound = Math.max(...upper.map(m => m.round_number), 0);
+      upper.push({ ...thirdPlace, round_number: maxRound + 1 });
+    }
 
     // Собираем уникальные номера раундов и сортируем
     const uRounds = Array.from(new Set(upper.map((m) => m.round_number))).sort((a, b) => a - b);
@@ -452,8 +464,6 @@ export function TournamentBracket({
     return {
       upperMatches: upper,
       lowerMatches: lower,
-      grandFinalMatch: grandFinal,
-      thirdPlaceMatch: thirdPlace,
       upperRounds: uRounds,
       lowerRounds: lRounds,
     };
@@ -462,16 +472,24 @@ export function TournamentBracket({
   /**
    * Возвращает человекочитаемое название раунда
    */
-  const getRoundLabel = (round: number, totalRounds: number) => {
-    if (round === totalRounds) return "Финал";
-    if (round === totalRounds - 1) return "Полуфинал";
-    if (round === totalRounds - 2) return "Четвертьфинал";
+  const getRoundLabel = (round: number, totalRounds: number, hasThirdPlace: boolean) => {
+    if (hasThirdPlace && round === totalRounds) return "Матч за 3-е место";
+
+    const realTotalRounds = hasThirdPlace ? totalRounds - 1 : totalRounds;
+
+    if (round === realTotalRounds) return "Финал";
+    if (round === realTotalRounds - 1) return "Полуфинал";
+    if (round === realTotalRounds - 2) return "Четвертьфинал";
     return `Раунд ${round}`;
   };
 
   // ============================================================================
   // РЕНДЕРИНГ СЕКЦИИ СЕТКИ
   // ============================================================================
+
+  // Константы для визуализации
+  const MATCH_HEIGHT = 130; // Высота карточки матча
+  const GAP = 32;          // Базовый отступ (gap-8)
 
   /**
    * Отрисовывает одну секцию турнирной сетки (верхнюю или нижнюю)
@@ -480,57 +498,112 @@ export function TournamentBracket({
    * @param matchesList - Список матчей для отображения
    * @param title - Заголовок секции
    */
-  const renderBracketSection = (rounds: number[], matchesList: BracketMatch[], title: string) => (
-    <div className="mb-12">
-      <h2 className="text-xl font-bold mb-6">{title}</h2>
-      <div className="overflow-x-auto pb-6">
-        {/* Горизонтальный скролл для больших сеток */}
-        <div className="flex gap-8 min-w-max px-4">
-          {rounds.map((round, roundIndex) => {
-            // Фильтруем матчи для текущего раунда
-            const roundMatches = matchesList
-              .filter((m) => m.round_number === round)
-              .sort((a, b) => a.match_number - b.match_number);
+  const renderBracketSection = (rounds: number[], matchesList: BracketMatch[], title: string) => {
+    const hasThirdPlace = matchesList.some(m => m.bracket_type === "third_place");
 
-            return (
-              <div key={round} className="flex flex-col min-w-[280px]">
-                {/* Заголовок раунда */}
-                <h3 className="text-center text-sm font-medium text-muted-foreground mb-4">
-                  {getRoundLabel(round, rounds[rounds.length - 1])}
-                </h3>
+    return (
+      <div className="mb-12">
+        <h2 className="text-xl font-bold mb-6">{title}</h2>
+        <div className="overflow-x-auto pb-6">
+          <div className="flex gap-16 min-w-max px-4">
+            {rounds.map((round, roundIndex) => {
+              const roundMatches = matchesList
+                .filter((m) => m.round_number === round)
+                .sort((a, b) => a.match_number - b.match_number);
 
-                {/* Матчи раунда с равномерным распределением по высоте */}
-                <div className="flex flex-col justify-around flex-grow gap-8 relative">
-                  {roundMatches.map((match, index) => (
-                    <div key={match.id} className="relative flex items-center">
-                      {/* Соединительная линия ОТ предыдущего раунда */}
-                      {roundIndex > 0 && (
-                        <div className="absolute -left-4 w-4 h-px bg-border" />
-                      )}
+              const isLastRound = roundIndex === rounds.length - 1;
+              const isThirdPlaceRound = hasThirdPlace && isLastRound;
+              const isFirstRound = roundIndex === 0;
 
-                      {/* Карточка матча */}
-                      <div className="w-full z-10">
-                        <MatchCard
-                          match={match}
-                          isOwner={isOwner}
-                          onEdit={() => handleEditMatch(match)}
-                        />
+              // Расчет отступов для текущего раунда
+              // Если это раунд за 3-е место, используем отступы как для финала (предыдущего раунда),
+              // чтобы они были на одном уровне.
+              const effectiveRoundIndex = isThirdPlaceRound ? roundIndex - 1 : roundIndex;
+
+              // paddingTop = (2^i - 1) * (H + G) / 2
+              const paddingTop = (Math.pow(2, effectiveRoundIndex) - 1) * (MATCH_HEIGHT + GAP) / 2;
+
+              // gap между парами (или матчами)
+              const calculatedGap = Math.pow(2, effectiveRoundIndex) * (MATCH_HEIGHT + GAP) - MATCH_HEIGHT;
+
+              // Группируем матчи в пары
+              const pairs = [];
+              if (isLastRound || isThirdPlaceRound) {
+                roundMatches.forEach(m => pairs.push([m]));
+              } else {
+                for (let i = 0; i < roundMatches.length; i += 2) {
+                  pairs.push(roundMatches.slice(i, i + 2));
+                }
+              }
+
+              return (
+                <div key={round} className="flex flex-col min-w-[280px]">
+                  <h3 className="text-center text-sm font-medium text-muted-foreground mb-6">
+                    {getRoundLabel(round, rounds[rounds.length - 1], hasThirdPlace)}
+                  </h3>
+
+                  {/* 
+                      Логика выравнивания:
+                      Первый раунд задает высоту контента через gap-8.
+                      Последующие раунды растягиваются (justify-around), чтобы выровняться относительно первого.
+                  */}
+                  <div
+                    className="flex flex-col flex-grow"
+                    style={{
+                      paddingTop: `${paddingTop}px`,
+                      gap: `${calculatedGap}px`
+                    }}
+                  >
+                    {pairs.map((pair, pairIndex) => (
+                      <div key={pairIndex} className="relative flex flex-col justify-center"
+                        style={{ gap: `${calculatedGap}px` }}
+                      >
+                        {pair.map((match, matchIndex) => (
+                          <div key={match.id} className="relative z-10" style={{ height: `${MATCH_HEIGHT}px` }}>
+                            <MatchCard
+                              match={match}
+                              isOwner={isOwner}
+                              onEdit={() => handleEditMatch(match)}
+                            />
+
+                            {/* ЛИНИИ (Connectors) */}
+                            {!isLastRound && pair.length === 2 && (
+                              <>
+                                {matchIndex === 0 ? (
+                                  // Верхний матч: линия вниз
+                                  <div className="absolute top-1/2 right-[-24px] w-6 border-t border-r border-border rounded-tr-xl"
+                                    style={{
+                                      height: `${(calculatedGap / 2) + (MATCH_HEIGHT / 2)}px`,
+                                    }}
+                                  />
+                                ) : (
+                                  // Нижний матч: линия вверх
+                                  <div className="absolute bottom-1/2 right-[-24px] w-6 border-b border-r border-border rounded-br-xl"
+                                    style={{
+                                      height: `${(calculatedGap / 2) + (MATCH_HEIGHT / 2)}px`
+                                    }}
+                                  />
+                                )}
+                              </>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Горизонтальный отросток к следующему раунду */}
+                        {!isLastRound && pair.length === 2 && (
+                          <div className="absolute top-1/2 right-[-64px] w-10 h-px bg-border" />
+                        )}
                       </div>
-
-                      {/* Соединительная линия К следующему раунду */}
-                      {roundIndex < rounds.length - 1 && (
-                        <div className="absolute -right-4 w-4 h-px bg-border" />
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ============================================================================
   // РЕНДЕРИНГ КОМПОНЕНТА
@@ -596,37 +669,7 @@ export function TournamentBracket({
             renderBracketSection(lowerRounds, lowerMatches, "Нижняя сетка")
           }
 
-          {/* Секция финалов */}
-          {(grandFinalMatch || thirdPlaceMatch) && (
-            <div className="mt-12 pt-8 border-t">
-              <h2 className="text-xl font-bold mb-6 text-center">Финалы</h2>
-              <div className="flex flex-wrap justify-center gap-12">
-                {/* Гранд-финал (только для double elimination) */}
-                {grandFinalMatch && (
-                  <div className="flex flex-col items-center gap-4">
-                    <h3 className="text-sm font-medium text-muted-foreground">Гранд-финал</h3>
-                    <MatchCard
-                      match={grandFinalMatch}
-                      isOwner={isOwner}
-                      onEdit={() => handleEditMatch(grandFinalMatch)}
-                    />
-                  </div>
-                )}
 
-                {/* Матч за 3-е место (только для Single Elimination) */}
-                {thirdPlaceMatch && bracketFormat === "single_elimination" && (
-                  <div className="flex flex-col items-center gap-4">
-                    <h3 className="text-sm font-medium text-muted-foreground">Матч за 3-е место</h3>
-                    <MatchCard
-                      match={thirdPlaceMatch}
-                      isOwner={isOwner}
-                      onEdit={() => handleEditMatch(thirdPlaceMatch)}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
         </>
       )}
