@@ -83,9 +83,21 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
     // Check if date is in the past
     const selectedDate = new Date(formData.start_time);
     const now = new Date();
+    const maxDate = new Date();
+    maxDate.setFullYear(now.getFullYear() + 5);
 
     if (selectedDate < now) {
       toast.error("Дата начала турнира должна быть в будущем");
+      return;
+    }
+
+    if (selectedDate > maxDate) {
+      toast.error("Дата начала турнира не может быть более чем через 5 лет");
+      return;
+    }
+
+    if (selectedDate.getFullYear() > maxDate.getFullYear()) {
+      toast.error("Некорректный год");
       return;
     }
 
@@ -142,6 +154,9 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
       navigate('/tournaments');
     }
   };
+
+  const maxDateStr = new Date();
+  maxDateStr.setFullYear(maxDateStr.getFullYear() + 5);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -212,6 +227,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
                 value={formData.start_time}
                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                 min={new Date().toISOString().slice(0, 16)}
+                max={maxDateStr.toISOString().slice(0, 16)}
                 required
                 className="[color-scheme:dark] w-full block"
               />

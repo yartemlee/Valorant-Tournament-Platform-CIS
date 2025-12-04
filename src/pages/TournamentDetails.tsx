@@ -47,12 +47,11 @@ const TournamentDetails = () => {
     queryFn: async () => {
       if (!user?.id) return false;
       const { data } = await supabase
-        .from("user_roles" as any)
+        .from("profiles")
         .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      return !!data;
+        .eq("id", user.id)
+        .single();
+      return data?.role === "admin";
     },
     enabled: !!user?.id,
   });

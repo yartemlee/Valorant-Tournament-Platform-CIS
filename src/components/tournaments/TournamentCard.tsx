@@ -72,7 +72,17 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>{format(new Date(tournament.start_time), "d MMMM yyyy, HH:mm", { locale: ru })}</span>
+              <span>
+                {(() => {
+                  try {
+                    return tournament.start_time
+                      ? format(new Date(tournament.start_time), "d MMMM yyyy, HH:mm", { locale: ru })
+                      : "Дата не указана";
+                  } catch (e) {
+                    return "Ошибка даты";
+                  }
+                })()}
+              </span>
             </div>
 
             <div className="flex items-center gap-2 text-muted-foreground">
