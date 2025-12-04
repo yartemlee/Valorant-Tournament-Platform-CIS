@@ -17,6 +17,7 @@ import { CompleteTournamentDialog } from "@/components/tournaments/CompleteTourn
 import { EditTournamentDialog } from "@/components/tournaments/EditTournamentDialog";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { PhantomDataControls } from "@/components/tournaments/PhantomDataControls";
+import { RosterSelectionDialog } from "@/components/tournaments/RosterSelectionDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
@@ -192,6 +193,9 @@ const TournamentDetails = () => {
     setLoading(false);
   };
 
+  const [rosterDialogOpen, setRosterDialogOpen] = useState(false);
+  const [pendingTeamId, setPendingTeamId] = useState<string | null>(null);
+
   const handleJoin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -257,20 +261,32 @@ const TournamentDetails = () => {
       return;
     }
 
+    // Open roster selection dialog instead of direct registration
+    setPendingTeamId(teamMember.team_id);
+    setRosterDialogOpen(true);
+  };
+
+  const handleRosterConfirm = async (selectedUserIds: string[]) => {
+    if (!pendingTeamId) return;
+
     const { error } = await supabase.from("tournament_registrations").insert([
       {
         tournament_id: id,
-        team_id: teamMember.team_id,
+        team_id: pendingTeamId,
         status: "pending",
-      },
+        selected_roster: selectedUserIds,
+      } as any, // Cast to any because selected_roster might not be in types yet
     ]);
 
     if (error) {
+      console.error(error);
       toast.error("Ошибка регистрации");
       return;
     }
 
     toast.success("Команда зарегистрирована на турнир");
+    setRosterDialogOpen(false);
+    setPendingTeamId(null);
     fetchData();
   };
 
@@ -619,6 +635,13 @@ const TournamentDetails = () => {
           </AlertDialog>
         </>
       )}
+
+      <RosterSelectionDialog
+        open={rosterDialogOpen}
+        onOpenChange={setRosterDialogOpen}
+        teamId={pendingTeamId || ""}
+        onConfirm={handleRosterConfirm}
+      />
     </div>
   );
 };

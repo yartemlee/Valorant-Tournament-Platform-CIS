@@ -175,6 +175,26 @@ export function CompleteTournamentDialog({
         });
       }
 
+      // Distribute prize pool coins
+      try {
+        const { data: distResult, error: distError } = await supabase.rpc("distribute_tournament_prizes", {
+          p_tournament_id: tournamentId,
+          p_first_place_team_id: firstPlace,
+          p_second_place_team_id: secondPlace || null,
+          p_third_place_team_id: thirdPlace || null,
+        });
+
+        if (distError) {
+          console.error("Error distributing prizes:", distError);
+          toast.error("Ошибка распределения призового фонда");
+        } else {
+          console.log("Prizes distributed:", distResult);
+          toast.success("Призовой фонд распределен!");
+        }
+      } catch (e) {
+        console.error("Exception distributing prizes:", e);
+      }
+
       // Сохраняем результаты турнира
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await supabase.from("tournament_results" as any).insert([
