@@ -530,7 +530,7 @@ export function TournamentBracket({
 
     return (
       <div className="mb-12">
-        <h2 className="text-xl font-bold mb-6">{title}</h2>
+        {title && <h2 className="text-xl font-bold mb-6">{title}</h2>}
         <div className="overflow-x-auto pb-6 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50">
           <div className="flex gap-16 min-w-max px-4">
             {rounds.map((round, roundIndex) => {
@@ -688,7 +688,7 @@ export function TournamentBracket({
           {renderBracketSection(
             upperRounds,
             upperMatches,
-            bracketFormat === "double_elimination" ? "Верхняя сетка" : "Турнирная сетка"
+            bracketFormat === "double_elimination" ? "Верхняя сетка" : ""
           )}
 
           {/* Нижняя сетка (только для double elimination) */}
