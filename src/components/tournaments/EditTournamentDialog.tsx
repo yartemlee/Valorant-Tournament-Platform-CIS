@@ -105,6 +105,11 @@ export function EditTournamentDialog({
     const maxDate = new Date();
     maxDate.setFullYear(new Date().getFullYear() + 5);
 
+    if (selectedDate < new Date()) {
+      toast.error("Дата начала турнира не может быть в прошлом");
+      return;
+    }
+
     if (selectedDate > maxDate) {
       toast.error("Дата начала турнира не может быть более чем через 5 лет");
       return;
@@ -260,6 +265,7 @@ export function EditTournamentDialog({
                 value={formData.start_time}
                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                 required
+                min={new Date().toISOString().slice(0, 16)}
                 max={new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString().slice(0, 16)}
                 className="[color-scheme:dark] w-full block"
               />
