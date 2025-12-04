@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { DEFAULT_RULES } from "@/constants/tournament";
 
 interface CreateTournamentDialogProps {
   open: boolean;
@@ -26,7 +27,8 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
     start_time: "",
     prize_pool: "",
     max_teams: 16,
-    rules: "",
+
+    rules: DEFAULT_RULES,
   });
 
   // Fetch user coins when dialog opens

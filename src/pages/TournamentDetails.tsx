@@ -24,6 +24,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 import { User } from "@supabase/supabase-js";
 
+import { DEFAULT_RULES } from "@/constants/tournament";
+
 const TournamentDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -464,6 +466,7 @@ const TournamentDetails = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList>
                 <TabsTrigger value="description">Описание</TabsTrigger>
+                <TabsTrigger value="rules">Регламент</TabsTrigger>
                 <TabsTrigger value="participants">
                   Команды ({participants.length}/{tournament.max_teams || 0})
                 </TabsTrigger>
@@ -476,13 +479,24 @@ const TournamentDetails = () => {
                     <CardTitle>О турнире</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {tournament.description && <p className="text-muted-foreground">{tournament.description}</p>}
-                    {tournament.rules && (
-                      <div>
-                        <h3 className="font-semibold mb-2">Правила</h3>
-                        <p className="text-muted-foreground whitespace-pre-wrap">{tournament.rules}</p>
-                      </div>
+                    {tournament.description ? (
+                      <p className="text-muted-foreground whitespace-pre-wrap">{tournament.description}</p>
+                    ) : (
+                      <p className="text-muted-foreground italic">Описание отсутствует</p>
                     )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="rules">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Регламент турнира</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                      {tournament.rules || DEFAULT_RULES}
+                    </p>
                   </CardContent>
                 </Card>
               </TabsContent>

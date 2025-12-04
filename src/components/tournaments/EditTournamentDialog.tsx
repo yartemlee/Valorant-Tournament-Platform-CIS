@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+
 import { Trash2 } from "lucide-react";
+import { DEFAULT_RULES } from "@/constants/tournament";
 
 interface EditTournamentDialogProps {
   open: boolean;
@@ -75,7 +77,8 @@ export function EditTournamentDialog({
         start_time: tournament.start_time ? new Date(tournament.start_time).toISOString().slice(0, 16) : "",
         prize_pool: tournament.prize_pool ? tournament.prize_pool.toString() : "",
         max_teams: tournament.max_teams || 16,
-        rules: tournament.rules || "",
+
+        rules: tournament.rules || DEFAULT_RULES,
       });
     }
   }, [tournament]);
