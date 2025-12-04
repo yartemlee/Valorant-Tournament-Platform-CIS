@@ -229,25 +229,6 @@ const TournamentDetails = () => {
       return;
     }
 
-    // Check Riot IDs for all team members
-    const { data: teamProfiles } = await supabase
-      .from("team_members")
-      .select("user_id, profiles:user_id(riot_id)")
-      .eq("team_id", teamMember.team_id);
-
-    const allHaveRiotId = teamProfiles?.every((m) => {
-      const prof = m.profiles;
-      if (!prof) return false;
-
-      // Check if riot_id is present (assuming it contains Name#Tag)
-      return !!prof.riot_id;
-    });
-
-    if (!allHaveRiotId) {
-      toast.error("Все участники команды должны привязать Riot ID");
-      return;
-    }
-
     if (tournament?.status !== "registration") {
       toast.error("Регистрация закрыта");
       return;

@@ -67,6 +67,12 @@ export const RosterSelectionDialog = ({
     };
 
     const toggleSelection = (userId: string) => {
+        const member = members.find(m => m.user_id === userId);
+        if (!member?.profiles?.riot_id) {
+            toast.error("Этот игрок не привязал Riot ID");
+            return;
+        }
+
         setSelectedIds(prev => {
             if (prev.includes(userId)) {
                 return prev.filter(id => id !== userId);
@@ -104,37 +110,46 @@ export const RosterSelectionDialog = ({
                         <p className="text-center text-muted-foreground">Загрузка...</p>
                     ) : (
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                            {members.map((member) => (
-                                <div
-                                    key={member.user_id}
-                                    className="flex items-center space-x-3 p-2 rounded-lg border border-border hover:bg-accent/50 transition-colors cursor-pointer"
-                                    onClick={() => toggleSelection(member.user_id)}
-                                >
-                                    <Checkbox
-                                        checked={selectedIds.includes(member.user_id)}
-                                        onCheckedChange={() => toggleSelection(member.user_id)}
-                                    />
-                                    <div className="flex items-center gap-3 flex-1">
-                                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
-                                            {member.profiles.avatar_url ? (
-                                                <img
-                                                    src={member.profiles.avatar_url}
-                                                    alt={member.profiles.username}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <Users className="h-4 w-4 text-primary" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-sm">{member.profiles.username}</p>
-                                            {member.profiles.riot_id && (
-                                                <p className="text-xs text-muted-foreground">{member.profiles.riot_id}</p>
-                                            )}
+                            {members.map((member) => {
+                                const hasRiotId = !!member.profiles?.riot_id;
+                                return (
+                                    <div
+                                        key={member.user_id}
+                                        className={`flex items-center space-x-3 p-2 rounded-lg border border-border transition-colors ${hasRiotId
+                                                ? "hover:bg-accent/50 cursor-pointer"
+                                                : "opacity-50 cursor-not-allowed"
+                                            }`}
+                                        onClick={() => toggleSelection(member.user_id)}
+                                    >
+                                        <Checkbox
+                                            checked={selectedIds.includes(member.user_id)}
+                                            onCheckedChange={() => toggleSelection(member.user_id)}
+                                            disabled={!hasRiotId}
+                                        />
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                                                {member.profiles.avatar_url ? (
+                                                    <img
+                                                        src={member.profiles.avatar_url}
+                                                        alt={member.profiles.username}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <Users className="h-4 w-4 text-primary" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-sm">{member.profiles.username}</p>
+                                                {hasRiotId ? (
+                                                    <p className="text-xs text-muted-foreground">{member.profiles.riot_id}</p>
+                                                ) : (
+                                                    <p className="text-xs text-destructive">Riot ID не привязан</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                     <div className="mt-4 flex justify-between items-center text-sm">

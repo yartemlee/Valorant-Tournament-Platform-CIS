@@ -40,13 +40,19 @@ const Index = () => {
       .select("*")
       .in("status", ["registration", "active"])
       .order("start_time", { ascending: true })
-      .limit(4);
+      .limit(5); // Увеличили с 4 до 5: 1 для избранного + 4 для активных
 
     if (!error && data) {
+      console.log("Fetched tournaments:", data);
+      console.log("Total count:", data.length);
       // First tournament is featured
       setFeaturedTournament(data[0] || null);
       // Rest are active tournaments
-      setActiveTournaments(data.slice(1));
+      const activeTournamentsData = data.slice(1);
+      console.log("Active tournaments (after slice):", activeTournamentsData);
+      setActiveTournaments(activeTournamentsData);
+    } else if (error) {
+      console.error("Error fetching tournaments:", error);
     }
 
     setLoading(false);

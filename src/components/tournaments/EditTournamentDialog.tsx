@@ -188,6 +188,9 @@ export function EditTournamentDialog({
               maxLength={100}
               required
             />
+            <div className="text-xs text-muted-foreground text-right">
+              {formData.title.length}/100
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -200,6 +203,9 @@ export function EditTournamentDialog({
               maxLength={300}
               rows={3}
             />
+            <div className="text-xs text-muted-foreground text-right">
+              {formData.description.length}/300
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

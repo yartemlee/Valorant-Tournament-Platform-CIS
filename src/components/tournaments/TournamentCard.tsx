@@ -58,45 +58,47 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
       )}
       <div className="absolute inset-0 bg-gradient-card opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-      <div className="relative p-6 space-y-4">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 flex-1">
-            <Trophy className="h-5 w-5 text-primary shrink-0" />
-            <h3 className="text-lg font-bold text-foreground line-clamp-1">{tournament.title}</h3>
-          </div>
-          <Badge className={statusColors[tournament.status as keyof typeof statusColors]}>
-            {statusLabels[tournament.status as keyof typeof statusLabels]}
-          </Badge>
-        </div>
-
-        {/* Description */}
-        {tournament.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">{tournament.description}</p>
-        )}
-
-        {/* Info */}
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            <span>{format(new Date(tournament.start_time), "d MMMM yyyy, HH:mm", { locale: ru })}</span>
-          </div>
-
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span>{formatLabels[tournament.format as keyof typeof formatLabels]}</span>
-          </div>
-
-          {tournament.prize_pool && (
-            <div className="pt-2">
-              <div className="text-xs text-muted-foreground">Призовой фонд</div>
-              <div className="text-xl font-bold text-accent">{tournament.prize_pool}</div>
+      <div className="relative p-6 flex flex-col justify-between min-h-[280px]">
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              <Trophy className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <h3 className="text-lg font-bold text-foreground line-clamp-2">{tournament.title}</h3>
             </div>
+            <Badge className={`${statusColors[tournament.status as keyof typeof statusColors]} shrink-0`}>
+              {statusLabels[tournament.status as keyof typeof statusLabels]}
+            </Badge>
+          </div>
+
+          {/* Description */}
+          {tournament.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2">{tournament.description}</p>
           )}
+
+          {/* Info */}
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>{format(new Date(tournament.start_time), "d MMMM yyyy, HH:mm", { locale: ru })}</span>
+            </div>
+
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>{formatLabels[tournament.format as keyof typeof formatLabels]}</span>
+            </div>
+
+            {tournament.prize_pool && (
+              <div className="pt-2">
+                <div className="text-xs text-muted-foreground">Призовой фонд</div>
+                <div className="text-xl font-bold text-accent">{tournament.prize_pool}</div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-4">
           <Button
             variant="default"
             className="flex-1"
