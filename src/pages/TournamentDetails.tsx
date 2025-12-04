@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Calendar, Users, Edit, LogOut, UserPlus } from "lucide-react";
+import { Trophy, Calendar, Users, Edit, LogOut, UserPlus, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { toast } from "sonner";
@@ -18,13 +18,12 @@ import { EditTournamentDialog } from "@/components/tournaments/EditTournamentDia
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { PhantomDataControls } from "@/components/tournaments/PhantomDataControls";
 import { RosterSelectionDialog } from "@/components/tournaments/RosterSelectionDialog";
+import { SubstitutionRequestDialog } from "@/components/tournaments/SubstitutionRequestDialog";
+import { SubstitutionRequestsList } from "@/components/tournaments/SubstitutionRequestsList";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-
-
-
 import { User } from "@supabase/supabase-js";
-
 import { DEFAULT_RULES } from "@/constants/tournament";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const TournamentDetails = () => {
   const { id } = useParams();
@@ -40,6 +39,11 @@ const TournamentDetails = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [startDialogOpen, setStartDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("description");
+
+  // Substitution state
+  const [substitutionDialogOpen, setSubstitutionDialogOpen] = useState(false);
+  const [currentRosterIds, setCurrentRosterIds] = useState<string[]>([]);
+  const [userTeamId, setUserTeamId] = useState<string | null>(null);
 
   // Check if user is admin
   const { data: isAdmin } = useQuery({
@@ -117,7 +121,7 @@ const TournamentDetails = () => {
     // Fetch participants (registrations)
     const { data: participantsData } = await supabase
       .from("tournament_registrations")
-      .select("id, team_id, registered_at, status")
+      .select("id, team_id, registered_at, status, selected_roster")
       .eq("tournament_id", targetId)
       .in("status", ["pending", "approved"]);
 
@@ -131,12 +135,23 @@ const TournamentDetails = () => {
             .eq("id", p.team_id)
             .maybeSingle();
 
+          let rosterPlayers: any[] = [];
+          if (p.selected_roster && p.selected_roster.length > 0) {
+            const { data: profiles } = await supabase
+              .from("profiles")
+              .select("id, username, avatar_url, rank")
+              .in("id", p.selected_roster);
+            rosterPlayers = profiles || [];
+          }
+
           return {
             id: p.id,
             user_id: "", // Not used for team registrations
             team_id: p.team_id,
             joined_at: p.registered_at,
             team: team || null,
+            selected_roster: p.selected_roster,
+            roster_players: rosterPlayers,
           };
         })
       );
@@ -152,8 +167,13 @@ const TournamentDetails = () => {
           .maybeSingle();
 
         if (anyTeamMember?.team_id) {
-          const isJoined = participantsData?.some((p) => p.team_id === anyTeamMember.team_id);
-          setIsParticipant(!!isJoined);
+          const participant = participantsData?.find((p) => p.team_id === anyTeamMember.team_id);
+          setIsParticipant(!!participant);
+          setUserTeamId(anyTeamMember.team_id);
+
+          if (participant && participant.selected_roster) {
+            setCurrentRosterIds(participant.selected_roster);
+          }
         }
       }
     }
@@ -162,7 +182,6 @@ const TournamentDetails = () => {
   const fetchData = async () => {
     setLoading(true);
 
-    // Fetch tournament
     // Fetch tournament
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
 
@@ -353,8 +372,6 @@ const TournamentDetails = () => {
 
   if (!tournament) return null;
 
-
-
   const isOwner = user?.id === tournament.organizer_id || isAdmin;
 
   const statusColors = {
@@ -424,7 +441,7 @@ const TournamentDetails = () => {
                   )}
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                   {tournament.status === "registration" && !tournament.bracket_generated && !isParticipant && isTeamLeader && (
                     <Button onClick={handleJoin}>
                       <UserPlus className="h-4 w-4 mr-2" />
@@ -437,6 +454,15 @@ const TournamentDetails = () => {
                       Выйти из турнира
                     </Button>
                   )}
+
+                  {/* Substitution Button */}
+                  {isParticipant && tournament.status === "active" && isTeamLeader && (tournament.substitution_limit || 0) > 0 && (
+                    <Button onClick={() => setSubstitutionDialogOpen(true)} variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-500/10">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Запросить замену
+                    </Button>
+                  )}
+
                   {isOwner && (
                     <>
                       {(tournament.status === "draft" || tournament.status === "registration") && (
@@ -459,18 +485,26 @@ const TournamentDetails = () => {
                   )}
                 </div>
 
-                {/* Phantom Data Controls for Organizer */}
+                {/* Organizer Controls */}
                 {isOwner && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Инструменты для тестирования сетки
-                    </p>
-                    <PhantomDataControls
-                      tournamentId={tournament?.id}
-                      onUpdate={refetchParticipants}
-                      currentTeamsCount={participants.length}
-                      maxTeams={tournament.max_teams}
-                    />
+                  <div className="mt-4 pt-4 border-t border-border space-y-4">
+                    {/* Substitution Requests */}
+                    {(tournament.substitution_limit || 0) > 0 && (
+                      <SubstitutionRequestsList tournamentId={tournament.id} />
+                    )}
+
+                    {/* Phantom Data Controls */}
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Инструменты для тестирования сетки
+                      </p>
+                      <PhantomDataControls
+                        tournamentId={tournament?.id}
+                        onUpdate={refetchParticipants}
+                        currentTeamsCount={participants.length}
+                        maxTeams={tournament.max_teams}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -528,32 +562,13 @@ const TournamentDetails = () => {
                         {participants.map((participant) => (
                           <div
                             key={participant.id}
-                            className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border hover:bg-accent/10 transition-colors"
+                            className="relative flex flex-col gap-3 p-4 rounded-lg border border-border hover:bg-accent/10 transition-colors"
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                                {participant.team?.logo_url ? (
-                                  <img
-                                    src={participant.team.logo_url}
-                                    alt={participant.team.name}
-                                    className="w-full h-full rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <Users className="h-5 w-5 text-primary" />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold truncate">{participant.team?.name || "Unknown"}</p>
-                                {participant.team?.tag && (
-                                  <p className="text-xs text-muted-foreground truncate">{participant.team.tag}</p>
-                                )}
-                              </div>
-                            </div>
                             {isOwner && (
                               <Button
-                                size="sm"
+                                size="icon"
                                 variant="ghost"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                                className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                 onClick={async () => {
                                   if (window.confirm(`Удалить команду ${participant.team?.name || "Unknown"} из турнира?`)) {
                                     const { error } = await supabase
@@ -574,6 +589,47 @@ const TournamentDetails = () => {
                                 ✕
                               </Button>
                             )}
+                            <div className="flex items-center w-full pr-8">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                  {participant.team?.logo_url ? (
+                                    <img
+                                      src={participant.team.logo_url}
+                                      alt={participant.team.name}
+                                      className="w-full h-full rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <Users className="h-5 w-5 text-primary" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold truncate">{participant.team?.name || "Unknown"}</p>
+                                  {participant.team?.tag && (
+                                    <p className="text-xs text-muted-foreground truncate">{participant.team.tag}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Roster Display */}
+                            {participant.roster_players && participant.roster_players.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-border w-full">
+                                <p className="text-xs text-muted-foreground mb-2">Состав:</p>
+                                <div className="flex flex-col gap-1.5">
+                                  {participant.roster_players.map((player) => (
+                                    <div key={player.id} className="flex items-center gap-2 bg-background/50 rounded-lg p-2 border border-border">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarImage src={player.avatar_url || undefined} />
+                                        <AvatarFallback className="text-[10px]">{player.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-sm">{player.username}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+
                           </div>
                         ))}
                       </div>
@@ -652,11 +708,21 @@ const TournamentDetails = () => {
         teamId={pendingTeamId || ""}
         onConfirm={handleRosterConfirm}
       />
+
+      {userTeamId && tournament && (
+        <SubstitutionRequestDialog
+          open={substitutionDialogOpen}
+          onOpenChange={setSubstitutionDialogOpen}
+          tournamentId={tournament.id}
+          teamId={userTeamId}
+          currentRosterIds={currentRosterIds}
+          onSuccess={() => {
+            // Optional: refresh data or show success message
+          }}
+        />
+      )}
     </div>
   );
 };
 
 export default TournamentDetails;
-
-
-
