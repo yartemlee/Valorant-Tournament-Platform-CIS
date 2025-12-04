@@ -22,7 +22,6 @@ import { Profile } from "@/types/common.types";
 
 const TopBar = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -31,9 +30,6 @@ const TopBar = () => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      }
     });
 
     // Listen for auth changes
@@ -41,27 +37,28 @@ const TopBar = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+  // Fetch profile using React Query
+  const { data: profile } = useQuery({
+    queryKey: ["current-user-profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
 
-    if (data) {
-      setProfile(data);
-    }
-  };
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error || !data) return null;
+      return data as any as Profile;
+    },
+    enabled: !!user?.id,
+  });
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
