@@ -7,6 +7,8 @@ export type Profile = Database['public']['Tables']['profiles']['Row'] & {
     medals_gold?: number;
     medals_silver?: number;
     medals_bronze?: number;
+    role: 'player' | 'admin' | 'publisher' | 'organizer';
+    rank?: ValorantRank | null;
 };
 export type Team = Database['public']['Tables']['teams']['Row'] & { is_recruiting: boolean; slug?: string | null };
 export type Tournament = Database['public']['Tables']['tournaments']['Row'] & {

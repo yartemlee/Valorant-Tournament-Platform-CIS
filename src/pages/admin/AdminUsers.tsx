@@ -25,16 +25,14 @@ import { toast } from "sonner";
 import { Profile } from "@/types/common.types";
 import { EditUserDialog } from "@/components/admin/EditUserDialog";
 
-interface UserWithRoles extends Profile {
-    roles: string[];
-}
+
 
 const AdminUsers = () => {
-    const [users, setUsers] = useState<UserWithRoles[]>([]);
+    const [users, setUsers] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [editDialogOpen, setEditDialogOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState<UserWithRoles | null>(null);
+    const [editingUser, setEditingUser] = useState<Profile | null>(null);
 
     useEffect(() => {
         fetchUsers();
@@ -51,22 +49,7 @@ const AdminUsers = () => {
 
             if (profilesError) throw profilesError;
 
-            // Fetch roles
-            const { data: roles, error: rolesError } = await supabase
-                .from("user_roles")
-                .select("user_id, role");
-
-            if (rolesError) throw rolesError;
-
-            // Combine data
-            const usersWithRoles = profiles.map((profile) => {
-                const userRoles = roles
-                    .filter((r) => r.user_id === profile.id)
-                    .map((r) => r.role);
-                return { ...profile, roles: userRoles };
-            });
-
-            setUsers(usersWithRoles);
+            setUsers(profiles as Profile[]);
         } catch (error) {
             console.error("Error fetching users:", error);
             toast.error("Ошибка загрузки пользователей");
@@ -75,28 +58,21 @@ const AdminUsers = () => {
         }
     };
 
-    const handleEditUser = (user: UserWithRoles) => {
+    const handleEditUser = (user: Profile) => {
         setEditingUser(user);
         setEditDialogOpen(true);
     };
 
-    const handleRoleChange = async (userId: string, role: string, action: "add" | "remove") => {
+    const handleRoleChange = async (userId: string, newRole: string) => {
         try {
-            if (action === "add") {
-                const { error } = await supabase
-                    .from("user_roles")
-                    .insert({ user_id: userId, role: role as "admin" | "publisher" | "organizer" | "player" });
-                if (error) throw error;
-            } else {
-                const { error } = await supabase
-                    .from("user_roles")
-                    .delete()
-                    .eq("user_id", userId)
-                    .eq("role", role as "admin" | "publisher" | "organizer" | "player");
-                if (error) throw error;
-            }
+            const { error } = await supabase
+                .from("profiles")
+                .update({ role: newRole as "admin" | "publisher" | "organizer" | "player" })
+                .eq("id", userId);
 
-            toast.success("Роли обновлены");
+            if (error) throw error;
+
+            toast.success("Роль обновлена");
             fetchUsers();
         } catch (error) {
             console.error("Error updating role:", error);
@@ -150,7 +126,7 @@ const AdminUsers = () => {
                         <TableRow>
                             <TableHead>Пользователь</TableHead>
                             <TableHead>Riot ID</TableHead>
-                            <TableHead>Роли</TableHead>
+                            <TableHead>Роль</TableHead>
                             <TableHead>Ранг</TableHead>
                             <TableHead className="text-right">Действия</TableHead>
                         </TableRow>
@@ -183,13 +159,9 @@ const AdminUsers = () => {
                                     </TableCell>
                                     <TableCell>{user.riot_id || "-"}</TableCell>
                                     <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {user.roles.map((role) => (
-                                                <Badge key={role} variant={role === "admin" ? "destructive" : "secondary"}>
-                                                    {role}
-                                                </Badge>
-                                            ))}
-                                        </div>
+                                        <Badge variant={user.role === "admin" ? "destructive" : "secondary"}>
+                                            {user.role}
+                                        </Badge>
                                     </TableCell>
                                     <TableCell>{user.rank || "-"}</TableCell>
                                     <TableCell className="text-right">
@@ -212,22 +184,16 @@ const AdminUsers = () => {
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuLabel>Роли</DropdownMenuLabel>
                                                 <DropdownMenuItem
-                                                    onClick={() => {
-                                                        const hasRole = user.roles.includes("admin");
-                                                        handleRoleChange(user.id, "admin", hasRole ? "remove" : "add");
-                                                    }}
+                                                    onClick={() => handleRoleChange(user.id, user.role === "admin" ? "player" : "admin")}
                                                 >
                                                     <Shield className="mr-2 h-4 w-4" />
-                                                    {user.roles.includes("admin") ? "Убрать админа" : "Сделать админом"}
+                                                    {user.role === "admin" ? "Убрать админа" : "Сделать админом"}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
-                                                    onClick={() => {
-                                                        const hasRole = user.roles.includes("organizer");
-                                                        handleRoleChange(user.id, "organizer", hasRole ? "remove" : "add");
-                                                    }}
+                                                    onClick={() => handleRoleChange(user.id, user.role === "organizer" ? "player" : "organizer")}
                                                 >
                                                     <Trophy className="mr-2 h-4 w-4" />
-                                                    {user.roles.includes("organizer") ? "Убрать организатора" : "Сделать организатором"}
+                                                    {user.role === "organizer" ? "Убрать организатора" : "Сделать организатором"}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem

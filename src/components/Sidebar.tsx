@@ -73,12 +73,11 @@ const Sidebar = () => {
     queryFn: async () => {
       if (!session?.user?.id) return false;
       const { data } = await supabase
-        .from("user_roles")
+        .from("profiles")
         .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      return !!data;
+        .eq("id", session.user.id)
+        .single();
+      return data?.role === "admin";
     },
     enabled: !!session?.user?.id,
   });
