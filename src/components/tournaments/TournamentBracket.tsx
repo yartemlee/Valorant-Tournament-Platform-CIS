@@ -47,6 +47,7 @@ interface TournamentBracketProps {
   bracketFormat: string;         // single_elimination или double_elimination
   participants: ParticipantWithTeam[];           // Массив участников турнира
   tournamentStatus: string;      // Статус турнира
+  onBracketCreated?: () => void; // Callback при создании сетки
 }
 
 // ============================================================================
@@ -59,7 +60,8 @@ export function TournamentBracket({
   isAdmin,
   bracketFormat,
   participants,
-  tournamentStatus
+  tournamentStatus,
+  onBracketCreated
 }: TournamentBracketProps) {
 
   // ============================================================================
@@ -205,12 +207,13 @@ export function TournamentBracket({
       // Помечаем турнир как имеющий сгенерированную сетку
       await supabase
         .from("tournaments")
-        .update({ bracket_generated: true })
+        .update({ bracket_generated: true } as any)
         .eq("id", tournamentId);
 
       toast.success("Сетка создана");
       fetchMatches();
       setConfirmDialogOpen(false);
+      onBracketCreated?.();
     } catch (error) {
       toast.error("Ошибка создания сетки");
       console.error("Ошибка генерации сетки:", error);

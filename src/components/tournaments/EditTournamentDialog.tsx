@@ -216,7 +216,11 @@ export function EditTournamentDialog({
               <Label htmlFor="format">
                 Формат сетки <span className="text-destructive">*</span>
               </Label>
-              <Select value={formData.format} onValueChange={(value) => setFormData({ ...formData, format: value })}>
+              <Select
+                value={formData.format}
+                onValueChange={(value) => setFormData({ ...formData, format: value })}
+                disabled={tournament?.bracket_generated}
+              >
                 <SelectTrigger id="format">
                   <SelectValue />
                 </SelectTrigger>
@@ -225,6 +229,11 @@ export function EditTournamentDialog({
                   <SelectItem value="double_elimination">Double Elimination</SelectItem>
                 </SelectContent>
               </Select>
+              {tournament?.bracket_generated && (
+                <p className="text-xs text-muted-foreground">
+                  Нельзя изменить формат после создания сетки
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -269,7 +278,13 @@ export function EditTournamentDialog({
                 max={64}
                 value={formData.max_teams}
                 onChange={(e) => setFormData({ ...formData, max_teams: parseInt(e.target.value) })}
+                disabled={tournament?.bracket_generated}
               />
+              {tournament?.bracket_generated && (
+                <p className="text-xs text-muted-foreground">
+                  Нельзя изменить лимит команд после создания сетки
+                </p>
+              )}
             </div>
           </div>
 

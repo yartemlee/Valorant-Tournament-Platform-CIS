@@ -184,14 +184,14 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
           <Button
             variant="outline"
             className="flex-1"
-            onClick={() => navigate(`/teams/${team.id}`)}
+            onClick={() => navigate(`/teams/${team.slug || team.id}`)}
           >
             Подробнее
           </Button>
           {showManageButton && (
             <Button
               className="flex-1"
-              onClick={() => navigate(`/teams/${team.id}`)}
+              onClick={() => navigate(`/teams/${team.slug || team.id}`)}
             >
               Управление командой
             </Button>

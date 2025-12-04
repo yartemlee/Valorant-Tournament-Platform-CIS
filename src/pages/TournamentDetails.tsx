@@ -109,14 +109,17 @@ const TournamentDetails = () => {
   };
 
   // Separate function to refetch participants for real-time updates
-  const refetchParticipants = async () => {
-    if (!id) return;
+  const refetchParticipants = async (specificTournamentId?: string) => {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
+    const targetId = specificTournamentId || tournament?.id || (isUuid ? id : null);
+
+    if (!targetId) return;
 
     // Fetch participants (registrations)
     const { data: participantsData } = await supabase
       .from("tournament_registrations")
       .select("id, team_id, registered_at, status")
-      .eq("tournament_id", id)
+      .eq("tournament_id", targetId)
       .in("status", ["pending", "approved"]);
 
     if (participantsData) {
@@ -161,11 +164,18 @@ const TournamentDetails = () => {
     setLoading(true);
 
     // Fetch tournament
-    const { data: tournamentData, error: tournamentError } = await supabase
-      .from("tournaments")
-      .select("*")
-      .eq("id", id)
-      .single();
+    // Fetch tournament
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
+
+    let query = supabase.from("tournaments").select("*");
+
+    if (isUuid) {
+      query = query.eq("id", id);
+    } else {
+      query = query.eq("slug", id);
+    }
+
+    const { data: tournamentData, error: tournamentError } = await query.single();
 
     if (tournamentError || !tournamentData) {
       toast.error("Турнир не найден");
@@ -173,10 +183,10 @@ const TournamentDetails = () => {
       return;
     }
 
-    setTournament(tournamentData);
+    setTournament(tournamentData as unknown as Tournament);
 
     // Fetch participants using the new function
-    await refetchParticipants();
+    await refetchParticipants(tournamentData.id);
 
     // Check if current user is team leader
     const { data: { user } } = await supabase.auth.getUser();
@@ -254,7 +264,7 @@ const TournamentDetails = () => {
 
     const { error } = await supabase.from("tournament_registrations").insert([
       {
-        tournament_id: id,
+        tournament_id: tournament?.id,
         team_id: pendingTeamId,
         status: "pending",
         selected_roster: selectedUserIds,
@@ -263,7 +273,12 @@ const TournamentDetails = () => {
 
     if (error) {
       console.error(error);
-      toast.error("Ошибка регистрации");
+      if (error.code === '23505') {
+        toast.error("Команда уже зарегистрирована на этот турнир");
+        fetchData(); // Refresh to update UI state
+      } else {
+        toast.error("Ошибка регистрации");
+      }
       return;
     }
 
@@ -282,7 +297,7 @@ const TournamentDetails = () => {
         .update({
           status: "active"
         })
-        .eq("id", id);
+        .eq("id", tournament?.id);
 
       toast.success("Турнир начался!");
       setStartDialogOpen(false);
@@ -311,7 +326,7 @@ const TournamentDetails = () => {
     const { error } = await supabase
       .from("tournament_registrations")
       .delete()
-      .eq("tournament_id", id)
+      .eq("tournament_id", tournament?.id)
       .eq("team_id", teamMember.team_id);
 
     if (error) {
@@ -411,7 +426,7 @@ const TournamentDetails = () => {
                 </div>
 
                 <div className="flex gap-3">
-                  {tournament.status === "registration" && !isParticipant && isTeamLeader && (
+                  {tournament.status === "registration" && !tournament.bracket_generated && !isParticipant && isTeamLeader && (
                     <Button onClick={handleJoin}>
                       <UserPlus className="h-4 w-4 mr-2" />
                       Участвовать
@@ -452,7 +467,7 @@ const TournamentDetails = () => {
                       Инструменты для тестирования сетки
                     </p>
                     <PhantomDataControls
-                      tournamentId={id!}
+                      tournamentId={tournament?.id}
                       onUpdate={refetchParticipants}
                       currentTeamsCount={participants.length}
                       maxTeams={tournament.max_teams}
@@ -582,6 +597,7 @@ const TournamentDetails = () => {
                         bracketFormat={tournament.format}
                         participants={participants}
                         tournamentStatus={tournament.status}
+                        onBracketCreated={fetchData}
                       />
                     ) : (
                       <p className="text-center text-muted-foreground py-8">

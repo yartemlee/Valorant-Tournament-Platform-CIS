@@ -45,24 +45,30 @@ const TeamDetails = () => {
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from("teams")
-        .select(`
-          *,
-          team_members (
-            id,
-            user_id,
-            role,
-            joined_at,
-            profiles (
-              username,
-              avatar_url,
-              riot_id
-            )
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+      let query = supabase.from("teams").select(`
+        *,
+        team_members(
+          id,
+          user_id,
+          role,
+          joined_at,
+          profiles(
+            username,
+            avatar_url,
+            riot_id
           )
-        `)
-        .eq("id", id)
-        .maybeSingle();
+        )
+          `);
+
+      if (isUuid) {
+        query = query.eq("id", id);
+      } else {
+        query = query.eq("slug", id);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
         console.error("Error fetching team:", error);

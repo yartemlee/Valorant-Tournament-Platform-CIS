@@ -8,9 +8,21 @@ export type Profile = Database['public']['Tables']['profiles']['Row'] & {
     medals_silver?: number;
     medals_bronze?: number;
 };
-export type Team = Database['public']['Tables']['teams']['Row'] & { is_recruiting: boolean };
+export type Team = Database['public']['Tables']['teams']['Row'] & { is_recruiting: boolean; slug?: string | null };
 export type Tournament = Database['public']['Tables']['tournaments']['Row'] & {
     bracket_generated?: boolean;
+    slug?: string | null;
+    // Manually added fields that might be missing in Database type
+    title: string;
+    start_time: string;
+    banner_url: string | null;
+    prize_pool: string | null;
+    max_teams: number | null;
+    description: string | null;
+    rules: string | null;
+    organizer_id: string;
+    status: string;
+    format: string;
 };
 export type Participant = Database['public']['Tables']['tournament_registrations']['Row'];
 export type Match = Database['public']['Tables']['matches']['Row'];

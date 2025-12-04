@@ -6,18 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
+import { Tournament } from '@/types/common.types';
+
 interface TournamentCardProps {
-  tournament: {
-    id: string;
-    title: string;
-    description: string | null;
-    format: string;
-    start_time: string;
-    prize_pool: string | null;
-    status: string;
-    banner_url: string | null;
-    max_teams: number | null;
-  };
+  tournament: Tournament;
 }
 
 export function TournamentCard({ tournament }: TournamentCardProps) {
@@ -103,7 +95,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
             variant="default"
             className="flex-1"
             size="sm"
-            onClick={() => navigate(`/tournaments/${tournament.id}`)}
+            onClick={() => navigate(`/tournaments/${tournament.slug || tournament.id}`)}
           >
             Подробнее
           </Button>

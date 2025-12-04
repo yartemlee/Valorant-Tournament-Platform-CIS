@@ -63,7 +63,7 @@ const Tournaments = () => {
     if (error) {
       toast.error("Ошибка загрузки турниров");
     } else {
-      setTournaments(data || []);
+      setTournaments((data || []) as unknown as Tournament[]);
     }
     setLoading(false);
   };

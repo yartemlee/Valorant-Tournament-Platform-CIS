@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Shield } from "lucide-react";
 import { z } from "zod";
+import { slugify } from "@/utils/slugify";
 
 const teamSchema = z.object({
   name: z.string().min(3, "Минимум 3 символа").max(24, "Максимум 24 символа"),
@@ -65,8 +66,8 @@ const CreateTeam = () => {
       }
 
       // Create team using RPC
-      const { data: teamId, error: rpcError } = await supabase.rpc(
-        'create_team_with_captain',
+      const { data: teamIdData, error: rpcError } = await supabase.rpc(
+        'create_team_with_captain' as any,
         {
           name_input: formData.name,
           tag_input: formData.tag.toUpperCase(),
@@ -78,12 +79,26 @@ const CreateTeam = () => {
 
       if (rpcError) throw rpcError;
 
+      const teamId = teamIdData as unknown as string;
+
+      // Generate and update slug
+      const slug = slugify(formData.name);
+      const { error: slugError } = await supabase
+        .from('teams')
+        .update({ slug } as any)
+        .eq('id', teamId);
+
       toast({
         title: "Команда создана",
         description: "Вы можете пригласить участников",
       });
 
-      navigate(`/teams/${teamId}`);
+      if (!slugError) {
+        navigate(`/teams/${slug}`);
+      } else {
+        console.error("Error setting slug:", slugError);
+        navigate(`/teams/${teamId}`);
+      }
     } catch (error) {
       let errorMessage = error.message;
 

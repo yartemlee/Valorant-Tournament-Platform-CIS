@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { DEFAULT_RULES } from "@/constants/tournament";
+import { slugify } from "@/utils/slugify";
 
 interface CreateTournamentDialogProps {
   open: boolean;
@@ -42,7 +43,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
         .single();
 
       if (data) {
-        setUserCoins(data.coins);
+        setUserCoins((data as any).coins);
       }
     }
   };
@@ -95,7 +96,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
 
     setLoading(true);
 
-    const { data, error } = await supabase.rpc('create_tournament_with_payment', {
+    const { data, error } = await supabase.rpc('create_tournament_with_payment' as any, {
       p_title: formData.title,
       p_description: formData.description,
       p_format: formData.format as any,
@@ -121,7 +122,21 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
     // Based on our RPC: RETURN jsonb_build_object('id', v_tournament_id, ...)
     const newTournamentId = (data as any)?.id;
     if (newTournamentId) {
-      navigate(`/tournaments/${newTournamentId}`);
+      const shortId = newTournamentId.slice(-4);
+      const slug = `${slugify(formData.title)}-${shortId}`;
+
+      // Try to update slug
+      const { error: slugError } = await supabase
+        .from('tournaments')
+        .update({ slug } as any)
+        .eq('id', newTournamentId);
+
+      if (!slugError) {
+        navigate(`/tournaments/${slug}`);
+      } else {
+        console.error("Error setting slug:", slugError);
+        navigate(`/tournaments/${newTournamentId}`);
+      }
     } else {
       // Fallback if ID not found (shouldn't happen if RPC works)
       navigate('/tournaments');
