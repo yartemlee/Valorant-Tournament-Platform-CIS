@@ -25,6 +25,7 @@ export type Tournament = Database['public']['Tables']['tournaments']['Row'] & {
     organizer_id: string;
     status: string;
     format: string;
+    substitution_limit?: number;
 };
 export type Participant = Database['public']['Tables']['tournament_registrations']['Row'];
 export type Match = Database['public']['Tables']['matches']['Row'];
@@ -180,9 +181,16 @@ export interface BracketMatch {
 }
 
 export interface ParticipantWithTeam extends Participant {
+    selected_roster?: string[] | null;
     team: {
         name: string;
         tag: string;
         logo_url: string | null;
     } | null;
+    roster_players?: {
+        id: string;
+        username: string;
+        avatar_url: string | null;
+        rank?: ValorantRank | null;
+    }[];
 }

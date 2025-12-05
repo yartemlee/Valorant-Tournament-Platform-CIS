@@ -28,8 +28,8 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
     start_time: "",
     prize_pool: "",
     max_teams: 16,
-
     rules: DEFAULT_RULES,
+    substitution_limit: 0,
   });
 
   // Fetch user coins when dialog opens
@@ -116,7 +116,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
       p_prize_pool: formData.prize_pool, // Pass as string, RPC handles parsing
       p_max_teams: formData.max_teams,
       p_rules: formData.rules,
-
+      p_substitution_limit: formData.substitution_limit,
     });
 
     setLoading(false);
@@ -129,9 +129,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
 
     toast.success(`Турнир создан! Списано ${totalCost} VP`);
     onSuccess?.();
-    // RPC returns the new tournament ID in the response
-    // The response structure from RPC is JSONB, so we might need to cast or access carefully
-    // Based on our RPC: RETURN jsonb_build_object('id', v_tournament_id, ...)
+
     const newTournamentId = (data as any)?.id;
     if (newTournamentId) {
       const shortId = newTournamentId.slice(-4);
@@ -150,7 +148,6 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
         navigate(`/tournaments/${newTournamentId}`);
       }
     } else {
-      // Fallback if ID not found (shouldn't happen if RPC works)
       navigate('/tournaments');
     }
   };
@@ -231,7 +228,6 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
                 required
                 className="[color-scheme:dark] w-full block"
               />
-
             </div>
           </div>
 
@@ -262,6 +258,18 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
                 onChange={(e) => setFormData({ ...formData, max_teams: parseInt(e.target.value) })}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="substitution_limit">Лимит замен (0 = без замен)</Label>
+            <Input
+              id="substitution_limit"
+              type="number"
+              min={0}
+              max={5}
+              value={formData.substitution_limit}
+              onChange={(e) => setFormData({ ...formData, substitution_limit: parseInt(e.target.value) || 0 })}
+            />
           </div>
 
           {/* Cost Summary */}
@@ -301,8 +309,6 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
               rows={4}
             />
           </div>
-
-
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">

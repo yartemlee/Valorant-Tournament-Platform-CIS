@@ -41,6 +41,7 @@ export function EditTournamentDialog({
     prize_pool: "",
     max_teams: 16,
     rules: "",
+    substitution_limit: 0,
   });
 
   // Fetch user coins when dialog opens
@@ -77,8 +78,8 @@ export function EditTournamentDialog({
         start_time: tournament.start_time ? new Date(tournament.start_time).toISOString().slice(0, 16) : "",
         prize_pool: tournament.prize_pool ? tournament.prize_pool.toString() : "",
         max_teams: tournament.max_teams || 16,
-
         rules: tournament.rules || DEFAULT_RULES,
+        substitution_limit: tournament.substitution_limit || 0,
       });
     }
   }, [tournament]);
@@ -104,6 +105,11 @@ export function EditTournamentDialog({
     const selectedDate = new Date(formData.start_time);
     const maxDate = new Date();
     maxDate.setFullYear(new Date().getFullYear() + 5);
+
+    if (selectedDate < new Date()) {
+      toast.error("Дата начала турнира не может быть в прошлом");
+      return;
+    }
 
     if (selectedDate > maxDate) {
       toast.error("Дата начала турнира не может быть более чем через 5 лет");
@@ -143,7 +149,8 @@ export function EditTournamentDialog({
         p_start_time: new Date(formData.start_time).toISOString(),
         p_prize_pool: formData.prize_pool,
         p_max_teams: formData.max_teams,
-        p_rules: formData.rules
+        p_rules: formData.rules,
+        p_substitution_limit: formData.substitution_limit,
       });
 
       if (error) throw error;
@@ -260,6 +267,7 @@ export function EditTournamentDialog({
                 value={formData.start_time}
                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                 required
+                min={new Date().toISOString().slice(0, 16)}
                 max={new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString().slice(0, 16)}
                 className="[color-scheme:dark] w-full block"
               />
@@ -301,6 +309,18 @@ export function EditTournamentDialog({
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="substitution_limit">Лимит замен (0 = без замен)</Label>
+            <Input
+              id="substitution_limit"
+              type="number"
+              min={0}
+              max={5}
+              value={formData.substitution_limit}
+              onChange={(e) => setFormData({ ...formData, substitution_limit: parseInt(e.target.value) || 0 })}
+            />
           </div>
 
           {/* Transaction Summary - Only show if cost > 0 */}
