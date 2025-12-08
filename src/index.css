@@ -1,65 +1,83 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+
+/* 
+ * ValoHub Design System — Premium Aesthetic
+ * Refined, elegant, приятный глазу
+ */
 
 @layer base {
   :root {
-    --background: 220 30% 8%;
-    --foreground: 210 20% 98%;
+    /* Font families */
+    --font-display: 'Outfit', system-ui, sans-serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
 
-    --card: 220 25% 12%;
-    --card-foreground: 210 20% 98%;
+    /* Base colors — Deep Navy Theme */
+    --background: 225 25% 6%;
+    --foreground: 220 15% 95%;
 
-    --popover: 220 30% 10%;
-    --popover-foreground: 210 20% 98%;
+    /* Card & Surface */
+    --card: 225 20% 10%;
+    --card-foreground: 220 15% 95%;
 
-    --primary: 270 80% 60%;
+    /* Popover */
+    --popover: 225 22% 8%;
+    --popover-foreground: 220 15% 95%;
+
+    /* Primary — Soft Lavender */
+    --primary: 250 60% 65%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 270 80% 70%;
+    --primary-glow: 250 70% 75%;
 
-    --secondary: 220 25% 16%;
-    --secondary-foreground: 210 20% 98%;
+    /* Secondary */
+    --secondary: 225 18% 14%;
+    --secondary-foreground: 220 15% 95%;
 
-    --muted: 220 20% 18%;
-    --muted-foreground: 220 15% 60%;
+    /* Muted */
+    --muted: 225 15% 16%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 190 85% 55%;
+    /* Accent — Refined Teal */
+    --accent: 175 45% 50%;
     --accent-foreground: 0 0% 100%;
-    --accent-glow: 190 85% 65%;
+    --accent-glow: 175 55% 60%;
 
-    --destructive: 0 70% 55%;
+    /* Destructive */
+    --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 20%;
-    --input: 220 25% 16%;
-    --ring: 270 80% 60%;
+    /* Border & Input */
+    --border: 225 15% 18%;
+    --input: 225 18% 14%;
+    --ring: 250 60% 65%;
 
     --radius: 0.75rem;
 
     /* Gradients */
-    --gradient-bg: linear-gradient(135deg, hsl(220 30% 8%) 0%, hsl(230 35% 12%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(220 25% 12%) 0%, hsl(230 30% 14%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(270 80% 60%) 0%, hsl(280 75% 65%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(190 85% 55%) 0%, hsl(200 80% 60%) 100%);
-    --gradient-sidebar: linear-gradient(180deg, hsl(220 30% 10%) 0%, hsl(220 30% 8%) 100%);
+    --gradient-bg: linear-gradient(135deg, hsl(225 25% 6%) 0%, hsl(230 28% 9%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(225 20% 10%) 0%, hsl(230 22% 12%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(250 60% 65%) 0%, hsl(260 55% 70%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(175 45% 50%) 0%, hsl(185 40% 55%) 100%);
+    --gradient-sidebar: linear-gradient(180deg, hsl(225 22% 9%) 0%, hsl(225 25% 6%) 100%);
 
-    /* Shadows */
-    --shadow-glow-primary: 0 0 40px hsl(270 80% 60% / 0.4);
-    --shadow-glow-accent: 0 0 40px hsl(190 85% 55% / 0.4);
-    --shadow-card: 0 10px 30px hsl(0 0% 0% / 0.5);
-    --shadow-sidebar: 4px 0 20px hsl(0 0% 0% / 0.3);
+    /* Shadows — Soft & Elegant */
+    --shadow-glow-primary: 0 0 40px hsl(250 60% 65% / 0.25);
+    --shadow-glow-accent: 0 0 40px hsl(175 45% 50% / 0.25);
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.4);
+    --shadow-sidebar: 4px 0 24px hsl(0 0% 0% / 0.25);
+    --shadow-soft: 0 4px 24px -4px hsl(250 60% 65% / 0.15);
 
-    /* Transitions */
+    /* Transitions — Elegant & Smooth */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-elegant: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 }
 
 @layer base {
   html {
     @apply h-full;
+    font-family: var(--font-body);
   }
 
   * {
@@ -67,10 +85,102 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground h-full;
+    @apply bg-background text-foreground h-full antialiased;
+    font-family: var(--font-body);
   }
 
   #root {
-    @apply min-h-screen bg-background;
+    @apply min-h-screen;
+    background: var(--gradient-bg);
+  }
+
+  /* Typography */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* Subtle grain texture overlay */
+  #root::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.018;
+    pointer-events: none;
+    z-index: 9999;
+  }
+}
+
+@layer utilities {
+
+  /* Gradient mesh background for main content */
+  .gradient-mesh {
+    background:
+      radial-gradient(ellipse 80% 50% at 20% -10%, hsl(250 50% 20% / 0.35) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, hsl(175 35% 18% / 0.25) 0%, transparent 50%),
+      hsl(var(--background));
+  }
+
+  /* Glass effect */
+  .glass {
+    background: hsl(var(--card) / 0.75);
+    backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  /* Soft hover glow for cards */
+  .hover-glow {
+    transition: var(--transition-elegant);
+  }
+
+  .hover-glow:hover {
+    box-shadow:
+      0 8px 40px -8px hsl(var(--primary) / 0.2),
+      0 0 0 1px hsl(var(--primary) / 0.15);
+  }
+
+  /* Staggered animation classes */
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animation-delay-100 {
+    animation-delay: 0.1s;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 0.3s;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+
+  .animation-delay-500 {
+    animation-delay: 0.5s;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

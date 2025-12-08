@@ -88,13 +88,15 @@ const Tournaments = () => {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopBar />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto gradient-mesh">
           <div className="container mx-auto px-6 py-8">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8 animate-fade-in-up">
               <div className="flex items-center gap-3">
-                <Trophy className="h-8 w-8 text-primary" />
-                <h1 className="text-4xl font-bold">Турниры</h1>
+                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                  <Trophy className="h-6 w-6 text-primary" />
+                </div>
+                <h1 className="text-4xl font-display font-bold tracking-tight">Турниры</h1>
               </div>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={handleMyTournaments}>
@@ -108,10 +110,10 @@ const Tournaments = () => {
             </div>
 
             {/* Filters */}
-            <div className="bg-card border border-border rounded-lg p-4 mb-6">
+            <div className="glass border border-border/50 rounded-xl p-4 mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center gap-2 mb-4">
                 <Filter className="h-5 w-5 text-muted-foreground" />
-                <span className="font-semibold">Фильтры</span>
+                <span className="font-display font-semibold">Фильтры</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Input
@@ -175,8 +177,14 @@ const Tournaments = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredTournaments.map((tournament) => (
-                  <TournamentCard key={tournament.id} tournament={tournament} />
+                {filteredTournaments.map((tournament, index) => (
+                  <div
+                    key={tournament.id}
+                    className="animate-fade-in-up"
+                    style={{ animationDelay: `${0.2 + index * 0.05}s` }}
+                  >
+                    <TournamentCard tournament={tournament} />
+                  </div>
                 ))}
               </div>
             )}

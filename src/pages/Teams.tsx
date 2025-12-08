@@ -120,13 +120,15 @@ const Teams = () => {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopBar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-8 gradient-mesh">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between animate-fade-in-up">
               <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-primary" />
-                <h1 className="text-3xl font-bold">Команды</h1>
+                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <h1 className="text-3xl font-display font-bold tracking-tight">Команды</h1>
               </div>
               <Button onClick={handleCreateTeam} disabled={!canCreateTeam}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -135,7 +137,7 @@ const Teams = () => {
             </div>
 
             {/* Filters */}
-            <div className="flex gap-4">
+            <div className="flex gap-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -193,12 +195,17 @@ const Teams = () => {
 
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {sortedTeams.map((team) => (
-                    <TeamCard
+                  {sortedTeams.map((team, index) => (
+                    <div
                       key={team.id}
-                      team={team as any}
-                      isUserTeam={team.id === profile?.current_team_id}
-                    />
+                      className="animate-fade-in-up"
+                      style={{ animationDelay: `${0.2 + index * 0.05}s` }}
+                    >
+                      <TeamCard
+                        team={team as any}
+                        isUserTeam={team.id === profile?.current_team_id}
+                      />
+                    </div>
                   ))}
                 </div>
               );

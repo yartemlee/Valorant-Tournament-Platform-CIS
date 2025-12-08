@@ -86,8 +86,8 @@ const Sidebar = () => {
     <aside className="sticky top-0 w-64 h-screen bg-gradient-sidebar border-r border-border shadow-sidebar flex-shrink-0 overflow-y-auto">
       <div className="flex flex-col min-h-full">
         {/* Logo */}
-        <div className="p-6 border-b border-border">
-          <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+        <div className="p-6 border-b border-border/50">
+          <h1 className="text-2xl font-display font-bold tracking-tight">
             ValoHub
           </h1>
           <p className="text-xs text-muted-foreground mt-1">Valorant Tournament Platform</p>

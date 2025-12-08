@@ -86,7 +86,7 @@ const Index = () => {
       <div className="flex-1 flex flex-col">
         <TopBar />
 
-        <main className="flex-1 p-8 overflow-auto">
+        <main className="flex-1 p-8 overflow-auto gradient-mesh">
           <div className="max-w-7xl mx-auto">
             {/* Featured Tournament */}
             <section className="mb-12">
@@ -95,33 +95,41 @@ const Index = () => {
                   <p className="text-muted-foreground">Загрузка турниров...</p>
                 </div>
               ) : featuredTournament ? (
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-border p-8">
+                <div className="relative overflow-hidden rounded-2xl glass border border-border/50 p-8 animate-fade-in-up group">
+                  {/* Background Image with Overlay */}
                   {featuredTournament.banner_url && (
-                    <div className="absolute inset-0 opacity-20">
+                    <div className="absolute inset-0">
                       <img
                         src={featuredTournament.banner_url}
                         alt={featuredTournament.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover opacity-15 group-hover:opacity-20 transition-opacity duration-700"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
                     </div>
                   )}
                   <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-4">
-                      <Trophy className="h-6 w-6 text-primary" />
-                      <span className="text-sm font-semibold text-primary">Избранный турнир</span>
+                      <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                        <Trophy className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="text-sm font-medium text-primary/90 tracking-wide uppercase">Избранный турнир</span>
                     </div>
-                    <h2 className="text-4xl font-bold mb-4">{featuredTournament.title}</h2>
+                    <h2 className="text-4xl font-display font-bold mb-4 tracking-tight">{featuredTournament.title}</h2>
                     {featuredTournament.description && (
-                      <p className="text-lg text-muted-foreground mb-6">{featuredTournament.description}</p>
+                      <p className="text-lg text-muted-foreground mb-6 max-w-2xl leading-relaxed">{featuredTournament.description}</p>
                     )}
                     <div className="flex gap-4">
-                      <Button onClick={() => navigate(`/tournaments/${featuredTournament.id}`)}>
+                      <Button
+                        onClick={() => navigate(`/tournaments/${featuredTournament.id}`)}
+                        className="shadow-soft hover:shadow-glow-primary transition-shadow"
+                      >
                         Подробнее
                       </Button>
                       {featuredTournament.status === "registration" && (
                         <Button
                           variant="outline"
                           onClick={() => navigate(`/tournaments/${featuredTournament.id}?action=join`)}
+                          className="border-primary/30 hover:border-primary/50 hover:bg-primary/5"
                         >
                           Участвовать
                         </Button>
@@ -145,24 +153,35 @@ const Index = () => {
             </section>
 
             {/* News Section */}
-            <section className="mb-12">
-              <h2 className="text-3xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
-                Последние новости(в разработке)
+            <section className="mb-12 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <h2 className="text-3xl font-display font-bold mb-6 tracking-tight">
+                Последние новости
+                <span className="text-sm font-body font-normal text-muted-foreground ml-3">(в разработке)</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {news.map((item, index) => (
-                  <NewsCard key={index} {...item} />
+                  <div
+                    key={index}
+                    className="animate-fade-in-up"
+                    style={{ animationDelay: `${0.2 + index * 0.1}s` }}
+                  >
+                    <NewsCard {...item} />
+                  </div>
                 ))}
               </div>
             </section>
 
             {/* Active Tournaments */}
-            <section>
+            <section className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  🔥 Активные турниры
+                <h2 className="text-3xl font-display font-bold tracking-tight">
+                  Активные турниры
                 </h2>
-                <Button variant="outline" onClick={() => navigate("/tournaments")}>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/tournaments")}
+                  className="border-border/50 hover:border-primary/30 hover:bg-primary/5"
+                >
                   Все турниры
                 </Button>
               </div>
@@ -172,8 +191,14 @@ const Index = () => {
                 </div>
               ) : activeTournaments.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {activeTournaments.map((tournament) => (
-                    <TournamentCard key={tournament.id} tournament={tournament} />
+                  {activeTournaments.map((tournament, index) => (
+                    <div
+                      key={tournament.id}
+                      className="animate-fade-in-up"
+                      style={{ animationDelay: `${0.4 + index * 0.1}s` }}
+                    >
+                      <TournamentCard tournament={tournament} />
+                    </div>
                   ))}
                 </div>
               ) : (

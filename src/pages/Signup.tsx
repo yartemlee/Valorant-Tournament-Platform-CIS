@@ -142,12 +142,12 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12">
-      <div className="w-full max-w-2xl">
-        <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
+    <div className="min-h-screen flex items-center justify-center gradient-mesh p-4 py-12">
+      <div className="w-full max-w-2xl animate-fade-in-up">
+        <div className="glass rounded-2xl p-8 shadow-card border border-border/50">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-display font-bold mb-2 tracking-tight">
               Создать аккаунт
             </h1>
             <p className="text-muted-foreground">

@@ -37,18 +37,18 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
   };
 
   return (
-    <Card className="group relative overflow-hidden border-border bg-card shadow-card hover:shadow-glow-primary hover:border-primary/50 transition-all duration-300 hover:scale-105">
+    <Card className="group relative overflow-hidden glass border-border/50 hover:border-primary/30 hover-glow transition-all duration-400">
       {/* Banner */}
       {tournament.banner_url && (
         <div className="h-32 overflow-hidden">
           <img
             src={tournament.banner_url}
             alt={tournament.title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-card opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-60"></div>
 
       <div className="relative p-6 flex flex-col justify-between min-h-[280px]">
         <div className="space-y-4">
@@ -56,7 +56,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-2 flex-1 min-w-0">
               <Trophy className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-              <h3 className="text-lg font-bold text-foreground line-clamp-2">{tournament.title}</h3>
+              <h3 className="text-lg font-display font-bold text-foreground line-clamp-2">{tournament.title}</h3>
             </div>
             <Badge className={`${statusColors[tournament.status as keyof typeof statusColors]} shrink-0`}>
               {statusLabels[tournament.status as keyof typeof statusLabels]}

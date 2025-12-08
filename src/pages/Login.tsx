@@ -98,12 +98,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-card rounded-2xl p-8 shadow-card border border-border">
+    <div className="min-h-screen flex items-center justify-center gradient-mesh p-4">
+      <div className="w-full max-w-md animate-fade-in-up">
+        <div className="glass rounded-2xl p-8 shadow-card border border-border/50">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-display font-bold mb-2 tracking-tight">
               Вход в ValoHub
             </h1>
             <p className="text-muted-foreground">
