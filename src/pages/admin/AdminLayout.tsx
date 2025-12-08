@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
     LayoutDashboard,
     Users,
+    User,
     Trophy,
     Shield,
     LogOut,
@@ -67,6 +68,7 @@ const AdminLayout = () => {
         { path: "/admin/users", icon: Users, label: "Пользователи" },
         { path: "/admin/teams", icon: Shield, label: "Команды" },
         { path: "/admin/tournaments", icon: Trophy, label: "Турниры" },
+        { path: "/admin/free-agents", icon: User, label: "Свободные агенты" },
     ];
 
     return (

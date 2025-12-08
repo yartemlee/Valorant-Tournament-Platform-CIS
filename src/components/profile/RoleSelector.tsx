@@ -281,9 +281,18 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
             </div>
 
             {/* Agent icons */}
-            <TooltipProvider>
+            <TooltipProvider delayDuration={0}>
               <div className="flex flex-wrap gap-2 pl-8">
-                {roleAgents.map((agent) => {
+                {(isEditable
+                  ? roleAgents // No sorting for own profile
+                  : roleAgents.slice().sort((a, b) => {
+                    // Sort by proficiency only for other users' profiles
+                    const statusA = getAgentStatus(a.displayName);
+                    const statusB = getAgentStatus(b.displayName);
+                    const order = { main: 0, comfortable: 1, not_played: 2 };
+                    return (order[statusA as keyof typeof order] ?? 2) - (order[statusB as keyof typeof order] ?? 2);
+                  })
+                ).map((agent) => {
                   const status = getAgentStatus(agent.displayName);
 
                   // Don't show unselected agents on other profiles

@@ -18,12 +18,14 @@ import Teams from "./pages/Teams";
 import CreateTeam from "./pages/CreateTeam";
 import TeamDetails from "./pages/TeamDetails";
 import TeamManage from "./pages/TeamManage";
+import FreeAgents from "./pages/FreeAgents";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTeams from "./pages/admin/AdminTeams";
 import AdminTournaments from "./pages/admin/AdminTournaments";
+import AdminFreeAgents from "./pages/admin/AdminFreeAgents";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +86,7 @@ const App = () => {
               <Route path="/teams/create" element={<CreateTeam />} />
               <Route path="/teams/:id" element={<TeamDetails />} />
               <Route path="/teams/:id/manage" element={<TeamManage />} />
+              <Route path="/free-agents" element={<FreeAgents />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
@@ -91,6 +94,7 @@ const App = () => {
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="teams" element={<AdminTeams />} />
                 <Route path="tournaments" element={<AdminTournaments />} />
+                <Route path="free-agents" element={<AdminFreeAgents />} />
               </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

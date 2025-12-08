@@ -12,7 +12,7 @@ const navItems = [
   { icon: Home, label: "Главная", path: "/" },
   { icon: Trophy, label: "Турниры", path: "/tournaments" },
   { icon: Users, label: "Команды", path: "/teams", showTeamApplicationsBadge: true },
-  { icon: User, label: "Свободные игроки", path: "/free-agents", inDevelopment: true },
+  { icon: User, label: "Свободные агенты", path: "/free-agents" },
   { icon: Swords, label: "Скримы", path: "/scrims", inDevelopment: true },
   { icon: BarChart2, label: "Лидерборд", path: "/leaderboard", inDevelopment: true },
   { icon: Search, label: "Поиск тимейтов", path: "/lfg", inDevelopment: true },
@@ -87,7 +87,7 @@ const Sidebar = () => {
       <div className="flex flex-col min-h-full">
         {/* Logo */}
         <div className="p-6 border-b border-border/50">
-          <h1 className="text-2xl font-display font-bold tracking-tight">
+          <h1 className="text-2xl font-display font-bold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
             ValoHub
           </h1>
           <p className="text-xs text-muted-foreground mt-1">Valorant Tournament Platform</p>

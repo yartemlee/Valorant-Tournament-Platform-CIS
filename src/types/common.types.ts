@@ -194,3 +194,27 @@ export interface ParticipantWithTeam extends Participant {
         rank?: ValorantRank | null;
     }[];
 }
+
+// Free Agent Card types
+export interface FreeAgentCard {
+    id: string;
+    user_id: string;
+    intro: string;
+    preferred_roles: string[];
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+// Extended type with profile data for display
+export interface FreeAgentCardWithProfile extends FreeAgentCard {
+    profiles: {
+        id: string;
+        username: string;
+        avatar_url: string | null;
+        rank: ValorantRank | null;
+        country: string | null;
+    };
+    player_roles?: PlayerRole[];
+    player_agents?: PlayerAgent[];
+}
