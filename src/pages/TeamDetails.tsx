@@ -13,6 +13,7 @@ import { TeamRosterSection } from "@/components/teams/TeamRosterSection";
 import { TeamStatsSection } from "@/components/teams/TeamStatsSection";
 import { TeamActivitySection } from "@/components/teams/TeamActivitySection";
 import { TeamManageDialog } from "@/components/teams/TeamManageDialog";
+import { ApplyToTeamDialog } from "@/components/teams/ApplyToTeamDialog";
 import { useCurrentUserProfile } from "@/hooks/useCurrentUserProfile";
 import { useRealtimeTeamMembers } from "@/hooks/useRealtimeTeamMembers";
 import { useRealtimeTeams } from "@/hooks/useRealtimeTeams";
@@ -24,6 +25,7 @@ const TeamDetails = () => {
   const queryClient = useQueryClient();
   const [isApplying, setIsApplying] = useState(false);
   const [manageDialogOpen, setManageDialogOpen] = useState(false);
+  const [applyDialogOpen, setApplyDialogOpen] = useState(false);
 
   const {
     id: currentUserId,
@@ -284,7 +286,7 @@ const TeamDetails = () => {
               isCaptain={isCaptainOfThisTeam}
               currentUserId={currentUserId}
               userProfile={profile}
-              onApply={handleApply}
+              onApply={() => setApplyDialogOpen(true)}
               onManage={() => setManageDialogOpen(true)}
             />
 
@@ -321,6 +323,20 @@ const TeamDetails = () => {
           refetchUserProfile();
         }}
       />
+
+      {/* Диалог подачи заявки */}
+      {team && (
+        <ApplyToTeamDialog
+          open={applyDialogOpen}
+          onOpenChange={setApplyDialogOpen}
+          team={{
+            id: team.id,
+            name: team.name,
+            tag: team.tag,
+            logo_url: team.logo_url,
+          }}
+        />
+      )}
     </div>
   );
 };

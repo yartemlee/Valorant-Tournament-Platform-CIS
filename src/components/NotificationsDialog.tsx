@@ -21,6 +21,7 @@ interface TeamInviteWithTeam {
   invited_user_id: string;
   status: string;
   created_at: string;
+  message?: string | null;
   teams: {
     id: string;
     name: string;
@@ -239,35 +240,42 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
                 {invites.map((invite: TeamInviteWithTeam) => (
                   <div
                     key={invite.id}
-                    className="flex items-center gap-4 p-4 border rounded-lg bg-card"
+                    className="flex flex-col gap-3 p-4 border rounded-lg bg-card"
                   >
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={invite.teams?.logo_url} alt={invite.teams?.name} />
-                      <AvatarFallback>{invite.teams?.tag || "T"}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-medium">{invite.teams?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(invite.created_at), "d MMMM yyyy, HH:mm", { locale: ru })}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={invite.teams?.logo_url} alt={invite.teams?.name} />
+                        <AvatarFallback>{invite.teams?.tag || "T"}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium">{invite.teams?.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(invite.created_at), "d MMMM yyyy, HH:mm", { locale: ru })}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleInviteResponse(invite.id, invite.team_id, true)}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Принять
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleInviteResponse(invite.id, invite.team_id, false)}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Отклонить
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleInviteResponse(invite.id, invite.team_id, true)}
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Принять
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleInviteResponse(invite.id, invite.team_id, false)}
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        Отклонить
-                      </Button>
-                    </div>
+                    {invite.message && (
+                      <div className="px-4 py-2 bg-muted/50 rounded-md border-l-2 border-primary/50">
+                        <p className="text-sm text-muted-foreground italic">"{invite.message}"</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

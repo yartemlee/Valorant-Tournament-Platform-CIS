@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { valorantApi, ValorantAgent } from "@/services/valorantApi";
 import { cn } from "@/lib/utils";
-import { MapPin, User, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, User, ChevronDown, ChevronUp, UserPlus } from "lucide-react";
 import { agentProficiencyLevels, roleProficiencyLevels } from "@/constants/proficiency";
 
 // Rank display mapping
@@ -59,11 +59,13 @@ interface FreeAgentCardProps {
     card: FreeAgentCardWithProfile;
     isOwnCard?: boolean;
     viewMode?: ViewMode;
+    canInvite?: boolean;
     onEdit?: () => void;
     onDelete?: () => void;
+    onInvite?: (player: { id: string; username: string; avatar_url?: string | null; rank?: string | null }) => void;
 }
 
-export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEdit, onDelete }: FreeAgentCardProps) {
+export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", canInvite = false, onEdit, onDelete, onInvite }: FreeAgentCardProps) {
     const navigate = useNavigate();
     const [apiAgents, setApiAgents] = useState<ValorantAgent[]>([]);
     const [roleIcons, setRoleIcons] = useState<Record<string, string>>({});
@@ -144,18 +146,18 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
     if (viewMode === "list") {
         return (
             <Card className="group relative overflow-hidden bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/30 hover:shadow-glow-primary transition-all duration-300">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                <CardContent className="relative p-5">
-                    <div className="flex flex-col lg:flex-row gap-4">
+                <CardContent className="relative p-4 sm:p-5">
+                    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
                         {/* Left: Avatar + Basic Info */}
-                        <div className="flex items-start gap-4 lg:w-64 shrink-0">
+                        <div className="flex items-center gap-4 lg:w-56 shrink-0">
                             <Avatar
-                                className="h-14 w-14 border-2 border-border cursor-pointer hover:border-primary/50 transition-colors"
+                                className="h-14 w-14 border-2 border-primary/20 cursor-pointer hover:border-primary/50 transition-all shadow-lg ring-2 ring-background"
                                 onClick={() => navigate(`/profile/${profile.username}`)}
                             >
                                 <AvatarImage src={profile.avatar_url || ""} alt={profile.username} />
-                                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary font-bold">
                                     {profile.username?.slice(0, 2).toUpperCase() || "??"}
                                 </AvatarFallback>
                             </Avatar>
@@ -186,8 +188,8 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
                             </div>
                         </div>
 
-                        {/* Middle: Roles + Agents */}
-                        <div className="flex-1 space-y-3">
+                        {/* Middle: Roles + Agents + Intro */}
+                        <div className="flex-1 space-y-3 min-w-0">
                             <TooltipProvider delayDuration={0}>
                                 {/* Roles */}
                                 {playerRoles.length > 0 && (
@@ -200,18 +202,20 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
                                                 return (
                                                     <Tooltip key={role.id}>
                                                         <TooltipTrigger asChild>
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className={cn(
-                                                                    "text-xs cursor-default flex items-center gap-1.5",
-                                                                    role.comfort_level === "perfect" && "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                                                                    role.comfort_level === "good" && "bg-green-500/20 text-green-400 border-green-500/30",
-                                                                    role.comfort_level === "learning" && "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-                                                                )}
-                                                            >
-                                                                {iconUrl && <img src={iconUrl} alt="" className="h-3.5 w-3.5 object-contain" />}
-                                                                {roleDisplayNames[role.role] || role.role}
-                                                            </Badge>
+                                                            <div className="cursor-help">
+                                                                <Badge
+                                                                    variant="secondary"
+                                                                    className={cn(
+                                                                        "text-xs flex items-center gap-1.5 px-2.5 py-1",
+                                                                        role.comfort_level === "perfect" && "bg-purple-500/20 text-purple-400 border-purple-500/30",
+                                                                        role.comfort_level === "good" && "bg-green-500/20 text-green-400 border-green-500/30",
+                                                                        role.comfort_level === "learning" && "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                                                                    )}
+                                                                >
+                                                                    {iconUrl && <img src={iconUrl} alt="" className="h-3.5 w-3.5 object-contain" />}
+                                                                    {roleDisplayNames[role.role] || role.role}
+                                                                </Badge>
+                                                            </div>
                                                         </TooltipTrigger>
                                                         <TooltipContent side="bottom">
                                                             <p className="text-xs font-medium">
@@ -227,7 +231,7 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
 
                                 {/* Agents */}
                                 {playerAgents.length > 0 && (
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
                                         {playerAgents
                                             .filter(a => a.skill_level !== "not_played")
                                             .sort((a, b) => {
@@ -242,7 +246,7 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
                                                     <Tooltip key={agent.id}>
                                                         <TooltipTrigger asChild>
                                                             <div className={cn(
-                                                                "relative w-9 h-9 rounded-md overflow-hidden bg-muted cursor-default",
+                                                                "relative w-8 h-8 rounded-lg overflow-hidden bg-muted cursor-default",
                                                                 "transition-all duration-200 hover:scale-110 hover:z-10",
                                                                 getAgentBorderClass(agent.skill_level)
                                                             )}>
@@ -263,16 +267,23 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
                             </TooltipProvider>
 
                             {/* Intro */}
-                            <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                                {card.intro}
-                            </p>
+                            {card.intro && (
+                                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                                    {card.intro}
+                                </p>
+                            )}
                         </div>
 
                         {/* Right: Actions */}
-                        <div className="flex lg:flex-col gap-2 lg:w-32 shrink-0">
+                        <div className="flex lg:flex-col gap-2 lg:w-36 shrink-0 lg:items-end">
                             {isOwnCard ? (
                                 <>
-                                    <Button variant="outline" size="sm" className="flex-1" onClick={onEdit}>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 lg:flex-none lg:w-full border-primary/30 hover:bg-primary/10 hover:border-primary/50"
+                                        onClick={onEdit}
+                                    >
                                         Редактировать
                                     </Button>
                                     <Button
@@ -285,15 +296,32 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
                                     </Button>
                                 </>
                             ) : (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={() => navigate(`/profile/${profile.username}`)}
-                                >
-                                    <User className="h-4 w-4 mr-2" />
-                                    Профиль
-                                </Button>
+                                <div className="flex lg:flex-col gap-2 w-full">
+                                    {canInvite && onInvite && (
+                                        <Button
+                                            size="sm"
+                                            className="flex-1 lg:flex-none lg:w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-primary/25 transition-all"
+                                            onClick={() => onInvite({
+                                                id: profile.id,
+                                                username: profile.username,
+                                                avatar_url: profile.avatar_url,
+                                                rank: profile.rank,
+                                            })}
+                                        >
+                                            <UserPlus className="h-4 w-4 mr-2" />
+                                            Пригласить
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 lg:flex-none lg:w-full border-border/50 hover:border-primary/40 hover:bg-primary/5"
+                                        onClick={() => navigate(`/profile/${profile.username}`)}
+                                    >
+                                        <User className="h-4 w-4 mr-2" />
+                                        Профиль
+                                    </Button>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -369,18 +397,20 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
                                             return (
                                                 <Tooltip key={role.id}>
                                                     <TooltipTrigger asChild>
-                                                        <Badge
-                                                            variant="secondary"
-                                                            className={cn(
-                                                                "text-[10px] cursor-default flex items-center gap-1",
-                                                                role.comfort_level === "perfect" && "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                                                                role.comfort_level === "good" && "bg-green-500/20 text-green-400 border-green-500/30",
-                                                                role.comfort_level === "learning" && "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-                                                            )}
-                                                        >
-                                                            {iconUrl && <img src={iconUrl} alt="" className="h-3 w-3 object-contain" />}
-                                                            {roleDisplayNames[role.role] || role.role}
-                                                        </Badge>
+                                                        <div className="cursor-help">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className={cn(
+                                                                    "text-[10px] flex items-center gap-1",
+                                                                    role.comfort_level === "perfect" && "bg-purple-500/20 text-purple-400 border-purple-500/30",
+                                                                    role.comfort_level === "good" && "bg-green-500/20 text-green-400 border-green-500/30",
+                                                                    role.comfort_level === "learning" && "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                                                                )}
+                                                            >
+                                                                {iconUrl && <img src={iconUrl} alt="" className="h-3 w-3 object-contain" />}
+                                                                {roleDisplayNames[role.role] || role.role}
+                                                            </Badge>
+                                                        </div>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="bottom">
                                                         <p className="text-xs font-medium">
@@ -448,15 +478,32 @@ export function FreeAgentCard({ card, isOwnCard = false, viewMode = "grid", onEd
                                     </Button>
                                 </>
                             ) : (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="w-full h-7 text-xs"
-                                    onClick={() => navigate(`/profile/${profile.username}`)}
-                                >
-                                    <User className="h-3 w-3 mr-1" />
-                                    Открыть профиль
-                                </Button>
+                                <>
+                                    {canInvite && onInvite && (
+                                        <Button
+                                            size="sm"
+                                            className="flex-1 h-7 text-xs"
+                                            onClick={() => onInvite({
+                                                id: profile.id,
+                                                username: profile.username,
+                                                avatar_url: profile.avatar_url,
+                                                rank: profile.rank,
+                                            })}
+                                        >
+                                            <UserPlus className="h-3 w-3 mr-1" />
+                                            Пригласить
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className={cn("h-7 text-xs", canInvite ? "flex-1" : "w-full")}
+                                        onClick={() => navigate(`/profile/${profile.username}`)}
+                                    >
+                                        <User className="h-3 w-3 mr-1" />
+                                        Профиль
+                                    </Button>
+                                </>
                             )}
                         </div>
                     </div>

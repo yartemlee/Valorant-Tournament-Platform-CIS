@@ -9,6 +9,7 @@ import { User, Plus, Sparkles, UserX } from "lucide-react";
 import { FreeAgentCard } from "@/components/free-agents/FreeAgentCard";
 import { FreeAgentFiltersPanel, FreeAgentFilters, ViewMode } from "@/components/free-agents/FreeAgentFilters";
 import { CreateFreeAgentCardDialog } from "@/components/free-agents/CreateFreeAgentCardDialog";
+import { InviteToTeamDialog } from "@/components/free-agents/InviteToTeamDialog";
 import { FreeAgentCardWithProfile, PlayerRole, PlayerAgent } from "@/types/common.types";
 import { toast } from "sonner";
 
@@ -30,6 +31,13 @@ const FreeAgents = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>("grid");
+    const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+    const [selectedPlayer, setSelectedPlayer] = useState<{
+        id: string;
+        username: string;
+        avatar_url?: string | null;
+        rank?: string | null;
+    } | null>(null);
 
     // Get current user profile
     const { data: profile } = useQuery({
@@ -48,6 +56,39 @@ const FreeAgents = () => {
 
     // Check if user has a team
     const hasTeam = !!profile?.current_team_id;
+
+    // Get user's team (if captain/coach)
+    const { data: userTeam } = useQuery({
+        queryKey: ["user-team", profile?.current_team_id],
+        queryFn: async () => {
+            if (!profile?.current_team_id) return null;
+            const { data } = await supabase
+                .from("teams")
+                .select("id, name, tag, logo_url")
+                .eq("id", profile.current_team_id)
+                .single();
+            return data;
+        },
+        enabled: !!profile?.current_team_id,
+    });
+
+    // Check if user is captain or coach of their team
+    const { data: userTeamRole } = useQuery({
+        queryKey: ["user-team-role", session?.user?.id, profile?.current_team_id],
+        queryFn: async () => {
+            if (!session?.user?.id || !profile?.current_team_id) return null;
+            const { data } = await supabase
+                .from("team_members")
+                .select("role")
+                .eq("team_id", profile.current_team_id)
+                .eq("user_id", session.user.id)
+                .single();
+            return data?.role;
+        },
+        enabled: !!session?.user?.id && !!profile?.current_team_id,
+    });
+
+    const canInvitePlayers = userTeamRole === "captain" || userTeamRole === "coach";
 
     // Get current user's free agent card
     const { data: myCard, refetch: refetchMyCard } = useQuery({
@@ -352,8 +393,13 @@ const FreeAgents = () => {
                                             card={card}
                                             viewMode={viewMode}
                                             isOwnCard={card.user_id === session?.user?.id}
+                                            canInvite={canInvitePlayers && card.user_id !== session?.user?.id}
                                             onEdit={openEditDialog}
                                             onDelete={handleDeleteCard}
+                                            onInvite={(player) => {
+                                                setSelectedPlayer(player);
+                                                setInviteDialogOpen(true);
+                                            }}
                                         />
                                     </div>
                                 ))}
@@ -374,6 +420,17 @@ const FreeAgents = () => {
                 } : undefined}
                 isEditing={isEditing}
             />
+
+            {/* Invite to Team Dialog */}
+            {selectedPlayer && userTeam && (
+                <InviteToTeamDialog
+                    open={inviteDialogOpen}
+                    onOpenChange={setInviteDialogOpen}
+                    player={selectedPlayer}
+                    teamId={userTeam.id}
+                    teamName={userTeam.name}
+                />
+            )}
         </div>
     );
 };

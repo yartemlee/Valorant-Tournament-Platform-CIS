@@ -38,7 +38,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
         .eq("team_id", teamId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
-      
+
       if (error) {
         console.error("Error fetching applications:", error);
         throw error;
@@ -53,13 +53,13 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
   });
 
   // Real-time подписки для автоматического обновления заявок и приглашений
-  useRealtimeTeamApplications({ 
-    userId: session?.user?.id, 
-    managedTeamIds: [teamId] 
+  useRealtimeTeamApplications({
+    userId: session?.user?.id,
+    managedTeamIds: [teamId]
   });
-  useRealtimeTeamInvitations({ 
-    userId: session?.user?.id, 
-    managedTeamIds: [teamId] 
+  useRealtimeTeamInvitations({
+    userId: session?.user?.id,
+    managedTeamIds: [teamId]
   });
 
   const { data: invites, isLoading: invitesLoading, error: invitesError } = useQuery({
@@ -78,7 +78,7 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
         .eq("team_id", teamId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
-      
+
       if (error) {
         console.error("Error fetching invites:", error);
         throw error;
@@ -219,8 +219,10 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
                         {app.from_user.riot_id}
                       </p>
                     )}
-                    {app.note && (
-                      <p className="text-sm text-muted-foreground mt-1">{app.note}</p>
+                    {app.message && (
+                      <div className="mt-2 px-3 py-2 bg-muted/50 rounded-md border-l-2 border-primary/50 max-w-md">
+                        <p className="text-sm text-muted-foreground italic">"{app.message}"</p>
+                      </div>
                     )}
                   </div>
                 </div>
