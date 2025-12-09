@@ -23,3 +23,19 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# IDE/Editor configs
+.cursor/
+
+# Tool-specific
+.claude/
+.playwright-mcp/
+
+# Temporary files
+build_log.txt
+lint_output.txt
+debug_roles.ts
+
+# One-off scripts
+fix-any-types.ps1
+fix-any-types-pass2.ps1
