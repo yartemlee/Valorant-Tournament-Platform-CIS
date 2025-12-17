@@ -139,8 +139,8 @@ export interface ElectronWindow {
 }
 
 // Type guard to check if running in Electron
-export function isElectronWindow(win: Window): win is Window & ElectronWindow {
-  return 'valorantApi' in win && 'appApi' in win;
+export function isElectronWindow(win: any): win is ElectronWindow {
+  return win && typeof win === 'object' && 'valorantApi' in win && 'appApi' in win;
 }
 
 /**
