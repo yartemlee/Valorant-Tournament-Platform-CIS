@@ -1,124 +1,18 @@
 # Valorant Tournament Platform CIS
 
-Платформа для проведения любительских и полупрофессиональных турниров по Valorant в СНГ. Участвуйте в турнирах, создавайте команды, отслеживайте статистику.
+Платформа для проведения любительских и полупрофессиональных турниров по Valorant в СНГ.
 
-## 📚 Документация
+> **⚠️ ВНИМАНИЕ**
+> Полная документация, спецификация, архитектура и инструкции для разработчиков находятся в файле **[spec.md](./spec.md)**.
+> 
+> Пожалуйста, обращайтесь к `spec.md` за актуальной информацией о проекте.
+> **ВАЖНО:** При внесении изменений в проект, `spec.md` должен быть обновлен.
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - архитектура проекта, структура, типы, паттерны
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - руководство для разработчиков, стандарты кодирования
-- **[spec.md](./spec.md)** - полная спецификация проекта
+## Быстрый старт
 
-## 🚀 Быстрый старт
-
-### 1. Установка
-
-```sh
+```bash
 npm install
-```
-
-### 2. Настройка окружения
-
-Создайте `.env` файл:
-
-```sh
-cp .env.example .env
-```
-
-Заполните переменные окружения:
-
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-> Получите эти значения из [Supabase project settings](https://supabase.com/dashboard/project/_/settings/api)
-
-### 3. Запуск
-
-```sh
 npm run dev
 ```
 
-Приложение будет доступно по адресу `http://localhost:5173`
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** React 18 + TypeScript + Vite
-- **UI:** Tailwind CSS + shadcn/ui
-- **Backend:** Supabase (PostgreSQL + Auth + Storage + Realtime)
-- **State:** TanStack Query (React Query)
-- **Forms:** React Hook Form + Zod
-- **Routing:** React Router v6
-
----
-
-## 📦 Доступные команды
-
-```bash
-npm run dev         # Запуск dev сервера
-npm run build       # Production build
-npm run preview     # Preview build
-npm run typecheck   # TypeScript проверка
-npm run lint        # ESLint проверка
-```
-
----
-
-## 📖 Для разработчиков
-
-Перед началом разработки ознакомьтесь с:
-
-1. **[ARCHITECTURE.md](./ARCHITECTURE.md)** - узнайте структуру проекта
-2. **[CONTRIBUTING.md](./CONTRIBUTING.md)** - изучите стандарты кодирования
-3. **[spec.md](./spec.md)** - прочитайте спецификацию
-
-### Процесс разработки
-
-1. Создайте ветку от `develop`
-2. Следуйте стандартам из `CONTRIBUTING.md`
-3. Запустите проверки перед коммитом:
-   ```bash
-   npm run typecheck && npm run lint
-   ```
-4. Создайте Pull Request
-
----
-
-## 🏗️ Структура проекта
-
-```
-src/
-├── pages/              # Страницы приложения (роуты)
-├── components/         # React компоненты
-│   ├── ui/            # Базовые UI компоненты (shadcn/ui)
-│   ├── profile/       # Компоненты профилей
-│   ├── teams/         # Компоненты команд
-│   └── tournaments/   # Компоненты турниров
-├── hooks/             # Переиспользуемые хуки
-├── contexts/          # Context Providers
-├── lib/               # Утилиты
-├── types/             # TypeScript типы
-└── constants/         # Константы
-```
-
-Подробнее в [ARCHITECTURE.md](./ARCHITECTURE.md)
-
----
-
-## 🔐 Безопасность
-
-- Row Level Security (RLS) включена на всех таблицах
-- JWT аутентификация через Supabase Auth
-- Переменные окружения не коммитятся в Git
-
----
-
-## 📄 Лицензия
-
-MIT
-
----
-
-**Разработано с ❤️ для Valorant сообщества СНГ**
+Подробнее см. в [spec.md](./spec.md).
