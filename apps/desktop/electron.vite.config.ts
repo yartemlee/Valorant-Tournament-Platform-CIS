@@ -1,5 +1,4 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
-import react from '@vitejs/plugin-react-swc';
 import { resolve } from 'path';
 
 export default defineConfig({
@@ -35,22 +34,16 @@ export default defineConfig({
     }
   },
   renderer: {
-    plugins: [react()],
-    resolve: {
-      alias: {
-        '@': resolve(__dirname, '../web/src'),
-        '@shared': resolve(__dirname, '../../packages/shared/src')
-      }
-    },
+    // В режиме dev мы загружаем web app напрямую (http://localhost:8080)
+    // Renderer dev server использует минимальный HTML чтобы не было ошибок
+    root: resolve(__dirname, 'src/renderer'),
     build: {
+      outDir: resolve(__dirname, 'out/renderer'),
       rollupOptions: {
         input: {
-          index: resolve(__dirname, '../web/index.html')
+          index: resolve(__dirname, 'src/renderer/index.html')
         }
       }
-    },
-    server: {
-      port: 5173
     }
   }
 });

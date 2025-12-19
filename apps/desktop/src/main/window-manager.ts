@@ -15,7 +15,7 @@ export class WindowManager {
       autoHideMenuBar: true,
       backgroundColor: '#0a0e27', // Match app theme
       webPreferences: {
-        preload: join(__dirname, '../preload/index.js'),
+        preload: join(__dirname, '../preload/index.mjs'),
         sandbox: false, // Required for preload script to work
         contextIsolation: true, // Enable context isolation for security
         nodeIntegration: false, // Disable node integration for security
@@ -24,9 +24,9 @@ export class WindowManager {
     });
 
     // Load the app
-    if (process.env.ELECTRON_RENDERER_URL) {
-      // Development mode: load from vite dev server
-      this.mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+    if (process.env.NODE_ENV !== 'production') {
+      // Development mode: load from web dev server on port 8080
+      this.mainWindow.loadURL('http://localhost:8080');
     } else {
       // Production mode: load from built files
       this.mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
