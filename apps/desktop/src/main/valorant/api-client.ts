@@ -7,6 +7,23 @@ import type {
   PartyInfo
 } from '@shared/types/valorant';
 
+/**
+ * Auth tokens from local API for GLZ requests
+ */
+export interface ValorantAuthTokens {
+  accessToken: string;
+  entitlementsToken: string;
+  subject: string; // Player PUUID
+}
+
+/**
+ * Client version info
+ */
+export interface ClientVersionInfo {
+  version: string;
+  clientPlatform: string; // Base64 encoded
+}
+
 export class ValorantLocalAPI {
   private client: AxiosInstance | null = null;
   private lockfileData: LockfileData | null = null;
@@ -60,6 +77,114 @@ export class ValorantLocalAPI {
   async getPlayerPUUID(): Promise<string> {
     const response = await this.request<{ Subject: string }>('/chat/v1/session');
     return response.Subject;
+  }
+
+  /**
+   * Get auth tokens for GLZ API requests
+   */
+  async getAuthTokens(): Promise<ValorantAuthTokens> {
+    const response = await this.request<{
+      accessToken: string;
+      token: string;
+      subject: string;
+    }>('/entitlements/v1/token');
+
+    return {
+      accessToken: response.accessToken,
+      entitlementsToken: response.token,
+      subject: response.subject
+    };
+  }
+
+  /**
+   * Get client version for headers
+   */
+  async getClientVersion(): Promise<ClientVersionInfo> {
+    const response = await this.request<{
+      branch: string;
+      buildVersion: string;
+      version: string;
+    }>('/product-session/v1/external-sessions');
+
+    // Find Valorant session
+    const sessions = response as unknown as Record<string, {
+      launchConfiguration: {
+        arguments: string[];
+      };
+    }>;
+
+    let clientVersion = 'release-10.00-shipping-10-0000000.0000000';
+
+    // Try to extract version from session arguments
+    for (const session of Object.values(sessions)) {
+      const args = session.launchConfiguration?.arguments || [];
+      for (const arg of args) {
+        if (arg.startsWith('-config-branch=')) {
+          clientVersion = arg.replace('-config-branch=', '');
+          break;
+        }
+      }
+    }
+
+    // Standard client platform (PC/Windows)
+    const clientPlatform = Buffer.from(JSON.stringify({
+      platformType: 'PC',
+      platformOS: 'Windows',
+      platformOSVersion: '10.0.19042.1.256.64bit',
+      platformChipset: 'Unknown'
+    })).toString('base64');
+
+    return {
+      version: clientVersion,
+      clientPlatform
+    };
+  }
+
+  /**
+   * Get shard/region from session
+   */
+  async getRegionInfo(): Promise<{ region: string; shard: string }> {
+    const response = await this.request<any>('/product-session/v1/external-sessions');
+
+    // Parse region from session
+    const sessions = response as Record<string, any>;
+    for (const session of Object.values(sessions)) {
+      const args = session.launchConfiguration?.arguments || [];
+      for (const arg of args) {
+        if (arg.includes('-ares-deployment=')) {
+          const deployment = arg.split('=')[1];
+          // Parse deployment (e.g., "eu" -> region: "eu", shard: "eu")
+          return {
+            region: deployment,
+            shard: deployment
+          };
+        }
+      }
+    }
+
+    // Default to EU if not found
+    return { region: 'eu', shard: 'eu' };
+  }
+
+  /**
+   * Get current party ID for the player
+   */
+  async getCurrentPartyId(puuid: string): Promise<string | null> {
+    try {
+      const response = await this.request<any>('/chat/v4/presences');
+      const presences = response.presences || [];
+
+      const playerPresence = presences.find((p: any) => p.puuid === puuid);
+      if (playerPresence?.private) {
+        const privateData = JSON.parse(
+          Buffer.from(playerPresence.private, 'base64').toString()
+        );
+        return privateData.partyId || null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   /**

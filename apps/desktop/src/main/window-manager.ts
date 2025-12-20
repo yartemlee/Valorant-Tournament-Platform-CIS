@@ -1,6 +1,10 @@
 import { BrowserWindow, shell } from 'electron';
 import { join } from 'path';
 
+// Declare Electron Forge's magic constants
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+declare const MAIN_WINDOW_VITE_NAME: string;
+
 export class WindowManager {
   private mainWindow: BrowserWindow | null = null;
 
@@ -15,7 +19,7 @@ export class WindowManager {
       autoHideMenuBar: true,
       backgroundColor: '#0a0e27', // Match app theme
       webPreferences: {
-        preload: join(__dirname, '../preload/index.mjs'),
+        preload: join(__dirname, 'preload.mjs'),
         sandbox: false, // Required for preload script to work
         contextIsolation: true, // Enable context isolation for security
         nodeIntegration: false, // Disable node integration for security
@@ -23,13 +27,15 @@ export class WindowManager {
       }
     });
 
-    // Load the app
-    if (process.env.NODE_ENV !== 'production') {
+    // Load the app using Electron Forge's environment variables
+    // In dev: use the web app on port 8080 (our main React app)
+    // In prod: use the packaged renderer
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       // Development mode: load from web dev server on port 8080
       this.mainWindow.loadURL('http://localhost:8080');
     } else {
-      // Production mode: load from built files
-      this.mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+      // Production mode: load from built renderer files
+      this.mainWindow.loadFile(join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
     }
 
     // Show window when ready
@@ -49,7 +55,7 @@ export class WindowManager {
     });
 
     // Open DevTools in development
-    if (process.env.NODE_ENV === 'development') {
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       this.mainWindow.webContents.openDevTools();
     }
 

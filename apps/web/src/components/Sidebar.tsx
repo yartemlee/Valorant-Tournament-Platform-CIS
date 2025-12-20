@@ -13,9 +13,9 @@ const navItems = [
   { icon: Trophy, label: "Турниры", path: "/tournaments" },
   { icon: Users, label: "Команды", path: "/teams", showTeamApplicationsBadge: true },
   { icon: User, label: "Свободные агенты", path: "/free-agents" },
+  { icon: Search, label: "Поиск тимейтов", path: "/lfg" },
   { icon: Swords, label: "Скримы", path: "/scrims", inDevelopment: true },
   { icon: BarChart2, label: "Лидерборд", path: "/leaderboard", inDevelopment: true },
-  { icon: Search, label: "Поиск тимейтов", path: "/lfg", inDevelopment: true },
 ];
 
 const Sidebar = () => {

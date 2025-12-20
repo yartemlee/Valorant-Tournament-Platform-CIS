@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '@shared/types/ipc';
 import type {
   ValorantAPI,
   AppAPI,
+  LFGAPI,
   IPCRequest,
   IPCResponse,
   IPCEvent
@@ -62,9 +63,36 @@ const appApi: AppAPI = {
   close: () => invoke(IPC_CHANNELS.APP_CLOSE)
 };
 
+// LFG API exposed to renderer
+const lfgApi: LFGAPI = {
+  // Party management
+  getPartyInfo: () => invoke(IPC_CHANNELS.LFG_GET_PARTY_INFO),
+  generatePartyCode: () => invoke(IPC_CHANNELS.LFG_GENERATE_PARTY_CODE),
+  joinPartyByCode: (code: string) =>
+    invoke(IPC_CHANNELS.LFG_JOIN_PARTY_BY_CODE, { code }),
+  inviteToParty: (gameName: string, tagLine: string) =>
+    invoke(IPC_CHANNELS.LFG_INVITE_TO_PARTY, { gameName, tagLine }),
+
+  // Desktop sync
+  startSync: (supabaseToken: string) =>
+    invoke(IPC_CHANNELS.DESKTOP_START_SYNC, { supabaseToken }),
+  stopSync: () => invoke(IPC_CHANNELS.DESKTOP_STOP_SYNC),
+
+  // Event listeners
+  onPartyCodeGenerated: (callback) =>
+    on(IPC_CHANNELS.LFG_PARTY_CODE_GENERATED, callback),
+  onPartyJoinResult: (callback) =>
+    on(IPC_CHANNELS.LFG_PARTY_JOIN_RESULT, callback),
+  onHeartbeat: (callback) =>
+    on(IPC_CHANNELS.DESKTOP_HEARTBEAT, callback),
+  onStatusChanged: (callback) =>
+    on(IPC_CHANNELS.DESKTOP_STATUS_CHANGED, callback)
+};
+
 // Expose APIs to renderer via contextBridge
 contextBridge.exposeInMainWorld('valorantApi', valorantApi);
 contextBridge.exposeInMainWorld('appApi', appApi);
+contextBridge.exposeInMainWorld('lfgApi', lfgApi);
 
 // Log successful preload
 console.log('[Preload] APIs exposed successfully');

@@ -3,19 +3,23 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "concurrently -n web,desktop \"npm:dev:web\" \"npm:dev:desktop\"",
-    "dev:web": "pnpm --filter web dev",
-    "dev:desktop": "pnpm --filter desktop dev",
-    "build": "pnpm -r build",
-    "build:web": "pnpm --filter web build",
-    "build:desktop": "pnpm --filter desktop build",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
-    "clean": "pnpm -r clean && rm -rf node_modules",
+    "dev:web": "node scripts/run-web.js",
+    "dev:desktop": "node scripts/run-desktop.js",
+    "build": "npm run build:web && npm run build:desktop",
+    "build:web": "node scripts/run-web.js build",
+    "build:desktop": "node scripts/run-desktop.js make",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "clean": "rm -rf node_modules apps/web/node_modules apps/desktop/node_modules packages/shared/node_modules",
     "db:migrate": "supabase db push",
     "db:types": "supabase gen types typescript --local > packages/shared/src/types/database.types.ts",
-    "preview": "pnpm --filter web preview"
+    "preview": "node scripts/run-web.js preview"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

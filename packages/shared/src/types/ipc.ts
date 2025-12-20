@@ -2,6 +2,45 @@
 import type { ValorantGameStatus, ValorantLobbyInfo, ValorantMatchStats } from './valorant';
 
 /**
+ * LFG Party information for party management
+ */
+export interface LFGPartyInfo {
+  partyId: string;
+  inviteCode: string | null;
+  size: number;
+  maxSize: number;
+  isOwner: boolean;
+  members: Array<{
+    puuid: string;
+    gameName?: string;
+    tagLine?: string;
+    isReady: boolean;
+  }>;
+}
+
+/**
+ * Desktop heartbeat data sent to Supabase
+ */
+export interface DesktopHeartbeatData {
+  isOnline: boolean;
+  valorantRunning: boolean;
+  valorantStatus: ValorantGameStatus;
+  partyId: string | null;
+  partyCode: string | null;
+  partySize: number;
+  playerPuuid: string | null;
+}
+
+/**
+ * Desktop status change event
+ */
+export interface DesktopStatusData {
+  isOnline: boolean;
+  valorantRunning: boolean;
+  valorantStatus: ValorantGameStatus;
+}
+
+/**
  * Centralized IPC channel definitions
  * All channels should be defined here to ensure type safety
  */
@@ -18,6 +57,20 @@ export const IPC_CHANNELS = {
   // Supabase sync channels
   VALORANT_SYNC_SUPABASE: 'valorant:sync-supabase',
   VALORANT_SYNC_STATUS: 'valorant:sync-status',
+
+  // LFG Party Management channels
+  LFG_GET_PARTY_INFO: 'lfg:get-party-info',
+  LFG_GENERATE_PARTY_CODE: 'lfg:generate-party-code',
+  LFG_JOIN_PARTY_BY_CODE: 'lfg:join-party-by-code',
+  LFG_INVITE_TO_PARTY: 'lfg:invite-to-party',
+  LFG_PARTY_CODE_GENERATED: 'lfg:party-code-generated',
+  LFG_PARTY_JOIN_RESULT: 'lfg:party-join-result',
+
+  // Desktop Sync channels
+  DESKTOP_HEARTBEAT: 'desktop:heartbeat',
+  DESKTOP_STATUS_CHANGED: 'desktop:status-changed',
+  DESKTOP_START_SYNC: 'desktop:start-sync',
+  DESKTOP_STOP_SYNC: 'desktop:stop-sync',
 
   // App lifecycle channels
   APP_GET_VERSION: 'app:get-version',
@@ -36,6 +89,15 @@ export type IPCRequest = {
   [IPC_CHANNELS.VALORANT_GET_LOBBY]: void;
   [IPC_CHANNELS.VALORANT_GET_MATCH_STATS]: { matchId?: string };
   [IPC_CHANNELS.VALORANT_SYNC_SUPABASE]: { force?: boolean };
+  // LFG Party Management
+  [IPC_CHANNELS.LFG_GET_PARTY_INFO]: void;
+  [IPC_CHANNELS.LFG_GENERATE_PARTY_CODE]: void;
+  [IPC_CHANNELS.LFG_JOIN_PARTY_BY_CODE]: { code: string };
+  [IPC_CHANNELS.LFG_INVITE_TO_PARTY]: { gameName: string; tagLine: string };
+  // Desktop Sync
+  [IPC_CHANNELS.DESKTOP_START_SYNC]: { supabaseToken: string };
+  [IPC_CHANNELS.DESKTOP_STOP_SYNC]: void;
+  // App lifecycle
   [IPC_CHANNELS.APP_GET_VERSION]: void;
   [IPC_CHANNELS.APP_QUIT]: void;
   [IPC_CHANNELS.APP_MINIMIZE]: void;
@@ -52,6 +114,15 @@ export type IPCResponse = {
   [IPC_CHANNELS.VALORANT_GET_LOBBY]: ValorantLobbyInfo | null;
   [IPC_CHANNELS.VALORANT_GET_MATCH_STATS]: ValorantMatchStats | null;
   [IPC_CHANNELS.VALORANT_SYNC_SUPABASE]: { success: boolean; synced: number; failed: number };
+  // LFG Party Management
+  [IPC_CHANNELS.LFG_GET_PARTY_INFO]: LFGPartyInfo | null;
+  [IPC_CHANNELS.LFG_GENERATE_PARTY_CODE]: { success: boolean; code?: string; error?: string };
+  [IPC_CHANNELS.LFG_JOIN_PARTY_BY_CODE]: { success: boolean; partyId?: string; error?: string };
+  [IPC_CHANNELS.LFG_INVITE_TO_PARTY]: { success: boolean; error?: string };
+  // Desktop Sync
+  [IPC_CHANNELS.DESKTOP_START_SYNC]: { success: boolean };
+  [IPC_CHANNELS.DESKTOP_STOP_SYNC]: { success: boolean };
+  // App lifecycle
   [IPC_CHANNELS.APP_GET_VERSION]: string;
   [IPC_CHANNELS.APP_QUIT]: void;
   [IPC_CHANNELS.APP_MINIMIZE]: void;
@@ -72,6 +143,12 @@ export type IPCEvent = {
     status: 'syncing' | 'success' | 'error';
     message?: string;
   };
+  // LFG Party events
+  [IPC_CHANNELS.LFG_PARTY_CODE_GENERATED]: { partyId: string; code: string };
+  [IPC_CHANNELS.LFG_PARTY_JOIN_RESULT]: { success: boolean; partyId?: string; error?: string };
+  // Desktop Sync events
+  [IPC_CHANNELS.DESKTOP_HEARTBEAT]: DesktopHeartbeatData;
+  [IPC_CHANNELS.DESKTOP_STATUS_CHANGED]: DesktopStatusData;
 };
 
 /**
@@ -130,17 +207,39 @@ export interface AppAPI {
 }
 
 /**
+ * LFG API exposed to renderer via contextBridge
+ */
+export interface LFGAPI {
+  // Party management
+  getPartyInfo: () => Promise<LFGPartyInfo | null>;
+  generatePartyCode: () => Promise<{ success: boolean; code?: string; error?: string }>;
+  joinPartyByCode: (code: string) => Promise<{ success: boolean; partyId?: string; error?: string }>;
+  inviteToParty: (gameName: string, tagLine: string) => Promise<{ success: boolean; error?: string }>;
+
+  // Desktop sync
+  startSync: (supabaseToken: string) => Promise<{ success: boolean }>;
+  stopSync: () => Promise<{ success: boolean }>;
+
+  // Event listeners
+  onPartyCodeGenerated: (callback: (data: { partyId: string; code: string }) => void) => () => void;
+  onPartyJoinResult: (callback: (data: { success: boolean; partyId?: string; error?: string }) => void) => () => void;
+  onHeartbeat: (callback: (data: DesktopHeartbeatData) => void) => () => void;
+  onStatusChanged: (callback: (data: DesktopStatusData) => void) => () => void;
+}
+
+/**
  * Window interface extension for Electron preload
  * This should be used in apps/web/src/vite-env.d.ts
  */
 export interface ElectronWindow {
   valorantApi: ValorantAPI;
   appApi: AppAPI;
+  lfgApi: LFGAPI;
 }
 
 // Type guard to check if running in Electron
 export function isElectronWindow(win: any): win is ElectronWindow {
-  return win && typeof win === 'object' && 'valorantApi' in win && 'appApi' in win;
+  return win && typeof win === 'object' && 'valorantApi' in win && 'appApi' in win && 'lfgApi' in win;
 }
 
 /**

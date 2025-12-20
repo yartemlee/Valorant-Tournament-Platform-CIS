@@ -19,6 +19,7 @@ import CreateTeam from "./pages/CreateTeam";
 import TeamDetails from "./pages/TeamDetails";
 import TeamManage from "./pages/TeamManage";
 import FreeAgents from "./pages/FreeAgents";
+import FindTeammates from "./pages/FindTeammates";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -87,6 +88,7 @@ const App = () => {
               <Route path="/teams/:id" element={<TeamDetails />} />
               <Route path="/teams/:id/manage" element={<TeamManage />} />
               <Route path="/free-agents" element={<FreeAgents />} />
+              <Route path="/lfg" element={<FindTeammates />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
