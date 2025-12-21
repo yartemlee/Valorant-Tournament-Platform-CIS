@@ -41,6 +41,17 @@ export interface CreateLobbyParams {
   inviteCode?: string;
 }
 
+export interface UpdateLobbyParams {
+  lobbyId: string;
+  title: string;
+  description?: string;
+  maxSize: number;
+  minRank?: string;
+  maxRank?: string;
+  isPrivate?: boolean;
+  voiceRequired?: boolean;
+}
+
 export interface LobbyFilters {
   gameMode?: LFGGameMode;
   region?: ValorantRegion;
@@ -294,6 +305,103 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
     },
   });
 
+  // Update lobby mutation
+  const updateLobby = useMutation({
+    mutationFn: async (params: UpdateLobbyParams) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('lfg_lobbies')
+        .update({
+          title: params.title,
+          description: params.description ?? null,
+          max_size: params.maxSize,
+          min_rank: params.minRank ?? null,
+          max_rank: params.maxRank ?? null,
+          is_private: params.isPrivate ?? false,
+          voice_required: params.voiceRequired ?? false,
+        })
+        .eq('id', params.lobbyId)
+        .eq('owner_id', user.id); // Only owner can update
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      toast.success('Лобби обновлено');
+      queryClient.invalidateQueries({ queryKey: ['lfg-lobbies'] });
+      queryClient.invalidateQueries({ queryKey: ['my-lfg-lobby'] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Ошибка обновления лобби');
+    },
+  });
+
+  // Request to join private lobby mutation
+  const requestToJoin = useMutation({
+    mutationFn: async ({ lobbyId, message }: { lobbyId: string; message?: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.rpc('request_to_join_lfg_lobby', {
+        p_lobby_id: lobbyId,
+        p_message: message || null,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const result = data as { success: boolean; error?: string; request_id?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Ошибка отправки заявки');
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      toast.success('Заявка отправлена!');
+      queryClient.invalidateQueries({ queryKey: ['lfg-lobbies'] });
+      queryClient.invalidateQueries({ queryKey: ['my-pending-requests'] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Ошибка отправки заявки');
+    },
+  });
+
+  // Handle join request (accept/reject) mutation
+  const handleRequest = useMutation({
+    mutationFn: async ({ requestId, action }: { requestId: string; action: 'accept' | 'reject' }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.rpc('handle_lfg_request', {
+        p_request_id: requestId,
+        p_action: action,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const result = data as { success: boolean; error?: string; action?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Ошибка обработки заявки');
+      }
+
+      return result;
+    },
+    onSuccess: (data) => {
+      const actionText = data.action === 'accepted' ? 'принята' : 'отклонена';
+      toast.success(`Заявка ${actionText}`);
+      queryClient.invalidateQueries({ queryKey: ['lfg-lobbies'] });
+      queryClient.invalidateQueries({ queryKey: ['my-lfg-lobby'] });
+      queryClient.invalidateQueries({ queryKey: ['lobby-requests'] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Ошибка обработки заявки');
+    },
+  });
+
   return {
     lobbies: lobbies ?? [],
     isLoading,
@@ -303,6 +411,9 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
     joinLobby,
     leaveLobby,
     updateLobbyPartyCode,
+    updateLobby,
+    requestToJoin,
+    handleRequest,
   };
 }
 
@@ -413,5 +524,244 @@ export function useMyLFGLobby() {
     isOwner,
     myMembership,
     isInLobby: !!lobby,
+  };
+}
+
+/**
+ * Interface for lobby join request
+ */
+export interface LobbyJoinRequest {
+  id: string;
+  lobby_id: string;
+  requester_id: string;
+  message: string | null;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  created_at: string;
+  profiles?: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+    rank: string | null;
+    player_roles?: Array<{ id: string; role: string; comfort_level: string }>;
+    player_agents?: Array<{ id: string; agent_name: string; skill_level: string }>;
+  };
+}
+
+/**
+ * Hook для работы с заявками на вступление в лобби
+ */
+export function useLobbyRequests(lobbyId: string | undefined) {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Fetch pending requests for this lobby (for owner)
+  const { data: requests = [], isLoading, refetch } = useQuery({
+    queryKey: ['lobby-requests', lobbyId],
+    queryFn: async () => {
+      if (!lobbyId) return [];
+
+      // First get the requests with basic profile info
+      const { data, error } = await supabase
+        .from('lfg_lobby_requests')
+        .select(`
+          id,
+          lobby_id,
+          requester_id,
+          message,
+          status,
+          created_at,
+          profiles:requester_id (
+            id,
+            username,
+            avatar_url,
+            rank
+          )
+        `)
+        .eq('lobby_id', lobbyId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching lobby requests:', error);
+        return [];
+      }
+
+      // Get player_roles and player_agents for each requester
+      const requestsWithExtras = await Promise.all(
+        (data || []).map(async (request: any) => {
+          const userId = request.requester_id;
+
+          // Fetch player_roles
+          const { data: roles } = await supabase
+            .from('player_roles')
+            .select('id, role, comfort_level')
+            .eq('user_id', userId);
+
+          // Fetch player_agents
+          const { data: agents } = await supabase
+            .from('player_agents')
+            .select('id, agent_name, skill_level')
+            .eq('user_id', userId);
+
+          return {
+            ...request,
+            profiles: {
+              ...request.profiles,
+              player_roles: roles || [],
+              player_agents: agents || [],
+            },
+          };
+        })
+      );
+
+      return requestsWithExtras as LobbyJoinRequest[];
+    },
+    enabled: !!lobbyId && !!user?.id,
+    staleTime: 5000,
+  });
+
+  // Subscribe to realtime updates for requests
+  useEffect(() => {
+    if (!lobbyId) return;
+
+    const channel = supabase
+      .channel(`lobby-requests:${lobbyId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lfg_lobby_requests',
+          filter: `lobby_id=eq.${lobbyId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['lobby-requests', lobbyId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [lobbyId, queryClient]);
+
+  return {
+    requests,
+    isLoading,
+    refetch,
+  };
+}
+
+/**
+ * Hook для проверки статуса заявки пользователя на конкретное лобби
+ */
+export function useMyLobbyRequest(lobbyId: string | undefined) {
+  const { user } = useAuth();
+
+  const { data: myRequest, isLoading } = useQuery({
+    queryKey: ['my-lobby-request', lobbyId, user?.id],
+    queryFn: async () => {
+      if (!lobbyId || !user?.id) return null;
+
+      const { data, error } = await supabase
+        .from('lfg_lobby_requests')
+        .select('id, status')
+        .eq('lobby_id', lobbyId)
+        .eq('requester_id', user.id)
+        .single();
+
+      if (error) {
+        // PGRST116 = no rows found, which is expected
+        if (error.code !== 'PGRST116') {
+          console.error('Error fetching my request:', error);
+        }
+        return null;
+      }
+
+      return data as { id: string; status: string };
+    },
+    enabled: !!lobbyId && !!user?.id,
+    staleTime: 5000,
+  });
+
+  const hasPendingRequest = myRequest?.status === 'pending';
+  const wasRejected = myRequest?.status === 'rejected';
+
+  return {
+    myRequest,
+    hasPendingRequest,
+    wasRejected,
+    isLoading,
+  };
+}
+
+/**
+ * Hook для получения всех pending заявок пользователя (для списка лобби)
+ */
+export function useMyPendingRequests() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: pendingRequests = [], isLoading, refetch } = useQuery({
+    queryKey: ['my-pending-requests', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .from('lfg_lobby_requests')
+        .select('id, lobby_id, status')
+        .eq('requester_id', user.id);
+
+      if (error) {
+        console.error('Error fetching my requests:', error);
+        return [];
+      }
+
+      return data as Array<{ id: string; lobby_id: string; status: string }>;
+    },
+    enabled: !!user?.id,
+    staleTime: 1000, // Shorter stale time for faster updates
+  });
+
+  // Subscribe to realtime updates for user's requests
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`my-requests:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lfg_lobby_requests',
+          filter: `requester_id=eq.${user.id}`,
+        },
+        () => {
+          // Immediately refetch when any change happens to user's requests
+          queryClient.invalidateQueries({ queryKey: ['my-pending-requests', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
+
+  // Helper to get request status for a specific lobby
+  const getRequestStatus = (lobbyId: string): 'pending' | 'rejected' | null => {
+    const request = pendingRequests.find((r) => r.lobby_id === lobbyId);
+    if (!request) return null;
+    if (request.status === 'pending') return 'pending';
+    if (request.status === 'rejected') return 'rejected';
+    return null;
+  };
+
+  return {
+    pendingRequests,
+    getRequestStatus,
+    isLoading,
+    refetch,
   };
 }

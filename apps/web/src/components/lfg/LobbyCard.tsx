@@ -10,7 +10,10 @@ interface LobbyCardProps {
   lobby: LFGLobbyWithMembers;
   onJoin: (lobbyId: string) => void;
   onView: (lobbyId: string) => void;
+  onRequestJoin?: (lobbyId: string) => void;
   isJoining?: boolean;
+  isRequesting?: boolean;
+  hasRequestPending?: boolean;
   isMyLobby?: boolean;
 }
 
@@ -32,10 +35,28 @@ const REGION_LABELS: Record<string, string> = {
   br: 'Бразилия',
 };
 
-export function LobbyCard({ lobby, onJoin, onView, isJoining, isMyLobby }: LobbyCardProps) {
+export function LobbyCard({ lobby, onJoin, onView, onRequestJoin, isJoining, isRequesting, hasRequestPending, isMyLobby }: LobbyCardProps) {
   const isFull = lobby.current_size >= lobby.max_size;
   const slots = `${lobby.current_size}/${lobby.max_size}`;
   const ownerProfile = lobby.owner_profile;
+  const isPrivate = lobby.is_private;
+
+  const getJoinButtonText = () => {
+    if (isJoining) return 'Вступаем...';
+    if (isRequesting) return 'Отправка...';
+    if (hasRequestPending) return 'Заявка отправлена';
+    if (isFull) return 'Лобби полное';
+    if (isPrivate) return 'Подать заявку';
+    return 'Вступить';
+  };
+
+  const handleJoinClick = () => {
+    if (isPrivate && onRequestJoin) {
+      onRequestJoin(lobby.id);
+    } else {
+      onJoin(lobby.id);
+    }
+  };
 
   return (
     <Card
@@ -84,7 +105,7 @@ export function LobbyCard({ lobby, onJoin, onView, isJoining, isMyLobby }: Lobby
 
       <CardContent className="pb-2">
         {lobby.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3 break-words">
             {lobby.description}
           </p>
         )}
@@ -157,10 +178,11 @@ export function LobbyCard({ lobby, onJoin, onView, isJoining, isMyLobby }: Lobby
             </Button>
             <Button
               className="flex-1"
-              disabled={isFull || isJoining}
-              onClick={() => onJoin(lobby.id)}
+              disabled={isFull || isJoining || isRequesting || hasRequestPending}
+              onClick={handleJoinClick}
+              variant={isPrivate ? 'secondary' : 'default'}
             >
-              {isJoining ? 'Вступаем...' : isFull ? 'Лобби полное' : 'Вступить'}
+              {getJoinButtonText()}
             </Button>
           </div>
         )}

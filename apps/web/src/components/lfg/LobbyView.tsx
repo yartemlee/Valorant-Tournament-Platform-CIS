@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Copy,
@@ -6,18 +6,17 @@ import {
   Trash2,
   Gamepad2,
   Loader2,
-  Globe,
   Users,
   Shield,
   Mic,
   RefreshCw,
-  Edit2,
   Check,
   X,
+  Lock,
+  Pencil,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
@@ -30,8 +29,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { LobbyPlayerCard } from './LobbyPlayerCard';
+import { EditLobbyDialog } from './EditLobbyDialog';
+import { JoinRequestCard } from './JoinRequestCard';
 import { useDesktopStatus } from '@/hooks/useDesktopStatus';
-import { useLFGLobbies, type LFGLobbyWithMembers } from '@/hooks/useLFGLobbies';
+import { useLFGLobbies, useLobbyRequests, type LFGLobbyWithMembers } from '@/hooks/useLFGLobbies';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -44,61 +45,55 @@ interface LobbyViewProps {
 
 const GAME_MODE_LABELS: Record<string, string> = {
   competitive: 'Рейтинговый',
-  unrated: 'Обычный',
-  spike_rush: 'Spike Rush',
-  deathmatch: 'Deathmatch',
-  swiftplay: 'Swiftplay',
+  unrated: 'Без рейтинга',
+  spike_rush: 'Спайк-раш',
+  deathmatch: 'Десматч',
+  swiftplay: 'Свифтплей',
   custom: 'Кастом',
 };
 
 const REGION_LABELS: Record<string, string> = {
-  eu: 'Европа',
-  na: 'Америка',
-  ap: 'Азия',
-  kr: 'Корея',
-  br: 'Бразилия',
-  latam: 'Латинская Америка',
+  eu: 'Европа (EU)',
+  na: 'Северная Америка (NA)',
+  ap: 'Азия (AP)',
+  kr: 'Корея (KR)',
+  br: 'Бразилия (BR)',
+  latam: 'Латинская Америка (LATAM)',
 };
 
 export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [isJoiningParty, setIsJoiningParty] = useState(false);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [isEditingCode, setIsEditingCode] = useState(false);
   const [editedCode, setEditedCode] = useState(lobby.party_code || '');
 
-  // Local state for party_code that updates in real-time
   const [currentPartyCode, setCurrentPartyCode] = useState(lobby.party_code || '');
 
   const { isConnected, isValorantRunning } = useDesktopStatus();
-  const { leaveLobby, updateLobbyPartyCode } = useLFGLobbies();
+  const { leaveLobby, updateLobbyPartyCode, updateLobby, handleRequest } = useLFGLobbies();
+  const { requests: lobbyRequests, isLoading: isLoadingRequests } = useLobbyRequests(
+    isOwner && lobby.is_private ? lobby.id : undefined
+  );
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
 
-  // Check if desktop app is available (lfgApi exposed means we're in Electron)
   const [isDesktopAvailable, setIsDesktopAvailable] = useState(false);
 
   useEffect(() => {
-    // Check if lfgApi is exposed (only available in Electron preload)
     const checkDesktop = () => {
       const available = typeof window !== 'undefined' && typeof window.lfgApi !== 'undefined';
-      console.log('[LobbyView] Desktop available:', available, 'lfgApi:', typeof window.lfgApi);
       setIsDesktopAvailable(available);
     };
-
     checkDesktop();
-    // Re-check after a short delay in case preload is slow
     const timeout = setTimeout(checkDesktop, 1000);
     return () => clearTimeout(timeout);
   }, []);
 
-  // Desktop is ready if lfgApi is available AND (connected via heartbeat OR we assume local connection)
-  // For local dev, if lfgApi exists, assume it's ready
   const isDesktopReady = isDesktopAvailable && (isConnected || isValorantRunning || isDesktopAvailable);
 
-  // Real-time subscription for party_code updates
   useEffect(() => {
-    console.log('[LobbyView] Setting up real-time subscription for lobby:', lobby.id);
-
     const channel = supabase
       .channel(`lobby-${lobby.id}`)
       .on(
@@ -110,32 +105,20 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
           filter: `id=eq.${lobby.id}`,
         },
         (payload) => {
-          console.log('[LobbyView] Received real-time update:', payload);
           const newPartyCode = (payload.new as { party_code?: string })?.party_code;
           if (newPartyCode !== undefined) {
             setCurrentPartyCode(newPartyCode || '');
             setEditedCode(newPartyCode || '');
-            console.log('[LobbyView] Updated party_code to:', newPartyCode);
           }
         }
       )
-      .subscribe((status) => {
-        console.log('[LobbyView] Subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('[LobbyView] Successfully subscribed to lobby updates');
-        }
-        if (status === 'CHANNEL_ERROR') {
-          console.error('[LobbyView] Channel error - Realtime might not be enabled for this table');
-        }
-      });
+      .subscribe();
 
     return () => {
-      console.log('[LobbyView] Removing channel for lobby:', lobby.id);
       supabase.removeChannel(channel);
     };
   }, [lobby.id]);
 
-  // Sync with lobby prop changes
   useEffect(() => {
     setCurrentPartyCode(lobby.party_code || '');
     setEditedCode(lobby.party_code || '');
@@ -160,7 +143,6 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
       if (lfgApi?.generatePartyCode) {
         const result = await lfgApi.generatePartyCode();
         if (result.success && result.code) {
-          // Save to database
           await updateLobbyPartyCode?.mutateAsync({
             lobbyId: lobby.id,
             partyCode: result.code,
@@ -172,7 +154,7 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
       } else {
         toast.error('API недоступен');
       }
-    } catch (error) {
+    } catch {
       toast.error('Ошибка генерации кода');
     } finally {
       setIsGeneratingCode(false);
@@ -221,7 +203,7 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
       } else {
         toast.error('Запустите ValoHub Desktop');
       }
-    } catch (error) {
+    } catch {
       toast.error('Ошибка присоединения к party');
     } finally {
       setIsJoiningParty(false);
@@ -242,181 +224,230 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Back button + Actions */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          К списку лобби
-        </Button>
+      {/* Back Button - Above Title */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onBack}
+        className="gap-2 text-muted-foreground hover:text-foreground -ml-2"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span className="text-sm">К списку лобби</span>
+      </Button>
 
-        <div className="flex items-center gap-2">
+      {/* Header Row: Title Left + Buttons Right */}
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="text-3xl font-bold uppercase tracking-wide text-foreground break-words overflow-wrap-anywhere flex-1 min-w-0">
+          {lobby.title}
+        </h1>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          {isOwner && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              onClick={() => setShowEditDialog(true)}
+            >
+              <Pencil className="h-4 w-4" />
+              Редактировать
+            </Button>
+          )}
           {isOwner ? (
             <Button
               variant="destructive"
               size="sm"
               onClick={() => setShowDeleteDialog(true)}
+              className="gap-2"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Удалить
+              <Trash2 className="h-4 w-4" />
+              Удалить лобби
             </Button>
           ) : (
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowLeaveDialog(true)}
+              className="gap-2"
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-4 w-4" />
               Покинуть
             </Button>
           )}
         </div>
       </div>
 
-      {/* Header Card */}
-      <div className="p-6 rounded-2xl border bg-gradient-to-br from-card via-card to-primary/5 shadow-soft">
-        {/* Title Row */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-display font-bold">{lobby.title}</h2>
-            {lobby.description && (
-              <p className="text-muted-foreground mt-1 max-w-xl">{lobby.description}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-sm">
-              {GAME_MODE_LABELS[lobby.game_mode] || lobby.game_mode}
-            </Badge>
-            <Badge variant="outline" className="text-sm">
-              <Users className="h-3 w-3 mr-1" />
-              {lobby.current_size}/{lobby.max_size}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Info Pills */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          {lobby.region && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 text-sm">
-              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>{REGION_LABELS[lobby.region] || lobby.region}</span>
+      {/* Main Grid: Info (larger) + Invite Code (smaller) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Block: Lobby Info - Takes 2 columns */}
+        <div className="lg:col-span-2 p-5 rounded-xl bg-card border border-border">
+          {/* Description */}
+          {lobby.description && (
+            <div className="mb-5">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Описание</span>
+              <p className="text-sm text-foreground mt-1 break-words overflow-wrap-anywhere">{lobby.description}</p>
             </div>
           )}
-          {(lobby.min_rank || lobby.max_rank) && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 text-sm">
-              <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>
+
+          {/* Info Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {/* Game Mode */}
+            <div className="p-3 rounded-lg bg-muted/50">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium flex items-center gap-1">
+                <Gamepad2 className="h-3 w-3" />
+                Режим
+              </span>
+              <p className="text-sm font-semibold text-foreground mt-1">
+                {GAME_MODE_LABELS[lobby.game_mode] || lobby.game_mode}
+              </p>
+            </div>
+
+            {/* Voice */}
+            <div className="p-3 rounded-lg bg-muted/50">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium flex items-center gap-1">
+                <Mic className="h-3 w-3" />
+                Голосовой чат
+              </span>
+              <p className="text-sm font-semibold text-foreground mt-1">
+                {lobby.voice_required ? 'Обязателен' : 'Не требуется'}
+              </p>
+            </div>
+
+            {/* Private */}
+            <div className="p-3 rounded-lg bg-muted/50">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                Приватное
+              </span>
+              <p className="text-sm font-semibold text-foreground mt-1">
+                {lobby.is_private ? 'Да' : 'Нет'}
+              </p>
+            </div>
+
+            {/* Rank Range */}
+            <div className="p-3 rounded-lg bg-muted/50">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Ранг
+              </span>
+              <p className="text-sm font-semibold text-foreground mt-1">
                 {lobby.min_rank && lobby.max_rank
                   ? `${lobby.min_rank} — ${lobby.max_rank}`
                   : lobby.min_rank
                     ? `от ${lobby.min_rank}`
-                    : `до ${lobby.max_rank}`}
-              </span>
+                    : lobby.max_rank
+                      ? `до ${lobby.max_rank}`
+                      : 'Любой'}
+              </p>
             </div>
-          )}
-          {lobby.voice_required && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 text-sm">
-              <Mic className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>Голосовой чат</span>
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* Party Code Section */}
-        <div className="p-4 rounded-xl border bg-background/50">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-muted-foreground">Invite Code</span>
-            {isOwner && !isEditingCode && (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setIsEditingCode(true)}
-                >
-                  <Edit2 className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={handleGenerateCode}
-                  disabled={isGeneratingCode || !isDesktopReady}
-                  title={!isDesktopReady ? 'Запустите ValoHub Desktop и Valorant' : 'Сгенерировать код'}
-                >
-                  {isGeneratingCode ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </div>
-            )}
+        {/* Right Block: Invite Code - Compact */}
+        <div className="p-5 rounded-xl bg-card border border-border">
+          <div className="mb-3">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
+              Код приглашения
+            </span>
           </div>
 
           {isEditingCode && isOwner ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-3">
               <Input
                 value={editedCode}
                 onChange={(e) => {
-                  // Allow only alphanumeric characters and convert to uppercase
                   const value = e.target.value
                     .toUpperCase()
                     .replace(/[^A-Z0-9]/g, '')
                     .slice(0, 6);
                   setEditedCode(value);
                 }}
-                placeholder="Вставьте Invite Code из игры"
-                className="font-mono uppercase"
+                placeholder="Введите код"
+                className="font-mono uppercase text-lg tracking-widest text-center"
                 maxLength={6}
               />
-              <Button size="icon" variant="ghost" onClick={handleSaveCode}>
-                <Check className="h-4 w-4 text-green-500" />
+              <Button size="icon" variant="ghost" onClick={handleSaveCode} className="text-green-500 hover:text-green-400 h-8 w-8">
+                <Check className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="ghost" onClick={() => setIsEditingCode(false)}>
-                <X className="h-4 w-4 text-red-500" />
+              <Button size="icon" variant="ghost" onClick={() => setIsEditingCode(false)} className="text-red-500 hover:text-red-400 h-8 w-8">
+                <X className="h-4 w-4" />
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <code className={cn(
-                'flex-1 px-3 py-2 rounded-lg font-mono text-lg',
-                currentPartyCode ? 'bg-muted text-foreground' : 'bg-muted/50 text-muted-foreground'
-              )}>
-                {currentPartyCode || 'Не установлен'}
-              </code>
-
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className={cn(
+                  'flex-1 px-3 py-2 rounded-lg font-mono text-lg tracking-widest text-center',
+                  'bg-muted border border-border',
+                  currentPartyCode ? 'text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                {currentPartyCode || '—'}
+              </div>
               {currentPartyCode && (
-                <>
-                  <Button variant="outline" size="icon" onClick={handleCopyPartyCode}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  {!isOwner && (
-                    <Button
-                      onClick={handleJoinParty}
-                      disabled={isJoiningParty || !isDesktopReady}
-                      className="shrink-0"
-                    >
-                      {isJoiningParty ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Gamepad2 className="h-4 w-4 mr-2" />
-                      )}
-                      {isJoiningParty ? 'Присоединение...' : 'Войти в Party'}
-                    </Button>
-                  )}
-                </>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopyPartyCode}
+                  title="Скопировать код"
+                  className="text-muted-foreground hover:text-foreground h-8 w-8"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
               )}
             </div>
           )}
 
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-2">
+            {isOwner && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full gap-2"
+                onClick={() => setIsEditingCode(true)}
+              >
+                <Pencil className="h-4 w-4" />
+                Редактировать код
+              </Button>
+            )}
+            {isOwner && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={handleGenerateCode}
+                disabled={isGeneratingCode || !isDesktopReady}
+              >
+                {isGeneratingCode ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Сгенерировать код
+              </Button>
+            )}
+            {!isOwner && currentPartyCode && (
+              <Button
+                size="sm"
+                className="w-full gap-2"
+                onClick={handleJoinParty}
+                disabled={isJoiningParty || !isDesktopReady}
+              >
+                {isJoiningParty ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Gamepad2 className="h-4 w-4" />
+                )}
+                {isJoiningParty ? 'Присоединение...' : 'Войти в Party'}
+              </Button>
+            )}
+          </div>
+
           {!isDesktopReady && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Запустите ValoHub Desktop и Valorant для автоприсоединения
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Запустите ValoHub Desktop
             </p>
           )}
         </div>
@@ -424,12 +455,12 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
 
       {/* Participants Section */}
       <div>
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <h3 className="text-base font-semibold mb-4 flex items-center gap-2 uppercase tracking-wide text-foreground">
           <Users className="h-5 w-5 text-primary" />
-          Участники ({lobby.lfg_lobby_members?.length || 0})
+          Участники ({lobby.lfg_lobby_members?.length || 0}/{lobby.max_size})
         </h3>
 
-        <div className="flex flex-wrap gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {(lobby.lfg_lobby_members || []).map((member) => (
             <LobbyPlayerCard
               key={member.id}
@@ -443,17 +474,54 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
             <div
               key={`empty-${i}`}
               className={cn(
-                'w-[140px] h-[180px] rounded-xl',
-                'border-2 border-dashed border-muted/50',
-                'flex items-center justify-center',
-                'bg-muted/10'
+                'aspect-[3/4] rounded-xl',
+                'border-2 border-dashed border-border',
+                'flex flex-col items-center justify-center gap-2',
+                'bg-muted/30'
               )}
             >
-              <Users className="h-8 w-8 text-muted-foreground/30" />
+              <Users className="h-8 w-8 text-muted-foreground/50" />
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Пусто</span>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Incoming Requests Section - Only for owner of private lobby */}
+      {isOwner && lobby.is_private && lobbyRequests.length > 0 && (
+        <div>
+          <h3 className="text-base font-semibold mb-4 flex items-center gap-2 uppercase tracking-wide text-foreground">
+            <Users className="h-5 w-5 text-yellow-500" />
+            Входящие заявки ({lobbyRequests.length})
+          </h3>
+
+          <div className="space-y-3">
+            {lobbyRequests.map((request) => (
+              <JoinRequestCard
+                key={request.id}
+                request={request}
+                onAccept={async (requestId) => {
+                  setProcessingRequestId(requestId);
+                  try {
+                    await handleRequest.mutateAsync({ requestId, action: 'accept' });
+                  } finally {
+                    setProcessingRequestId(null);
+                  }
+                }}
+                onReject={async (requestId) => {
+                  setProcessingRequestId(requestId);
+                  try {
+                    await handleRequest.mutateAsync({ requestId, action: 'reject' });
+                  } finally {
+                    setProcessingRequestId(null);
+                  }
+                }}
+                isProcessing={processingRequestId === request.id}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Leave Dialog */}
       <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
@@ -492,6 +560,16 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Dialog */}
+      <EditLobbyDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        lobby={lobby}
+        onSubmit={async (values) => {
+          await updateLobby.mutateAsync(values);
+        }}
+      />
     </div>
   );
 }

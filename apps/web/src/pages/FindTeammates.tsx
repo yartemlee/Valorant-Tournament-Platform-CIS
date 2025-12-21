@@ -13,7 +13,8 @@ import {
 import { LobbyCard } from '@/components/lfg/LobbyCard';
 import { LobbyView } from '@/components/lfg/LobbyView';
 import { CreateLobbyDialog, type CreateLobbyFormValues } from '@/components/lfg/CreateLobbyDialog';
-import { useLFGLobbies, useMyLFGLobby, type LobbyFilters } from '@/hooks/useLFGLobbies';
+import { JoinRequestDialog } from '@/components/lfg/JoinRequestDialog';
+import { useLFGLobbies, useMyLFGLobby, useMyPendingRequests, type LobbyFilters, type LFGLobbyWithMembers } from '@/hooks/useLFGLobbies';
 import { useDesktopStatus } from '@/hooks/useDesktopStatus';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/Sidebar';
@@ -43,10 +44,13 @@ export default function FindTeammates() {
   const { user, session } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showJoinRequestDialog, setShowJoinRequestDialog] = useState(false);
+  const [selectedLobbyForRequest, setSelectedLobbyForRequest] = useState<LFGLobbyWithMembers | null>(null);
   const [filters, setFilters] = useState<LobbyFilters>({});
 
-  const { lobbies, isLoading, refetch, createLobby, joinLobby } = useLFGLobbies(filters);
+  const { lobbies, isLoading, refetch, createLobby, joinLobby, requestToJoin } = useLFGLobbies(filters);
   const { lobby: myLobby, isOwner, isInLobby } = useMyLFGLobby();
+  const { getRequestStatus } = useMyPendingRequests();
   const { isConnected, isValorantRunning } = useDesktopStatus();
 
   // Simple Electron detection via userAgent (no preload needed)
@@ -210,6 +214,28 @@ export default function FindTeammates() {
     // For now, joining to view
     // In future, could show a preview
   }, []);
+
+  const handleRequestJoin = useCallback(
+    (lobbyId: string) => {
+      const lobby = lobbies.find(l => l.id === lobbyId);
+      if (lobby) {
+        setSelectedLobbyForRequest(lobby);
+        setShowJoinRequestDialog(true);
+      }
+    },
+    [lobbies]
+  );
+
+  const handleSubmitJoinRequest = useCallback(
+    async (message: string) => {
+      if (!selectedLobbyForRequest) return;
+      await requestToJoin.mutateAsync({
+        lobbyId: selectedLobbyForRequest.id,
+        message: message || undefined,
+      });
+    },
+    [selectedLobbyForRequest, requestToJoin]
+  );
 
   // Not logged in state
   if (!user) {
@@ -479,7 +505,10 @@ export default function FindTeammates() {
                       lobby={lobby}
                       onJoin={handleJoinLobby}
                       onView={handleViewLobby}
+                      onRequestJoin={handleRequestJoin}
                       isJoining={joinLobby.isPending}
+                      isRequesting={requestToJoin.isPending}
+                      hasRequestPending={getRequestStatus(lobby.id) === 'pending'}
                       isMyLobby={myLobby?.id === lobby.id}
                     />
                   </div>
@@ -496,6 +525,16 @@ export default function FindTeammates() {
         onOpenChange={setShowCreateDialog}
         onSubmit={handleCreateLobby}
       />
+
+      {/* Join Request dialog */}
+      {selectedLobbyForRequest && (
+        <JoinRequestDialog
+          open={showJoinRequestDialog}
+          onOpenChange={setShowJoinRequestDialog}
+          lobbyTitle={selectedLobbyForRequest.title}
+          onSubmit={handleSubmitJoinRequest}
+        />
+      )}
     </div>
   );
 }

@@ -219,7 +219,10 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                   <FormControl>
                     <Input placeholder="Ищем 2 в рейтинг" maxLength={50} {...field} />
                   </FormControl>
-                  <FormMessage />
+                  <div className="flex justify-between">
+                    <FormMessage />
+                    <span className="text-xs text-muted-foreground">{field.value?.length || 0}/50</span>
+                  </div>
                 </FormItem>
               )}
             />
@@ -240,7 +243,10 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <div className="flex justify-between">
+                    <FormMessage />
+                    <span className="text-xs text-muted-foreground">{field.value?.length || 0}/200</span>
+                  </div>
                 </FormItem>
               )}
             />
