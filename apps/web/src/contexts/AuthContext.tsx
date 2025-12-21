@@ -3,6 +3,41 @@ import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { SignInCredentials, SignUpCredentials } from '@/types/common.types';
 
+// Declare types for Electron APIs exposed via preload
+declare global {
+  interface Window {
+    lfgApi?: {
+      startSync: (supabaseToken: string, supabaseUrl?: string) => Promise<{ success: boolean }>;
+      stopSync: () => Promise<{ success: boolean }>;
+      getPartyInfo: () => Promise<any>;
+      generatePartyCode: () => Promise<any>;
+      joinPartyByCode: (code: string) => Promise<any>;
+      inviteToParty: (gameName: string, tagLine: string) => Promise<any>;
+      onPartyCodeGenerated: (callback: (data: any) => void) => () => void;
+      onPartyJoinResult: (callback: (data: any) => void) => () => void;
+      onHeartbeat: (callback: (data: any) => void) => () => void;
+      onStatusChanged: (callback: (data: any) => void) => () => void;
+    };
+    valorantApi?: {
+      getGameStatus: () => Promise<any>;
+      getLobbyInfo: () => Promise<any>;
+      syncToSupabase: (force?: boolean) => Promise<any>;
+    };
+    appApi?: {
+      getVersion: () => Promise<string>;
+      quit: () => Promise<void>;
+      minimize: () => Promise<void>;
+      maximize: () => Promise<void>;
+      close: () => Promise<void>;
+    };
+  }
+}
+
+// Helper to check if running in Electron
+const isElectron = (): boolean => {
+  return typeof window !== 'undefined' && !!window.lfgApi;
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -19,6 +54,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Start/stop desktop sync based on session
+  useEffect(() => {
+    const syncDesktop = async () => {
+      if (!isElectron()) return;
+
+      if (session?.access_token) {
+        // User logged in - start syncing
+        try {
+          console.log('[AuthContext] Starting desktop sync...');
+          // Pass both token and URL (URL from vite env variables)
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+          const result = await window.lfgApi!.startSync(session.access_token, supabaseUrl);
+          console.log('[AuthContext] Desktop sync started:', result);
+        } catch (error) {
+          console.error('[AuthContext] Failed to start desktop sync:', error);
+        }
+      } else {
+        // User logged out - stop syncing
+        try {
+          console.log('[AuthContext] Stopping desktop sync...');
+          await window.lfgApi!.stopSync();
+          console.log('[AuthContext] Desktop sync stopped');
+        } catch (error) {
+          console.error('[AuthContext] Failed to stop desktop sync:', error);
+        }
+      }
+    };
+
+    syncDesktop();
+  }, [session?.access_token]);
 
   useEffect(() => {
     // Get initial session
@@ -81,6 +147,3 @@ export function useAuth() {
   }
   return context;
 }
-
-
-

@@ -1,14 +1,25 @@
-import { BrowserWindow, shell } from 'electron';
-import { join } from 'path';
+import { BrowserWindow, shell, app } from 'electron';
+import { join, dirname } from 'path';
 
 // Declare Electron Forge's magic constants
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
+// Get the preload script path
+// Electron Forge Vite Plugin always outputs to index.js
+function getPreloadPath(): string {
+  // __dirname points to .vite/build where main.js is located
+  // preload index.js is in the same directory
+  return join(__dirname, 'index.js');
+}
+
 export class WindowManager {
   private mainWindow: BrowserWindow | null = null;
 
   createWindow(): BrowserWindow {
+    const preloadPath = getPreloadPath();
+    console.log('[WindowManager] Preload path:', preloadPath);
+
     // Create the browser window
     this.mainWindow = new BrowserWindow({
       width: 1280,
@@ -19,7 +30,7 @@ export class WindowManager {
       autoHideMenuBar: true,
       backgroundColor: '#0a0e27', // Match app theme
       webPreferences: {
-        preload: join(__dirname, 'preload.mjs'),
+        preload: preloadPath,
         sandbox: false, // Required for preload script to work
         contextIsolation: true, // Enable context isolation for security
         nodeIntegration: false, // Disable node integration for security

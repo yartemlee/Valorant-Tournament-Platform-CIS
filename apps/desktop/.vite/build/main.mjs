@@ -1,6 +1,6 @@
 import { BrowserWindow, shell, ipcMain, app } from "electron";
 import require$$1$1, { join } from "path";
-import require$$1 from "util";
+import require$$1, { promisify } from "util";
 import stream, { Readable } from "stream";
 import require$$3 from "http";
 import https from "https";
@@ -13,6 +13,7 @@ import require$$1$2 from "tty";
 import require$$0$2 from "os";
 import zlib from "zlib";
 import { EventEmitter } from "events";
+import { exec } from "child_process";
 function _mergeNamespaces(n, m) {
   for (var i = 0; i < m.length; i++) {
     const e = m[i];
@@ -32,9 +33,14 @@ function _mergeNamespaces(n, m) {
   }
   return Object.freeze(Object.defineProperty(n, Symbol.toStringTag, { value: "Module" }));
 }
+function getPreloadPath() {
+  return join(import.meta.dirname, "index.js");
+}
 class WindowManager {
   mainWindow = null;
   createWindow() {
+    const preloadPath = getPreloadPath();
+    console.log("[WindowManager] Preload path:", preloadPath);
     this.mainWindow = new BrowserWindow({
       width: 1280,
       height: 800,
@@ -46,7 +52,7 @@ class WindowManager {
       backgroundColor: "#0a0e27",
       // Match app theme
       webPreferences: {
-        preload: join(import.meta.dirname, "preload.mjs"),
+        preload: preloadPath,
         sandbox: false,
         // Required for preload script to work
         contextIsolation: true,
@@ -108,6 +114,7 @@ const IPC_CHANNELS = {
   LFG_GENERATE_PARTY_CODE: "lfg:generate-party-code",
   LFG_JOIN_PARTY_BY_CODE: "lfg:join-party-by-code",
   LFG_INVITE_TO_PARTY: "lfg:invite-to-party",
+  LFG_CHANGE_QUEUE: "lfg:change-queue",
   LFG_PARTY_CODE_GENERATED: "lfg:party-code-generated",
   LFG_PARTY_JOIN_RESULT: "lfg:party-join-result",
   // Desktop Sync channels
@@ -9024,8 +9031,24 @@ class ValorantLocalAPI {
    * Get current player PUUID
    */
   async getPlayerPUUID() {
-    const response = await this.request("/chat/v1/session");
-    return response.Subject;
+    try {
+      const response = await this.request("/chat/v1/session");
+      if (response.Subject) {
+        return response.Subject;
+      }
+      if (response.puuid) {
+        return response.puuid;
+      }
+      const authResponse = await this.request("/entitlements/v1/token");
+      if (authResponse.subject) {
+        return authResponse.subject;
+      }
+      console.error("[ValorantLocalAPI] Could not get PUUID from any endpoint");
+      return "";
+    } catch (error) {
+      console.error("[ValorantLocalAPI] getPlayerPUUID error:", error);
+      return "";
+    }
   }
   /**
    * Get auth tokens for GLZ API requests
@@ -9094,10 +9117,14 @@ class ValorantLocalAPI {
       const presences = response.presences || [];
       const playerPresence = presences.find((p) => p.puuid === puuid);
       if (playerPresence?.private) {
-        const privateData = JSON.parse(
-          Buffer.from(playerPresence.private, "base64").toString()
-        );
-        return privateData.partyId || null;
+        try {
+          const privateData = JSON.parse(
+            Buffer.from(playerPresence.private, "base64").toString()
+          );
+          return privateData.partyId || null;
+        } catch {
+          return null;
+        }
       }
       return null;
     } catch {
@@ -9379,6 +9406,27 @@ class ValorantRemoteAPI {
     }
   }
   /**
+   * Change party queue/game mode
+   * POST /parties/v1/parties/{partyId}/queue
+   */
+  async changeQueue(partyId, queueId) {
+    if (!this.client) {
+      return { success: false, error: "API not initialized" };
+    }
+    if (!queueId) {
+      return { success: true };
+    }
+    try {
+      await this.client.post(`/parties/v1/parties/${partyId}/queue`, {
+        queueId
+      });
+      console.log(`[ValorantRemoteAPI] Changed queue to: ${queueId}`);
+      return { success: true };
+    } catch (error) {
+      return this.handleError(error, "changeQueue");
+    }
+  }
+  /**
    * Handle API errors
    */
   handleError(error, operation) {
@@ -9415,21 +9463,25 @@ class ValorantRemoteAPI {
     return { success: false, error: errorMessage };
   }
 }
+const execAsync = promisify(exec);
 class LockfileWatcher extends EventEmitter {
   lockfilePath;
   watcher = null;
   currentLockfileData = null;
   checkInterval = null;
+  valorantProcessInterval = null;
+  isValorantProcessRunning = false;
   constructor() {
     super();
     const localAppData = process.env.LOCALAPPDATA || "";
     this.lockfilePath = join(localAppData, "Riot Games", "Riot Client", "Config", "lockfile");
   }
   /**
-   * Start watching for lockfile changes
+   * Start watching for lockfile changes AND VALORANT.exe process
    */
   start() {
     this.checkLockfile();
+    this.checkValorantProcess();
     try {
       const configDir = join(process.env.LOCALAPPDATA || "", "Riot Games", "Riot Client", "Config");
       this.watcher = watch(configDir, (eventType, filename) => {
@@ -9440,8 +9492,30 @@ class LockfileWatcher extends EventEmitter {
       this.checkInterval = setInterval(() => {
         this.checkLockfile();
       }, 5e3);
+      this.valorantProcessInterval = setInterval(() => {
+        this.checkValorantProcess();
+      }, 3e3);
     } catch (error) {
       this.emit("error", error);
+    }
+  }
+  /**
+   * Check if VALORANT.exe process is running
+   */
+  async checkValorantProcess() {
+    try {
+      const { stdout } = await execAsync('tasklist /FI "IMAGENAME eq VALORANT.exe" /NH');
+      const isRunning = stdout.toLowerCase().includes("valorant.exe");
+      if (isRunning && !this.isValorantProcessRunning) {
+        this.isValorantProcessRunning = true;
+        console.log("[LockfileWatcher] VALORANT.exe process detected");
+        this.emit("valorant-running");
+      } else if (!isRunning && this.isValorantProcessRunning) {
+        this.isValorantProcessRunning = false;
+        console.log("[LockfileWatcher] VALORANT.exe process stopped");
+        this.emit("valorant-stopped");
+      }
+    } catch (error) {
     }
   }
   /**
@@ -9455,6 +9529,10 @@ class LockfileWatcher extends EventEmitter {
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
       this.checkInterval = null;
+    }
+    if (this.valorantProcessInterval) {
+      clearInterval(this.valorantProcessInterval);
+      this.valorantProcessInterval = null;
     }
   }
   /**
@@ -9511,9 +9589,15 @@ class LockfileWatcher extends EventEmitter {
     return this.currentLockfileData;
   }
   /**
-   * Check if Riot Client is running
+   * Check if VALORANT game is running (not just Riot Client)
    */
   isRunning() {
+    return this.isValorantProcessRunning;
+  }
+  /**
+   * Check if Riot Client is running (lockfile exists)
+   */
+  isRiotClientRunning() {
     return this.currentLockfileData !== null;
   }
 }
@@ -21741,11 +21825,9 @@ class LFGService {
    */
   async initialize() {
     if (!this.lockfileWatcher.isRunning()) {
-      console.log("[LFGService] Valorant not running");
       return false;
     }
     if (!this.localApi.isInitialized()) {
-      console.log("[LFGService] Local API not initialized");
       return false;
     }
     try {
@@ -21762,7 +21844,6 @@ class LFGService {
       console.log("[LFGService] Initialized for region:", regionInfo.region);
       return true;
     } catch (error) {
-      console.error("[LFGService] Initialization failed:", error);
       return false;
     }
   }
@@ -21927,6 +22008,38 @@ class LFGService {
    */
   isReady() {
     return this.isInitialized && this.remoteApi.isInitialized();
+  }
+  /**
+   * Change the game mode/queue for the current party
+   */
+  async changeQueue(queueId) {
+    if (!this.isInitialized) {
+      const initialized = await this.initialize();
+      if (!initialized) {
+        return { success: false, error: "Valorant not running or not initialized" };
+      }
+    }
+    try {
+      const puuid = await this.localApi.getPlayerPUUID();
+      let partyId = await this.localApi.getCurrentPartyId(puuid);
+      if (!partyId) {
+        const partyInfo = await this.localApi.getPartyInfo(puuid);
+        if (partyInfo) {
+          partyId = partyInfo.ID;
+        }
+      }
+      if (!partyId) {
+        return { success: false, error: "Not in a party" };
+      }
+      const result = await this.remoteApi.changeQueue(partyId, queueId);
+      if (result.success) {
+        console.log("[LFGService] Changed queue to:", queueId);
+      }
+      return result;
+    } catch (error) {
+      console.error("[LFGService] changeQueue failed:", error);
+      return { success: false, error: "Failed to change queue" };
+    }
   }
   /**
    * Map PartyInfo to LFGPartyInfo
@@ -22120,15 +22233,22 @@ function setupIpcHandlers(window2) {
   lfgService = new LFGService(localApi, remoteApi, lockfileWatcher);
   commandListener = new CommandListener(lfgService);
   lockfileWatcher.on("lockfile-found", (data) => {
-    console.log("[IPC] Lockfile found, initializing API");
+    console.log("[IPC] Riot Client lockfile found, initializing API");
     localApi.initialize(data);
     lfgService.initialize();
-    updateStatus("in_menu");
   });
   lockfileWatcher.on("lockfile-lost", () => {
-    console.log("[IPC] Lockfile lost, clearing API");
+    console.log("[IPC] Riot Client lockfile lost, clearing API");
     localApi.clear();
     lfgService.clear();
+    updateStatus("not_running");
+  });
+  lockfileWatcher.on("valorant-running", () => {
+    console.log("[IPC] VALORANT.exe detected - game is running!");
+    updateStatus("in_menu");
+  });
+  lockfileWatcher.on("valorant-stopped", () => {
+    console.log("[IPC] VALORANT.exe stopped");
     updateStatus("not_running");
   });
   lockfileWatcher.on("error", (error) => {
@@ -22222,8 +22342,13 @@ function setupIpcHandlers(window2) {
   ipcMain.handle(IPC_CHANNELS.LFG_INVITE_TO_PARTY, async (_event, { gameName, tagLine }) => {
     return await lfgService.inviteToParty(gameName, tagLine);
   });
-  ipcMain.handle(IPC_CHANNELS.DESKTOP_START_SYNC, async (_event, { supabaseToken }) => {
-    supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+  ipcMain.handle(IPC_CHANNELS.LFG_CHANGE_QUEUE, async (_event, { queueId }) => {
+    const result = await lfgService.changeQueue(queueId);
+    console.log(`[IPC] Change queue to ${queueId}:`, result);
+    return result;
+  });
+  ipcMain.handle(IPC_CHANNELS.DESKTOP_START_SYNC, async (_event, { supabaseToken, supabaseUrl: urlFromRenderer }) => {
+    supabaseUrl = urlFromRenderer || process.env.VITE_SUPABASE_URL || "";
     if (!supabaseUrl) {
       console.error("[IPC] Supabase URL not configured");
       return { success: false };
@@ -22266,6 +22391,22 @@ function updateStatus(status) {
 }
 function sendToRenderer(channel, data) {
   if (mainWindow && !mainWindow.isDestroyed()) {
+    if (channel === IPC_CHANNELS.VALORANT_STATUS_CHANGED) {
+      const isValorantRunning = data !== "not_running";
+      const statusObj = JSON.stringify({
+        isRunning: isValorantRunning,
+        status: data,
+        updatedAt: Date.now()
+      });
+      const jsCode = `
+        window.__valorantStatus__ = ${statusObj};
+        window.dispatchEvent(new CustomEvent('valorant-status-changed', { 
+          detail: window.__valorantStatus__ 
+        }));
+        console.log('[Electron] Valorant status updated:', window.__valorantStatus__);
+      `;
+      mainWindow.webContents.executeJavaScript(jsCode).catch((err) => console.error("[IPC] Failed to inject status:", err));
+    }
     mainWindow.webContents.send(channel, data);
   }
 }
@@ -22301,4 +22442,4 @@ app.on("web-contents-created", (_event, contents) => {
     event.preventDefault();
   });
 });
-//# sourceMappingURL=main.js.map
+//# sourceMappingURL=main.mjs.map

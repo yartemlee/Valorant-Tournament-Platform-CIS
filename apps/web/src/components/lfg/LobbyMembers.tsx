@@ -10,7 +10,7 @@ interface MemberProfile {
   id: string;
   username: string | null;
   avatar_url: string | null;
-  valorant_rank: string | null;
+  rank: string | null;
 }
 
 interface LobbyMember {
@@ -125,8 +125,8 @@ function MemberCard({ member, isOwner, canKick, onKick }: MemberCardProps) {
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {profile?.valorant_rank && (
-            <span>{profile.valorant_rank}</span>
+          {profile?.rank && (
+            <span>{profile.rank}</span>
           )}
           <span className="flex items-center gap-1">
             {isValorantRunning ? (

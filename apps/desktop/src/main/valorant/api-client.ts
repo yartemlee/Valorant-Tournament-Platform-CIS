@@ -75,8 +75,33 @@ export class ValorantLocalAPI {
    * Get current player PUUID
    */
   async getPlayerPUUID(): Promise<string> {
-    const response = await this.request<{ Subject: string }>('/chat/v1/session');
-    return response.Subject;
+    try {
+      // Try /chat/v1/session first
+      const response = await this.request<{ Subject?: string; puuid?: string }>('/chat/v1/session');
+
+
+      if (response.Subject) {
+        return response.Subject;
+      }
+      if (response.puuid) {
+        return response.puuid;
+      }
+
+      // Try /entitlements/v1/token as fallback
+
+      const authResponse = await this.request<{ subject?: string }>('/entitlements/v1/token');
+
+
+      if (authResponse.subject) {
+        return authResponse.subject;
+      }
+
+      console.error('[ValorantLocalAPI] Could not get PUUID from any endpoint');
+      return '';
+    } catch (error) {
+      console.error('[ValorantLocalAPI] getPlayerPUUID error:', error);
+      return '';
+    }
   }
 
   /**
@@ -175,11 +200,16 @@ export class ValorantLocalAPI {
       const presences = response.presences || [];
 
       const playerPresence = presences.find((p: any) => p.puuid === puuid);
+
       if (playerPresence?.private) {
-        const privateData = JSON.parse(
-          Buffer.from(playerPresence.private, 'base64').toString()
-        );
-        return privateData.partyId || null;
+        try {
+          const privateData = JSON.parse(
+            Buffer.from(playerPresence.private, 'base64').toString()
+          );
+          return privateData.partyId || null;
+        } catch {
+          return null;
+        }
       }
       return null;
     } catch {

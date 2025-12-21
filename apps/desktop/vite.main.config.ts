@@ -27,7 +27,7 @@ export default defineConfig({
         lib: {
             entry: 'src/main/index.ts',
             formats: ['es'],
-            fileName: () => 'main.js',
+            fileName: () => 'main.mjs',
         },
         rollupOptions: {
             external: [

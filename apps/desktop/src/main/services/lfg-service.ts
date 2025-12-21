@@ -30,12 +30,12 @@ export class LFGService {
    */
   async initialize(): Promise<boolean> {
     if (!this.lockfileWatcher.isRunning()) {
-      console.log('[LFGService] Valorant not running');
+      // Valorant not ready yet - this is normal during startup
       return false;
     }
 
     if (!this.localApi.isInitialized()) {
-      console.log('[LFGService] Local API not initialized');
+      // Local API not ready yet - this is normal during startup
       return false;
     }
 
@@ -57,7 +57,7 @@ export class LFGService {
       console.log('[LFGService] Initialized for region:', regionInfo.region);
       return true;
     } catch (error) {
-      console.error('[LFGService] Initialization failed:', error);
+      // Initialization failed - this is expected if Valorant isn't fully loaded
       return false;
     }
   }
@@ -253,6 +253,46 @@ export class LFGService {
    */
   isReady(): boolean {
     return this.isInitialized && this.remoteApi.isInitialized();
+  }
+
+  /**
+   * Change the game mode/queue for the current party
+   */
+  async changeQueue(queueId: string): Promise<{ success: boolean; error?: string }> {
+    if (!this.isInitialized) {
+      const initialized = await this.initialize();
+      if (!initialized) {
+        return { success: false, error: 'Valorant not running or not initialized' };
+      }
+    }
+
+    try {
+      const puuid = await this.localApi.getPlayerPUUID();
+
+      // Try to get party ID
+      let partyId = await this.localApi.getCurrentPartyId(puuid);
+
+      // If no party ID from presences, try getting party info directly
+      if (!partyId) {
+        const partyInfo = await this.localApi.getPartyInfo(puuid);
+        if (partyInfo) {
+          partyId = partyInfo.ID;
+        }
+      }
+
+      if (!partyId) {
+        return { success: false, error: 'Not in a party' };
+      }
+
+      const result = await this.remoteApi.changeQueue(partyId, queueId);
+      if (result.success) {
+        console.log('[LFGService] Changed queue to:', queueId);
+      }
+      return result;
+    } catch (error) {
+      console.error('[LFGService] changeQueue failed:', error);
+      return { success: false, error: 'Failed to change queue' };
+    }
   }
 
   /**

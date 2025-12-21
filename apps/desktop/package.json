@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "ValoHub Desktop - Valorant Tournament Platform with Local API Integration",
   "private": true,
-  "type": "module",
-  "main": ".vite/build/main.js",
+  "main": ".vite/build/main.mjs",
   "author": "ValoHub Team",
   "license": "MIT",
   "scripts": {

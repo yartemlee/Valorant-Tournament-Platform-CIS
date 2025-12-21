@@ -34,18 +34,29 @@ export function setupIpcHandlers(window: BrowserWindow): void {
   lfgService = new LFGService(localApi, remoteApi, lockfileWatcher);
   commandListener = new CommandListener(lfgService);
 
-  // Setup lockfile watcher events
+  // Setup lockfile watcher events (Riot Client)
   lockfileWatcher.on('lockfile-found', (data) => {
-    console.log('[IPC] Lockfile found, initializing API');
+    console.log('[IPC] Riot Client lockfile found, initializing API');
     localApi.initialize(data);
     lfgService.initialize();
-    updateStatus('in_menu');
+    // Don't update status here - wait for VALORANT.exe
   });
 
   lockfileWatcher.on('lockfile-lost', () => {
-    console.log('[IPC] Lockfile lost, clearing API');
+    console.log('[IPC] Riot Client lockfile lost, clearing API');
     localApi.clear();
     lfgService.clear();
+    updateStatus('not_running');
+  });
+
+  // Setup VALORANT.exe process detection events
+  lockfileWatcher.on('valorant-running', () => {
+    console.log('[IPC] VALORANT.exe detected - game is running!');
+    updateStatus('in_menu');
+  });
+
+  lockfileWatcher.on('valorant-stopped', () => {
+    console.log('[IPC] VALORANT.exe stopped');
     updateStatus('not_running');
   });
 
@@ -179,13 +190,19 @@ export function setupIpcHandlers(window: BrowserWindow): void {
     return await lfgService.inviteToParty(gameName, tagLine);
   });
 
+  ipcMain.handle(IPC_CHANNELS.LFG_CHANGE_QUEUE, async (_event, { queueId }: { queueId: string }) => {
+    const result = await lfgService.changeQueue(queueId);
+    console.log(`[IPC] Change queue to ${queueId}:`, result);
+    return result;
+  });
+
   // ========================================
   // Desktop Sync handlers
   // ========================================
 
-  ipcMain.handle(IPC_CHANNELS.DESKTOP_START_SYNC, async (_event, { supabaseToken }: { supabaseToken: string }) => {
-    // Get Supabase config from environment or renderer
-    supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+  ipcMain.handle(IPC_CHANNELS.DESKTOP_START_SYNC, async (_event, { supabaseToken, supabaseUrl: urlFromRenderer }: { supabaseToken: string; supabaseUrl?: string }) => {
+    // Get Supabase config from renderer or environment
+    supabaseUrl = urlFromRenderer || process.env.VITE_SUPABASE_URL || '';
     supabaseAnonKey = supabaseToken;
 
     if (!supabaseUrl) {
@@ -242,10 +259,29 @@ function updateStatus(status: ValorantGameStatus): void {
 }
 
 /**
- * Send message to renderer
+ * Send message to renderer via direct JS injection (bypasses broken preload)
  */
 function sendToRenderer(channel: string, data: any): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
+    // For status updates, inject directly into window object
+    if (channel === IPC_CHANNELS.VALORANT_STATUS_CHANGED) {
+      const isValorantRunning = data !== 'not_running';
+      const statusObj = JSON.stringify({
+        isRunning: isValorantRunning,
+        status: data,
+        updatedAt: Date.now()
+      });
+      const jsCode = `
+        window.__valorantStatus__ = ${statusObj};
+        window.dispatchEvent(new CustomEvent('valorant-status-changed', { 
+          detail: window.__valorantStatus__ 
+        }));
+        console.log('[Electron] Valorant status updated:', window.__valorantStatus__);
+      `;
+      mainWindow.webContents.executeJavaScript(jsCode)
+        .catch(err => console.error('[IPC] Failed to inject status:', err));
+    }
+    // Fallback for other channels (will fail without preload, but log it)
     mainWindow.webContents.send(channel, data);
   }
 }

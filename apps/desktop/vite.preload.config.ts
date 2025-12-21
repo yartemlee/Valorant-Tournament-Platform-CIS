@@ -25,8 +25,8 @@ export default defineConfig({
         outDir: '.vite/build',
         lib: {
             entry: 'src/preload/index.ts',
-            formats: ['es'],
-            fileName: () => 'preload.mjs',
+            formats: ['cjs'],
+            fileName: () => 'index.js',
         },
         rollupOptions: {
             external: [

@@ -88,7 +88,7 @@ const App = () => {
               <Route path="/teams/:id" element={<TeamDetails />} />
               <Route path="/teams/:id/manage" element={<TeamManage />} />
               <Route path="/free-agents" element={<FreeAgents />} />
-              <Route path="/lfg" element={<FindTeammates />} />
+              <Route path="/find-teammates" element={<FindTeammates />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>

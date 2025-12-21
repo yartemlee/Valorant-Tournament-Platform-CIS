@@ -16,14 +16,14 @@ export interface LFGLobbyWithMembers extends LFGLobby {
       id: string;
       username: string | null;
       avatar_url: string | null;
-      valorant_rank: string | null;
+      rank: string | null;
     } | null;
   }>;
   owner_profile: {
     id: string;
     username: string | null;
     avatar_url: string | null;
-    valorant_rank: string | null;
+    rank: string | null;
   } | null;
 }
 
@@ -38,6 +38,7 @@ export interface CreateLobbyParams {
   isPrivate?: boolean;
   voiceRequired?: boolean;
   discordLink?: string;
+  inviteCode?: string;
 }
 
 export interface LobbyFilters {
@@ -53,6 +54,30 @@ export interface LobbyFilters {
 export function useLFGLobbies(filters: LobbyFilters = {}) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  // Real-time subscription for lobby updates (party_code changes)
+  useEffect(() => {
+    const channel = supabase
+      .channel('lfg-lobbies-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'lfg_lobbies',
+        },
+        () => {
+          // Invalidate queries to refetch updated lobby data
+          queryClient.invalidateQueries({ queryKey: ['lfg-lobbies'] });
+          queryClient.invalidateQueries({ queryKey: ['my-lfg-lobby'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Fetch lobbies
   const {
@@ -77,14 +102,14 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
               id,
               username,
               avatar_url,
-              valorant_rank
+              rank
             )
           ),
           owner_profile:profiles!lfg_lobbies_owner_id_fkey (
             id,
             username,
             avatar_url,
-            valorant_rank
+            rank
           )
         `)
         .eq('status', 'open')
@@ -175,7 +200,17 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
         throw error;
       }
 
-      return data as string; // Returns lobby ID
+      const lobbyId = data as string;
+
+      // If invite code was provided, update the lobby with it
+      if (params.inviteCode) {
+        await supabase
+          .from('lfg_lobbies')
+          .update({ party_code: params.inviteCode })
+          .eq('id', lobbyId);
+      }
+
+      return lobbyId;
     },
     onSuccess: () => {
       toast.success('Лобби создано');
@@ -235,6 +270,30 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
     },
   });
 
+  // Update lobby party code mutation
+  const updateLobbyPartyCode = useMutation({
+    mutationFn: async ({ lobbyId, partyCode }: { lobbyId: string; partyCode: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('lfg_lobbies')
+        .update({ party_code: partyCode })
+        .eq('id', lobbyId)
+        .eq('owner_id', user.id); // Only owner can update
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lfg-lobbies'] });
+      queryClient.invalidateQueries({ queryKey: ['my-lfg-lobby'] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Ошибка обновления кода');
+    },
+  });
+
   return {
     lobbies: lobbies ?? [],
     isLoading,
@@ -243,6 +302,7 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
     createLobby,
     joinLobby,
     leaveLobby,
+    updateLobbyPartyCode,
   };
 }
 
@@ -263,7 +323,7 @@ export function useMyLFGLobby() {
         .from('lfg_lobby_members')
         .select('lobby_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (memberError || !membership) {
         return null;
@@ -284,14 +344,14 @@ export function useMyLFGLobby() {
               id,
               username,
               avatar_url,
-              valorant_rank
+              rank
             )
           ),
           owner_profile:profiles!lfg_lobbies_owner_id_fkey (
             id,
             username,
             avatar_url,
-            valorant_rank
+            rank
           )
         `)
         .eq('id', membership.lobby_id)

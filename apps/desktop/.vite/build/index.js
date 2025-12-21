@@ -1,4 +1,5 @@
-import { contextBridge, ipcRenderer } from "electron";
+"use strict";
+const electron = require("electron");
 const IPC_CHANNELS = {
   // Valorant API channels
   VALORANT_GET_STATUS: "valorant:get-status",
@@ -16,6 +17,7 @@ const IPC_CHANNELS = {
   LFG_GENERATE_PARTY_CODE: "lfg:generate-party-code",
   LFG_JOIN_PARTY_BY_CODE: "lfg:join-party-by-code",
   LFG_INVITE_TO_PARTY: "lfg:invite-to-party",
+  LFG_CHANGE_QUEUE: "lfg:change-queue",
   LFG_PARTY_CODE_GENERATED: "lfg:party-code-generated",
   LFG_PARTY_JOIN_RESULT: "lfg:party-join-result",
   // Desktop Sync channels
@@ -31,15 +33,15 @@ const IPC_CHANNELS = {
   APP_CLOSE: "app:close"
 };
 function invoke(channel, data) {
-  return ipcRenderer.invoke(channel, data);
+  return electron.ipcRenderer.invoke(channel, data);
 }
 function on(channel, listener) {
   const wrappedListener = (_event, data) => {
     listener(data);
   };
-  ipcRenderer.on(channel, wrappedListener);
+  electron.ipcRenderer.on(channel, wrappedListener);
   return () => {
-    ipcRenderer.removeListener(channel, wrappedListener);
+    electron.ipcRenderer.removeListener(channel, wrappedListener);
   };
 }
 const valorantApi = {
@@ -69,8 +71,9 @@ const lfgApi = {
   generatePartyCode: () => invoke(IPC_CHANNELS.LFG_GENERATE_PARTY_CODE),
   joinPartyByCode: (code) => invoke(IPC_CHANNELS.LFG_JOIN_PARTY_BY_CODE, { code }),
   inviteToParty: (gameName, tagLine) => invoke(IPC_CHANNELS.LFG_INVITE_TO_PARTY, { gameName, tagLine }),
+  changeQueue: (queueId) => invoke(IPC_CHANNELS.LFG_CHANGE_QUEUE, { queueId }),
   // Desktop sync
-  startSync: (supabaseToken) => invoke(IPC_CHANNELS.DESKTOP_START_SYNC, { supabaseToken }),
+  startSync: (supabaseToken, supabaseUrl) => invoke(IPC_CHANNELS.DESKTOP_START_SYNC, { supabaseToken, supabaseUrl }),
   stopSync: () => invoke(IPC_CHANNELS.DESKTOP_STOP_SYNC),
   // Event listeners
   onPartyCodeGenerated: (callback) => on(IPC_CHANNELS.LFG_PARTY_CODE_GENERATED, callback),
@@ -78,8 +81,8 @@ const lfgApi = {
   onHeartbeat: (callback) => on(IPC_CHANNELS.DESKTOP_HEARTBEAT, callback),
   onStatusChanged: (callback) => on(IPC_CHANNELS.DESKTOP_STATUS_CHANGED, callback)
 };
-contextBridge.exposeInMainWorld("valorantApi", valorantApi);
-contextBridge.exposeInMainWorld("appApi", appApi);
-contextBridge.exposeInMainWorld("lfgApi", lfgApi);
+electron.contextBridge.exposeInMainWorld("valorantApi", valorantApi);
+electron.contextBridge.exposeInMainWorld("appApi", appApi);
+electron.contextBridge.exposeInMainWorld("lfgApi", lfgApi);
 console.log("[Preload] APIs exposed successfully");
 //# sourceMappingURL=index.js.map

@@ -30,6 +30,33 @@ export interface PartyInviteResult {
 }
 
 /**
+ * Result of changing queue/game mode
+ */
+export interface ChangeQueueResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Known Valorant Queue IDs
+ * These map to game modes in Valorant
+ */
+export const VALORANT_QUEUE_IDS = {
+  competitive: 'competitive',
+  unrated: 'unrated',
+  spikerush: 'spikerush',
+  deathmatch: 'deathmatch',
+  ggteam: 'ggteam', // Escalation
+  onefa: 'onefa', // Replication
+  swiftplay: 'swiftplay',
+  hurm: 'hurm', // Team Deathmatch
+  snowball: 'snowball', // Snowball Fight (seasonal)
+  custom: '', // Custom games don't use queue
+} as const;
+
+export type ValorantQueueId = keyof typeof VALORANT_QUEUE_IDS;
+
+/**
  * ValorantRemoteAPI - GLZ API for party management
  * Uses Riot's GLZ servers for party-related operations
  */
@@ -226,6 +253,32 @@ export class ValorantRemoteAPI {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Change party queue/game mode
+   * POST /parties/v1/parties/{partyId}/queue
+   */
+  async changeQueue(partyId: string, queueId: string): Promise<ChangeQueueResult> {
+    if (!this.client) {
+      return { success: false, error: 'API not initialized' };
+    }
+
+    // Skip for custom games (they don't use queue)
+    if (!queueId) {
+      return { success: true };
+    }
+
+    try {
+      await this.client.post(`/parties/v1/parties/${partyId}/queue`, {
+        queueId: queueId
+      });
+
+      console.log(`[ValorantRemoteAPI] Changed queue to: ${queueId}`);
+      return { success: true };
+    } catch (error) {
+      return this.handleError(error, 'changeQueue');
     }
   }
 

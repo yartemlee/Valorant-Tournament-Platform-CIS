@@ -35,14 +35,14 @@ export function useDesktopStatus() {
         .from('desktop_sessions')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('[useDesktopStatus] Error fetching session:', error);
         return null;
       }
 
-      return data as DesktopSession | null;
+      return data;
     },
     enabled: !!user?.id,
     staleTime: 10000, // 10 seconds
@@ -147,13 +147,13 @@ export function useUserDesktopStatus(userId: string | undefined) {
         .from('desktop_sessions')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         return null;
       }
 
-      return data as DesktopSession | null;
+      return data;
     },
     enabled: !!userId,
     staleTime: 10000,

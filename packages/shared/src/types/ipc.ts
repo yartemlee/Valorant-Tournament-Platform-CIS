@@ -63,6 +63,7 @@ export const IPC_CHANNELS = {
   LFG_GENERATE_PARTY_CODE: 'lfg:generate-party-code',
   LFG_JOIN_PARTY_BY_CODE: 'lfg:join-party-by-code',
   LFG_INVITE_TO_PARTY: 'lfg:invite-to-party',
+  LFG_CHANGE_QUEUE: 'lfg:change-queue',
   LFG_PARTY_CODE_GENERATED: 'lfg:party-code-generated',
   LFG_PARTY_JOIN_RESULT: 'lfg:party-join-result',
 
@@ -94,8 +95,9 @@ export type IPCRequest = {
   [IPC_CHANNELS.LFG_GENERATE_PARTY_CODE]: void;
   [IPC_CHANNELS.LFG_JOIN_PARTY_BY_CODE]: { code: string };
   [IPC_CHANNELS.LFG_INVITE_TO_PARTY]: { gameName: string; tagLine: string };
+  [IPC_CHANNELS.LFG_CHANGE_QUEUE]: { queueId: string };
   // Desktop Sync
-  [IPC_CHANNELS.DESKTOP_START_SYNC]: { supabaseToken: string };
+  [IPC_CHANNELS.DESKTOP_START_SYNC]: { supabaseToken: string; supabaseUrl?: string };
   [IPC_CHANNELS.DESKTOP_STOP_SYNC]: void;
   // App lifecycle
   [IPC_CHANNELS.APP_GET_VERSION]: void;
@@ -119,6 +121,7 @@ export type IPCResponse = {
   [IPC_CHANNELS.LFG_GENERATE_PARTY_CODE]: { success: boolean; code?: string; error?: string };
   [IPC_CHANNELS.LFG_JOIN_PARTY_BY_CODE]: { success: boolean; partyId?: string; error?: string };
   [IPC_CHANNELS.LFG_INVITE_TO_PARTY]: { success: boolean; error?: string };
+  [IPC_CHANNELS.LFG_CHANGE_QUEUE]: { success: boolean; error?: string };
   // Desktop Sync
   [IPC_CHANNELS.DESKTOP_START_SYNC]: { success: boolean };
   [IPC_CHANNELS.DESKTOP_STOP_SYNC]: { success: boolean };
@@ -215,9 +218,10 @@ export interface LFGAPI {
   generatePartyCode: () => Promise<{ success: boolean; code?: string; error?: string }>;
   joinPartyByCode: (code: string) => Promise<{ success: boolean; partyId?: string; error?: string }>;
   inviteToParty: (gameName: string, tagLine: string) => Promise<{ success: boolean; error?: string }>;
+  changeQueue: (queueId: string) => Promise<{ success: boolean; error?: string }>;
 
   // Desktop sync
-  startSync: (supabaseToken: string) => Promise<{ success: boolean }>;
+  startSync: (supabaseToken: string, supabaseUrl?: string) => Promise<{ success: boolean }>;
   stopSync: () => Promise<{ success: boolean }>;
 
   // Event listeners

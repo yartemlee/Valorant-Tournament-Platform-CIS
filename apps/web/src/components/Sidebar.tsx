@@ -13,7 +13,7 @@ const navItems = [
   { icon: Trophy, label: "Турниры", path: "/tournaments" },
   { icon: Users, label: "Команды", path: "/teams", showTeamApplicationsBadge: true },
   { icon: User, label: "Свободные агенты", path: "/free-agents" },
-  { icon: Search, label: "Поиск тимейтов", path: "/lfg" },
+  { icon: Search, label: "Поиск тимейтов", path: "/find-teammates" },
   { icon: Swords, label: "Скримы", path: "/scrims", inDevelopment: true },
   { icon: BarChart2, label: "Лидерборд", path: "/leaderboard", inDevelopment: true },
 ];

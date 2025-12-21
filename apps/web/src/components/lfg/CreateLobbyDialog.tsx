@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -30,19 +30,26 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, ChevronsUpDown, X, RefreshCw, Gamepad2 } from 'lucide-react';
+import { useMemo, useState as useReactState } from 'react';
 
 const formSchema = z.object({
-  title: z.string().min(3, 'Минимум 3 символа').max(100, 'Максимум 100 символов'),
-  description: z.string().max(500, 'Максимум 500 символов').optional(),
-  gameMode: z.enum(['competitive', 'unrated', 'spike_rush', 'deathmatch', 'swiftplay', 'custom']),
+  title: z.string().min(3, 'Минимум 3 символа').max(50, 'Максимум 50 символов'),
+  description: z.string().max(200, 'Максимум 200 символов').optional(),
+  lobbyType: z.enum(['competitive', 'casual', 'custom']),
+  gameMode: z.string().optional(),
   maxSize: z.coerce.number().min(2).max(5),
-  region: z.enum(['eu', 'na', 'kr', 'ap', 'latam', 'br']),
+  maxPlayers: z.coerce.number().min(2).max(10).optional(),
+  maps: z.array(z.string()).default([]),
+  servers: z.array(z.enum(['frankfurt', 'paris', 'london', 'warsaw', 'stockholm', 'istanbul', 'madrid', 'bahrain', 'dubai', 'capetown', 'tokyo'])).default([]),
   minRank: z.string().optional(),
   maxRank: z.string().optional(),
   isPrivate: z.boolean().default(false),
   voiceRequired: z.boolean().default(false),
-  discordLink: z.string().url('Введите корректную ссылку').optional().or(z.literal('')),
+  inviteCode: z.string().optional(),
 });
 
 export type CreateLobbyFormValues = z.infer<typeof formSchema>;
@@ -53,22 +60,72 @@ interface CreateLobbyDialogProps {
   onSubmit: (values: CreateLobbyFormValues) => Promise<void>;
 }
 
-const GAME_MODES = [
-  { value: 'competitive', label: 'Рейтинговый' },
-  { value: 'unrated', label: 'Обычный' },
-  { value: 'spike_rush', label: 'Spike Rush' },
-  { value: 'deathmatch', label: 'Deathmatch' },
-  { value: 'swiftplay', label: 'Swiftplay' },
+const LOBBY_TYPES = [
+  { value: 'competitive', label: 'Соревновательный' },
+  { value: 'casual', label: 'Казуальный' },
   { value: 'custom', label: 'Кастом' },
 ];
 
-const REGIONS = [
-  { value: 'eu', label: 'Европа' },
-  { value: 'na', label: 'Северная Америка' },
-  { value: 'kr', label: 'Корея' },
-  { value: 'ap', label: 'Азия' },
-  { value: 'latam', label: 'Латинская Америка' },
-  { value: 'br', label: 'Бразилия' },
+const CASUAL_GAME_MODES = [
+  { value: 'any', label: 'Любой' },
+  { value: 'swiftplay', label: 'Быстрый' },
+  { value: 'unrated', label: 'Обычный' },
+  { value: 'deathmatch', label: 'Deathmatch' },
+  { value: 'tdm', label: 'TDM' },
+  { value: 'spike_rush', label: 'Spike Rush' },
+];
+
+const CUSTOM_GAME_MODES = [
+  { value: 'any', label: 'Любой' },
+  { value: 'swiftplay', label: 'Быстрый' },
+  { value: 'unrated', label: 'Обычный' },
+  { value: 'deathmatch', label: 'Deathmatch' },
+  { value: 'escalation', label: 'Escalation' },
+  { value: 'tdm', label: 'TDM' },
+  { value: 'spike_rush', label: 'Spike Rush' },
+  { value: 'skirmish', label: 'Skirmish' },
+];
+
+const SERVERS = [
+  { value: 'frankfurt', label: 'Франкфурт' },
+  { value: 'paris', label: 'Париж' },
+  { value: 'london', label: 'Лондон' },
+  { value: 'warsaw', label: 'Варшава' },
+  { value: 'stockholm', label: 'Стокгольм' },
+  { value: 'istanbul', label: 'Стамбул' },
+  { value: 'madrid', label: 'Мадрид' },
+  { value: 'bahrain', label: 'Бахрейн' },
+  { value: 'dubai', label: 'Дубай' },
+  { value: 'capetown', label: 'Кейптаун' },
+  { value: 'tokyo', label: 'Токио' },
+];
+
+const STANDARD_MAPS = [
+  { value: 'abyss', label: 'Abyss' },
+  { value: 'ascent', label: 'Ascent' },
+  { value: 'bind', label: 'Bind' },
+  { value: 'breeze', label: 'Breeze' },
+  { value: 'fracture', label: 'Fracture' },
+  { value: 'haven', label: 'Haven' },
+  { value: 'icebox', label: 'Icebox' },
+  { value: 'lotus', label: 'Lotus' },
+  { value: 'pearl', label: 'Pearl' },
+  { value: 'split', label: 'Split' },
+  { value: 'sunset', label: 'Sunset' },
+];
+
+const TDM_MAPS = [
+  { value: 'piazza', label: 'Piazza' },
+  { value: 'drift', label: 'Drift' },
+  { value: 'glitch', label: 'Glitch' },
+  { value: 'kasbah', label: 'Kasbah' },
+  { value: 'district', label: 'District' },
+];
+
+const SKIRMISH_MAPS = [
+  { value: 'skirmish_a', label: 'Skirmish A' },
+  { value: 'skirmish_b', label: 'Skirmish B' },
+  { value: 'skirmish_c', label: 'Skirmish C' },
 ];
 
 const RANKS = [
@@ -91,16 +148,32 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
     defaultValues: {
       title: '',
       description: '',
-      gameMode: 'competitive',
+      lobbyType: 'competitive',
+      gameMode: 'any',
       maxSize: 5,
-      region: 'eu',
-      minRank: '',
-      maxRank: '',
+      maxPlayers: 10,
+      maps: [],
+      servers: [],
+      minRank: 'none',
+      maxRank: 'none',
       isPrivate: false,
       voiceRequired: false,
-      discordLink: '',
+      inviteCode: '',
     },
   });
+
+  const lobbyType = useWatch({ control: form.control, name: 'lobbyType' });
+  const gameMode = useWatch({ control: form.control, name: 'gameMode' });
+
+  const getAvailableMaps = () => {
+    if (gameMode === 'skirmish') {
+      return SKIRMISH_MAPS;
+    }
+    if (gameMode === 'tdm') {
+      return TDM_MAPS;
+    }
+    return STANDARD_MAPS;
+  };
 
   const handleSubmit = async (values: CreateLobbyFormValues) => {
     setIsSubmitting(true);
@@ -113,9 +186,20 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
     }
   };
 
+  const handleLobbyTypeChange = (value: string) => {
+    form.setValue('lobbyType', value as 'competitive' | 'casual' | 'custom');
+    form.setValue('gameMode', 'any');
+    form.setValue('maps', []);
+  };
+
+  const handleGameModeChange = (value: string) => {
+    form.setValue('gameMode', value);
+    form.setValue('maps', []);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Создать лобби</DialogTitle>
           <DialogDescription>
@@ -125,6 +209,7 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {/* Название */}
             <FormField
               control={form.control}
               name="title"
@@ -132,13 +217,14 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                 <FormItem>
                   <FormLabel>Название</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ищем 2 в рейтинг" {...field} />
+                    <Input placeholder="Ищем 2 в рейтинг" maxLength={50} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Описание */}
             <FormField
               control={form.control}
               name="description"
@@ -149,6 +235,8 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                     <Textarea
                       placeholder="Дополнительная информация о лобби..."
                       className="resize-none"
+                      rows={2}
+                      maxLength={200}
                       {...field}
                     />
                   </FormControl>
@@ -157,23 +245,24 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Тип лобби, Режим игры и Размер команды / Лимит игроков */}
+            <div className={`grid gap-4 ${lobbyType === 'competitive' ? 'grid-cols-2' : 'grid-cols-3'}`}>
               <FormField
                 control={form.control}
-                name="gameMode"
+                name="lobbyType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Режим игры</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel>Тип лобби</FormLabel>
+                    <Select onValueChange={handleLobbyTypeChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {GAME_MODES.map((mode) => (
-                          <SelectItem key={mode.value} value={mode.value}>
-                            {mode.label}
+                        {LOBBY_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -183,137 +272,324 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="maxSize"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Размер команды</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="2">Duo (2)</SelectItem>
-                        <SelectItem value="3">Trio (3)</SelectItem>
-                        <SelectItem value="4">Quad (4)</SelectItem>
-                        <SelectItem value="5">Full stack (5)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {(lobbyType === 'casual' || lobbyType === 'custom') && (
+                <FormField
+                  control={form.control}
+                  name="gameMode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Режим игры</FormLabel>
+                      <Select onValueChange={handleGameModeChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(lobbyType === 'casual' ? CASUAL_GAME_MODES : CUSTOM_GAME_MODES).map((mode) => (
+                            <SelectItem key={mode.value} value={mode.value}>
+                              {mode.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {(lobbyType === 'competitive' || lobbyType === 'casual') && (
+                <FormField
+                  control={form.control}
+                  name="maxSize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Размер команды</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="2">Duo (2)</SelectItem>
+                          <SelectItem value="3">Trio (3)</SelectItem>
+                          <SelectItem value="5">Full stack (5)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {lobbyType === 'custom' && (
+                <FormField
+                  control={form.control}
+                  name="maxPlayers"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Лимит игроков</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                            <SelectItem key={num} value={String(num)}>
+                              {num} {num === 10 ? '(макс.)' : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
-            <FormField
-              control={form.control}
-              name="region"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Регион</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {REGIONS.map((region) => (
-                        <SelectItem key={region.value} value={region.value}>
-                          {region.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+            {/* Карты и Серверы */}
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="minRank"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Минимальный ранг</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Любой" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">Любой</SelectItem>
-                        {RANKS.map((rank) => (
-                          <SelectItem key={rank} value={rank}>
-                            {rank}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {lobbyType === 'custom' && gameMode !== 'any' && (
+                <FormField
+                  control={form.control}
+                  name="maps"
+                  render={({ field }) => {
+                    const availableMaps = getAvailableMaps();
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Карты</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full h-auto min-h-10 justify-between font-normal"
+                              >
+                                {field.value.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1 flex-1">
+                                    {field.value.map((mapValue) => {
+                                      const map = availableMaps.find((m) => m.value === mapValue);
+                                      return (
+                                        <Badge key={mapValue} variant="secondary" className="text-xs">
+                                          {map?.label}
+                                        </Badge>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground flex-1 text-left">Любая</span>
+                                )}
+                                <div className="flex items-center gap-1 ml-2">
+                                  {field.value.length > 0 && (
+                                    <span
+                                      role="button"
+                                      className="rounded-sm hover:bg-accent p-0.5"
+                                      onPointerDown={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        field.onChange([]);
+                                      }}
+                                    >
+                                      <X className="h-4 w-4 opacity-50 hover:opacity-100" />
+                                    </span>
+                                  )}
+                                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                                </div>
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-2" align="start">
+                            <div className="grid grid-cols-2 gap-2">
+                              {availableMaps.map((map) => {
+                                const isSelected = field.value.includes(map.value);
+
+                                return (
+                                  <div
+                                    key={map.value}
+                                    className="flex items-center space-x-2 rounded-md p-2 hover:bg-accent cursor-pointer"
+                                    onClick={() => {
+                                      if (isSelected) {
+                                        field.onChange(field.value.filter((v) => v !== map.value));
+                                      } else {
+                                        field.onChange([...field.value, map.value]);
+                                      }
+                                    }}
+                                  >
+                                    <Checkbox checked={isSelected} />
+                                    <span className="text-sm">{map.label}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+              )}
 
               <FormField
                 control={form.control}
-                name="maxRank"
+                name="servers"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Максимальный ранг</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Любой" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">Любой</SelectItem>
-                        {RANKS.map((rank) => (
-                          <SelectItem key={rank} value={rank}>
-                            {rank}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <FormItem className={!(lobbyType === 'custom' && gameMode !== 'any') ? 'col-span-2' : ''}>
+                    <FormLabel>Серверы</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full h-auto min-h-10 justify-between font-normal"
+                          >
+                            {field.value.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 flex-1">
+                                {field.value.map((serverValue) => {
+                                  const server = SERVERS.find((s) => s.value === serverValue);
+                                  return (
+                                    <Badge key={serverValue} variant="secondary" className="text-xs">
+                                      {server?.label}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground flex-1 text-left">Оптимальный</span>
+                            )}
+                            <div className="flex items-center gap-1 ml-2">
+                              {field.value.length > 0 && (
+                                <span
+                                  role="button"
+                                  className="rounded-sm hover:bg-accent p-0.5"
+                                  onPointerDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    field.onChange([]);
+                                  }}
+                                >
+                                  <X className="h-4 w-4 opacity-50 hover:opacity-100" />
+                                </span>
+                              )}
+                              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                            </div>
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-2" align="start">
+                        <div className="grid grid-cols-2 gap-2">
+                          {SERVERS.map((server) => {
+                            const isSelected = field.value.includes(server.value);
+                            return (
+                              <div
+                                key={server.value}
+                                className="flex items-center space-x-2 rounded-md p-2 hover:bg-accent cursor-pointer"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    field.onChange(field.value.filter((v) => v !== server.value));
+                                  } else {
+                                    field.onChange([...field.value, server.value]);
+                                  }
+                                }}
+                              >
+                                <Checkbox checked={isSelected} />
+                                <span className="text-sm">{server.label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="discordLink"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Discord (опционально)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://discord.gg/..." {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Ссылка на Discord сервер или канал
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Ранги для соревновательного режима */}
+            {lobbyType === 'competitive' && (
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="minRank"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Минимальный ранг</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Любой" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Любой</SelectItem>
+                          {RANKS.map((rank) => (
+                            <SelectItem key={rank} value={rank}>
+                              {rank}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="maxRank"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Максимальный ранг</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Любой" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">Любой</SelectItem>
+                          {RANKS.map((rank) => (
+                            <SelectItem key={rank} value={rank}>
+                              {rank}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+
+            {/* Переключатели */}
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="voiceRequired"
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between rounded-lg border p-3">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Голосовой чат обязателен</FormLabel>
+                      <FormLabel className="text-base">Голосовой чат</FormLabel>
                       <FormDescription>
-                        Только для игроков с микрофоном
+                        Только с микрофоном
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -329,9 +605,9 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between rounded-lg border p-3">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Приватное лобби</FormLabel>
+                      <FormLabel className="text-base">Приватное</FormLabel>
                       <FormDescription>
-                        Игроки должны запросить доступ
+                        Нужен запрос доступа
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -341,6 +617,82 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                 )}
               />
             </div>
+
+            {/* Invite Code */}
+            <FormField
+              control={form.control}
+              name="inviteCode"
+              render={({ field }) => {
+                const isElectronEnv = typeof window !== 'undefined' && typeof (window as any).lfgApi !== 'undefined';
+                const [isGenerating, setIsGenerating] = useReactState(false);
+
+                const handleGenerate = async () => {
+                  if (!isElectronEnv) {
+                    return;
+                  }
+                  setIsGenerating(true);
+                  try {
+                    const lfgApi = (window as any).lfgApi;
+                    if (lfgApi?.generatePartyCode) {
+                      const result = await lfgApi.generatePartyCode();
+                      if (result.success && result.code) {
+                        field.onChange(result.code);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Failed to generate party code:', error);
+                  } finally {
+                    setIsGenerating(false);
+                  }
+                };
+
+                return (
+                  <FormItem>
+                    <FormLabel>Invite Code (опционально)</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input
+                          placeholder="Вставьте код из игры или сгенерируйте"
+                          {...field}
+                          className="font-mono uppercase"
+                          maxLength={6}
+                          onChange={(e) => {
+                            // Allow only alphanumeric characters and convert to uppercase
+                            const value = e.target.value
+                              .toUpperCase()
+                              .replace(/[^A-Z0-9]/g, '')
+                              .slice(0, 6);
+                            field.onChange(value);
+                          }}
+                        />
+                      </FormControl>
+                      {isElectronEnv && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={handleGenerate}
+                          disabled={isGenerating}
+                          title="Сгенерировать код"
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    <FormDescription>
+                      {isElectronEnv
+                        ? 'Код будет автоматически сгенерирован в Valorant'
+                        : 'Скопируйте код из игры (Custom Game → Share Code)'}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
 
             <DialogFooter>
               <Button
