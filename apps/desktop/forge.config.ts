@@ -6,7 +6,7 @@ const config: ForgeConfig = {
         name: 'ValoHub',
         executableName: 'ValoHub',
         asar: true,
-        icon: './resources/icon', // .ico will be appended on Windows
+        // icon: './resources/icon', // .ico will be appended on Windows
     },
     rebuildConfig: {},
     makers: [
@@ -14,12 +14,13 @@ const config: ForgeConfig = {
             name: '@electron-forge/maker-squirrel',
             config: {
                 name: 'ValoHub',
-                setupIcon: './resources/icon.ico',
+                // setupIcon: './resources/icon.ico',
             },
         },
         {
             name: '@electron-forge/maker-zip',
             platforms: ['darwin', 'linux', 'win32'],
+            config: {},
         },
     ],
     plugins: [

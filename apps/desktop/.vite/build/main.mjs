@@ -63,7 +63,7 @@ class WindowManager {
       }
     });
     {
-      this.mainWindow.loadURL("http://localhost:8080");
+      this.mainWindow.loadFile(join(import.meta.dirname, `../renderer/${"main_window"}/index.html`));
     }
     this.mainWindow.on("ready-to-show", () => {
       this.mainWindow?.show();
@@ -75,9 +75,6 @@ class WindowManager {
     this.mainWindow.on("closed", () => {
       this.mainWindow = null;
     });
-    {
-      this.mainWindow.webContents.openDevTools();
-    }
     return this.mainWindow;
   }
   getMainWindow() {
