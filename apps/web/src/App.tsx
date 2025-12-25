@@ -31,6 +31,8 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTeams from "./pages/admin/AdminTeams";
 import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminFreeAgents from "./pages/admin/AdminFreeAgents";
+import MatchRequestsList from "./pages/admin/MatchRequestsList";
+import MatchRequestDetails from "./pages/admin/MatchRequestDetails";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +102,8 @@ const App = () => {
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="teams" element={<AdminTeams />} />
                 <Route path="tournaments" element={<AdminTournaments />} />
+                <Route path="tournaments/:tournamentId/requests" element={<MatchRequestsList />} />
+                <Route path="requests/:requestId" element={<MatchRequestDetails />} />
                 <Route path="free-agents" element={<AdminFreeAgents />} />
               </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -11,6 +11,18 @@ export type Profile = Database['public']['Tables']['profiles']['Row'] & {
     rank?: ValorantRank | null;
 };
 export type Team = Database['public']['Tables']['teams']['Row'] & { is_recruiting: boolean; slug?: string | null };
+export interface TournamentSettings {
+    team_size: number;
+    match_format: 'bo1' | 'bo3' | 'bo5';
+    veto_enabled: boolean;
+    veto_time_limit: number;
+    map_pool: string[];
+    rank_min?: string | null;
+    rank_max?: string | null;
+    servers: string[];
+    custom_rules?: string;
+}
+
 export type Tournament = Database['public']['Tables']['tournaments']['Row'] & {
     bracket_generated?: boolean;
     slug?: string | null;
@@ -26,6 +38,7 @@ export type Tournament = Database['public']['Tables']['tournaments']['Row'] & {
     status: string;
     format: string;
     substitution_limit?: number;
+    settings: TournamentSettings;
 };
 export type Participant = Database['public']['Tables']['tournament_registrations']['Row'];
 export type Match = Database['public']['Tables']['matches']['Row'];
@@ -180,7 +193,7 @@ export interface BracketMatch {
     };
 }
 
-export interface ParticipantWithTeam extends Participant {
+export interface ParticipantWithTeam extends Omit<Participant, 'selected_roster'> {
     selected_roster?: string[] | null;
     team: {
         name: string;
@@ -217,4 +230,35 @@ export interface FreeAgentCardWithProfile extends FreeAgentCard {
     };
     player_roles?: PlayerRole[];
     player_agents?: PlayerAgent[];
+}
+
+// Match Request types
+export type MatchRequestType = 'score_dispute' | 'tech_issue' | 'cheating' | 'other';
+export type MatchRequestStatus = 'open' | 'in_progress' | 'resolved' | 'rejected';
+
+export interface MatchRequest {
+    id: string;
+    match_id: string;
+    reporter_id: string;
+    request_type: MatchRequestType;
+    description: string;
+    status: MatchRequestStatus;
+    created_at: string;
+    updated_at: string;
+    resolved_by?: string | null;
+    resolution_note?: string | null;
+}
+
+export interface MatchRequestMessage {
+    id: string;
+    request_id: string;
+    sender_id: string;
+    message: string;
+    created_at: string;
+}
+
+export interface MatchRequestWithDetails extends MatchRequest {
+    match?: Match;
+    reporter?: Profile;
+    messages?: MatchRequestMessage[];
 }

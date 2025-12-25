@@ -59,11 +59,17 @@ class WindowManager {
         // Enable context isolation for security
         nodeIntegration: false,
         // Disable node integration for security
-        webSecurity: true
+        webSecurity: true,
+        zoomFactor: 1,
+        // Fix blurry rendering
+        spellcheck: false
       }
     });
+    this.mainWindow.webContents.on("did-finish-load", () => {
+      this.mainWindow?.webContents.setZoomFactor(1);
+    });
     {
-      this.mainWindow.loadFile(join(import.meta.dirname, `../renderer/${"main_window"}/index.html`));
+      this.mainWindow.loadURL("http://localhost:8080");
     }
     this.mainWindow.on("ready-to-show", () => {
       this.mainWindow?.show();
@@ -75,6 +81,9 @@ class WindowManager {
     this.mainWindow.on("closed", () => {
       this.mainWindow = null;
     });
+    {
+      this.mainWindow.webContents.openDevTools();
+    }
     return this.mainWindow;
   }
   getMainWindow() {
@@ -22416,6 +22425,8 @@ async function cleanup() {
   lfgService.clear();
 }
 const windowManager = new WindowManager();
+app.commandLine.appendSwitch("high-dpi-support", "1");
+app.commandLine.appendSwitch("force-device-scale-factor", "1");
 app.whenReady().then(() => {
   const mainWindow2 = windowManager.createWindow();
   setupIpcHandlers(mainWindow2);

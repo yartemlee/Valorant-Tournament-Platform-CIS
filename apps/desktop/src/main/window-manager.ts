@@ -34,8 +34,15 @@ export class WindowManager {
         sandbox: false, // Required for preload script to work
         contextIsolation: true, // Enable context isolation for security
         nodeIntegration: false, // Disable node integration for security
-        webSecurity: true
-      }
+        webSecurity: true,
+        zoomFactor: 1.0, // Fix blurry rendering
+        spellcheck: false,
+      },
+    });
+
+    // Force zoom level to 1 to fix blurry text
+    this.mainWindow.webContents.on('did-finish-load', () => {
+      this.mainWindow?.webContents.setZoomFactor(1.0);
     });
 
     // Load the app using Electron Forge's environment variables

@@ -4,6 +4,10 @@ import { setupIpcHandlers } from './ipc-handlers';
 
 const windowManager = new WindowManager();
 
+// Fix blurry rendering on Windows with high DPI displays
+app.commandLine.appendSwitch('high-dpi-support', '1');
+app.commandLine.appendSwitch('force-device-scale-factor', '1');
+
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
   // Create window

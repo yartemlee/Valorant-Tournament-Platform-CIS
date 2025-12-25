@@ -8,8 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { DEFAULT_RULES } from "@/constants/tournament";
+import { DEFAULT_RULES, VALORANT_MAPS, VALORANT_RANKS } from "@/constants/tournament";
 import { slugify } from "@/utils/slugify";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { TournamentSettings } from "@/types/common.types";
+import { DateTimeInput } from "@/components/ui/datetime-input";
 
 interface CreateTournamentDialogProps {
   open: boolean;
@@ -30,6 +35,14 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
     max_teams: 16,
     rules: DEFAULT_RULES,
     substitution_limit: 0,
+    // Flexible Settings
+    team_size: 5,
+    veto_enabled: true,
+    veto_time_limit: 60,
+    map_pool: [...VALORANT_MAPS],
+    rank_min: "Iron 1",
+    rank_max: "Radiant",
+    servers: ["eu"],
   });
 
   // Fetch user coins when dialog opens
@@ -96,11 +109,6 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
       return;
     }
 
-    if (selectedDate.getFullYear() > maxDate.getFullYear()) {
-      toast.error("Некорректный год");
-      return;
-    }
-
     if (!canAfford) {
       toast.error("Недостаточно средств для создания турнира");
       return;
@@ -108,15 +116,26 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
 
     setLoading(true);
 
+    const settings: TournamentSettings = {
+      team_size: formData.team_size,
+      match_format: "bo1", // Default, will be configured per round
+      veto_enabled: formData.veto_enabled,
+      veto_time_limit: formData.veto_time_limit,
+      map_pool: formData.map_pool,
+      rank_min: formData.rank_min,
+      rank_max: formData.rank_max,
+      servers: formData.servers,
+    };
+
     const { data, error } = await supabase.rpc('create_tournament_with_payment' as any, {
       p_title: formData.title,
       p_description: formData.description,
       p_format: formData.format as any,
       p_start_time: formData.start_time,
-      p_prize_pool: formData.prize_pool, // Pass as string, RPC handles parsing
+      p_prize_pool: formData.prize_pool,
       p_max_teams: formData.max_teams,
       p_rules: formData.rules,
-      p_substitution_limit: formData.substitution_limit,
+      p_settings: settings,
     });
 
     setLoading(false);
@@ -135,7 +154,6 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
       const shortId = newTournamentId.slice(-4);
       const slug = `${slugify(formData.title)}-${shortId}`;
 
-      // Try to update slug
       const { error: slugError } = await supabase
         .from('tournaments')
         .update({ slug } as any)
@@ -162,7 +180,8 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
           <DialogTitle>Создать турнир</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">
               Название турнира <span className="text-destructive">*</span>
@@ -180,6 +199,7 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
             </div>
           </div>
 
+          {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Короткое описание</Label>
             <Textarea
@@ -188,14 +208,15 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Опишите турнир в нескольких словах"
               maxLength={300}
-              rows={3}
+              rows={2}
             />
             <div className="text-xs text-muted-foreground text-right">
               {formData.description.length}/300
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Row 1: Format, Team Size, Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="format">
                 Формат сетки <span className="text-destructive">*</span>
@@ -215,22 +236,127 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="team_size">Размер команды</Label>
+              <Select
+                value={formData.team_size.toString()}
+                onValueChange={(value) => setFormData({ ...formData, team_size: parseInt(value) })}
+              >
+                <SelectTrigger id="team_size">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1x1</SelectItem>
+                  <SelectItem value="2">2x2</SelectItem>
+                  <SelectItem value="3">3x3</SelectItem>
+                  <SelectItem value="5">5x5</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="start_time">
-                Дата и время начала <span className="text-destructive">*</span>
+                Дата начала <span className="text-destructive">*</span>
               </Label>
-              <Input
+              <DateTimeInput
                 id="start_time"
-                type="datetime-local"
                 value={formData.start_time}
                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                 min={new Date().toISOString().slice(0, 16)}
                 max={maxDateStr.toISOString().slice(0, 16)}
                 required
-                className="[color-scheme:dark] w-full block"
               />
             </div>
           </div>
 
+          {/* Row 2: Rank Limits */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="rank_min">Мин. ранг</Label>
+              <Select
+                value={formData.rank_min}
+                onValueChange={(value) => setFormData({ ...formData, rank_min: value })}
+              >
+                <SelectTrigger id="rank_min">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VALORANT_RANKS.map((rank) => (
+                    <SelectItem key={rank} value={rank}>{rank}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="rank_max">Макс. ранг</Label>
+              <Select
+                value={formData.rank_max}
+                onValueChange={(value) => setFormData({ ...formData, rank_max: value })}
+              >
+                <SelectTrigger id="rank_max">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VALORANT_RANKS.map((rank) => (
+                    <SelectItem key={rank} value={rank}>{rank}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Map Pool & Veto Section */}
+          <div className="space-y-4 rounded-lg border p-4" style={{ willChange: 'contents', contain: 'layout' }}>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label className="text-base">Map Veto System</Label>
+                <p className="text-xs text-muted-foreground">Включить систему бана карт</p>
+              </div>
+              <Switch
+                checked={formData.veto_enabled}
+                onCheckedChange={(checked) => setFormData({ ...formData, veto_enabled: checked })}
+              />
+            </div>
+
+            <div className={formData.veto_enabled ? "space-y-2" : "hidden"}>
+              <Label htmlFor="veto_time">Время на ход (сек)</Label>
+              <Input
+                id="veto_time"
+                type="number"
+                min={30}
+                max={300}
+                value={formData.veto_time_limit}
+                onChange={(e) => setFormData({ ...formData, veto_time_limit: parseInt(e.target.value) || 60 })}
+                className="w-32"
+              />
+            </div>
+
+            <div className={formData.veto_enabled ? "space-y-2" : "hidden"}>
+              <Label>Маппул ({formData.map_pool.length} карт)</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 rounded-md border p-3 max-h-32 overflow-y-auto">
+                {VALORANT_MAPS.map((map) => (
+                  <div key={map} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`map-${map}`}
+                      checked={formData.map_pool.includes(map)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({ ...formData, map_pool: [...formData.map_pool, map] });
+                        } else {
+                          setFormData({ ...formData, map_pool: formData.map_pool.filter(m => m !== map) });
+                        }
+                      }}
+                    />
+                    <label htmlFor={`map-${map}`} className="text-sm cursor-pointer">
+                      {map}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Row 3: Prize Pool, Max Teams */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="prize_pool">Призовой фонд (VP)</Label>
@@ -255,21 +381,9 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
                 min={2}
                 max={64}
                 value={formData.max_teams}
-                onChange={(e) => setFormData({ ...formData, max_teams: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, max_teams: parseInt(e.target.value) || 16 })}
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="substitution_limit">Лимит замен (0 = без замен)</Label>
-            <Input
-              id="substitution_limit"
-              type="number"
-              min={0}
-              max={5}
-              value={formData.substitution_limit}
-              onChange={(e) => setFormData({ ...formData, substitution_limit: parseInt(e.target.value) || 0 })}
-            />
           </div>
 
           {/* Cost Summary */}
@@ -299,18 +413,24 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="rules">Правила турнира</Label>
-            <Textarea
-              id="rules"
-              value={formData.rules}
-              onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
-              placeholder="Опишите правила участия и проведения"
-              rows={4}
-            />
-          </div>
+          {/* Rules (collapsed by default) */}
+          <details className="group">
+            <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Правила турнира (развернуть)
+            </summary>
+            <div className="mt-2 space-y-2">
+              <Textarea
+                id="rules"
+                value={formData.rules}
+                onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
+                placeholder="Опишите правила участия и проведения"
+                rows={4}
+              />
+            </div>
+          </details>
 
-          <div className="flex gap-3 pt-4">
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Отмена
             </Button>

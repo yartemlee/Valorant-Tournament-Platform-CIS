@@ -120,6 +120,7 @@ const AdminTournaments = () => {
                             <TableHead>Турнир</TableHead>
                             <TableHead>Статус</TableHead>
                             <TableHead>Дата начала</TableHead>
+                            <TableHead>Формат</TableHead>
                             <TableHead>Макс. команд</TableHead>
                             <TableHead className="text-right">Действия</TableHead>
                         </TableRow>
@@ -165,6 +166,16 @@ const AdminTournaments = () => {
                                             })
                                             : "-"}
                                     </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col text-xs text-muted-foreground">
+                                            <span className="uppercase">{tournament.format.replace('_', ' ')}</span>
+                                            {tournament.settings && (
+                                                <span className="font-medium text-foreground">
+                                                    {tournament.settings.team_size}v{tournament.settings.team_size} • {tournament.settings.match_format.toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>{tournament.max_teams || "-"}</TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
@@ -182,6 +193,11 @@ const AdminTournaments = () => {
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(tournament.id)}>
                                                     Копировать ID
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link to={`/admin/tournaments/${tournament.id}/requests`}>
+                                                        Жалобы / Запросы
+                                                    </Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
