@@ -52,9 +52,10 @@ export function PhantomDataControls({ tournamentId, onUpdate, currentTeamsCount,
 
       setFillDialogOpen(false);
       onUpdate();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as { message?: string };
       toast.error("Ошибка заполнения турнира", {
-        description: error.message || "Не удалось создать фантомные команды",
+        description: errObj.message || "Не удалось создать фантомные команды",
       });
     } finally {
       setIsLoading(false);
@@ -72,9 +73,10 @@ export function PhantomDataControls({ tournamentId, onUpdate, currentTeamsCount,
 
       setCleanupDialogOpen(false);
       onUpdate();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errObj = error as { message?: string };
       toast.error("Ошибка удаления фантомных данных", {
-        description: error.message || "Не удалось удалить фантомные данные",
+        description: errObj.message || "Не удалось удалить фантомные данные",
       });
     } finally {
       setIsLoading(false);

@@ -23,12 +23,7 @@ export default tseslint.config(
       "**/Profile.tsx",
       "**/Teams.tsx",
       "**/FreeAgents.tsx",
-      "**/PhantomDataControls.tsx",
       "**/RosterSelectionDialog.tsx",
-      "**/SubstitutionRequestDialog.tsx",
-      "**/SubstitutionRequestsList.tsx",
-      "**/AdminLayout.tsx",
-      "**/MatchRequestDetails.tsx",
       "**/MatchRequestsList.tsx",
 
     ]
