@@ -179,8 +179,8 @@ export function CompleteTournamentDialog({
         const { data: _distResult, error: distError } = await supabase.rpc("distribute_tournament_prizes", {
           p_tournament_id: tournamentId,
           p_first_place_team_id: firstPlace,
-          p_second_place_team_id: secondPlace || null,
-          p_third_place_team_id: thirdPlace || null,
+          p_second_place_team_id: secondPlace || firstPlace, // fallback to first place if not set
+          p_third_place_team_id: thirdPlace || firstPlace, // fallback to first place if not set
         });
 
         if (distError) {
@@ -192,8 +192,7 @@ export function CompleteTournamentDialog({
       }
 
       // Сохраняем результаты турнира
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await supabase.from("tournament_results" as any).insert([
+      await supabase.from("tournament_results").insert([
         {
           tournament_id: tournamentId,
           first_place_team_ids: firstPlace ? [firstPlace] : [],

@@ -21,7 +21,7 @@ interface TeamHeroSectionProps {
   isManager?: boolean;
   isCaptain?: boolean;
   currentUserId?: string;
-  userProfile?: unknown;
+  userProfile?: { current_team_id?: string | null };
   onApply: () => void;
   onManage: () => void;
 }

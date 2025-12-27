@@ -28,6 +28,8 @@ export type TournamentMatch = Tables<'tournament_matches'>;
 export type LfgLobby = Tables<'lfg_lobbies'>;
 export type TeamInvitation = Tables<'team_invitations'>;
 export type TeamApplication = Tables<'team_applications'>;
+export type PlayerRole = Tables<'player_roles'>;
+export type PlayerAgent = Tables<'player_agents'>;
 
 // Extended types (joins)
 export interface TeamWithMembers extends Team {
