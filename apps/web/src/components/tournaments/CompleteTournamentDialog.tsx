@@ -176,7 +176,7 @@ export function CompleteTournamentDialog({
 
       // Distribute prize pool coins
       try {
-        const { data: distResult, error: distError } = await supabase.rpc("distribute_tournament_prizes", {
+        const { data: _distResult, error: distError } = await supabase.rpc("distribute_tournament_prizes", {
           p_tournament_id: tournamentId,
           p_first_place_team_id: firstPlace,
           p_second_place_team_id: secondPlace || null,

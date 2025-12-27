@@ -1,4 +1,4 @@
-import { PlayerRole, PlayerAgent, Profile } from '@/types/common.types';
+import { PlayerRole, PlayerAgent } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { RoleMasterySlider } from "./RoleMasterySlider";
@@ -89,7 +89,7 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
     setLocalComfortLevels(newComfortLevels);
   }, [roles]);
 
-  const getRoleComfort = (role: string) => {
+  const _getRoleComfort = (role: string) => {
     const roleData = roles.find(r => r.role === role);
     if (!roleData) return "not_played";
     return roleData.comfort_level as ProficiencyLevel;

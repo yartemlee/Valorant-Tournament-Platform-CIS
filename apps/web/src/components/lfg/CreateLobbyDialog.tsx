@@ -33,8 +33,8 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ChevronsUpDown, X, RefreshCw, Gamepad2 } from 'lucide-react';
-import { useMemo, useState as useReactState } from 'react';
+import { Loader2, ChevronsUpDown, X, RefreshCw } from 'lucide-react';
+
 
 const formSchema = z.object({
   title: z.string().min(3, 'Минимум 3 символа').max(50, 'Максимум 50 символов'),
@@ -142,6 +142,7 @@ const RANKS = [
 
 export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   const form = useForm<CreateLobbyFormValues>({
     resolver: zodResolver(formSchema),
@@ -629,15 +630,16 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
               control={form.control}
               name="inviteCode"
               render={({ field }) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const isElectronEnv = typeof window !== 'undefined' && typeof (window as any).lfgApi !== 'undefined';
-                const [isGenerating, setIsGenerating] = useReactState(false);
 
                 const handleGenerate = async () => {
                   if (!isElectronEnv) {
                     return;
                   }
-                  setIsGenerating(true);
+                  setIsGeneratingCode(true);
                   try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const lfgApi = (window as any).lfgApi;
                     if (lfgApi?.generatePartyCode) {
                       const result = await lfgApi.generatePartyCode();
@@ -646,8 +648,9 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                       }
                     }
                   } catch {
+                    // Silently ignore code generation errors
                   } finally {
-                    setIsGenerating(false);
+                    setIsGeneratingCode(false);
                   }
                 };
 
@@ -677,10 +680,10 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                           variant="outline"
                           size="icon"
                           onClick={handleGenerate}
-                          disabled={isGenerating}
+                          disabled={isGeneratingCode}
                           title="Сгенерировать код"
                         >
-                          {isGenerating ? (
+                          {isGeneratingCode ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <RefreshCw className="h-4 w-4" />

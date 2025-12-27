@@ -3,9 +3,9 @@ import { supabase } from "@/lib/supabase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { valorantApi, ValorantAgent } from "@/services/valorantApi";
-import { ProficiencyLevel, roleProficiencyLevels } from "@/constants/proficiency";
+import { ProficiencyLevel } from "@/constants/proficiency";
 import { ProficiencySelector } from "./ProficiencySelector";
-import { cn } from "@/lib/utils";
+
 import { PlayerAgent } from "@/types/common.types";
 
 interface AgentSelectorProps {

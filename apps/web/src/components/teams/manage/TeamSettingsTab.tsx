@@ -31,7 +31,7 @@ interface TeamSettingsTabProps {
   isCoach?: boolean;
 }
 
-export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSettingsTabProps) {
+export function TeamSettingsTab({ team, isOwner: _isOwner, isCaptain, isCoach }: TeamSettingsTabProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -112,8 +112,8 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
 
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
-    } catch (error) {
-      toast.error(error.message || "Не удалось обновить настройки команды");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Не удалось обновить настройки команды");
     } finally {
       setIsUpdating(false);
     }
@@ -170,8 +170,8 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       navigate("/teams");
-    } catch (error) {
-      toast.error(error.message || "Ошибка при распускании команды");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Ошибка при распускании команды");
     }
   };
 

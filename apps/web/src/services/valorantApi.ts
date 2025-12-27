@@ -55,7 +55,7 @@ export const valorantApi = {
         // But our code uses internal keys like 'duelist', 'initiator'.
 
         // Let's map internal keys to what we might find or just look for known agents of that role.
-        const roleMap: Record<string, string> = {
+        const _roleMap: Record<string, string> = {
             duelist: "Duelist",
             initiator: "Initiator",
             controller: "Controller",

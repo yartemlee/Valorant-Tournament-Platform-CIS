@@ -1,7 +1,7 @@
 import { TeamWithMembers } from '@/types/common.types';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Settings, UserPlus, Users, Calendar } from "lucide-react";
+import { Settings, UserPlus, Users, Calendar } from "lucide-react";
 import { LeaveTeamButton } from "./LeaveTeamButton";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -30,7 +30,7 @@ export function TeamHeroSection({
   team,
   memberCount,
   canApply,
-  isOwner,
+  isOwner: _isOwner,
   isMember,
   isApplying,
   isManager,

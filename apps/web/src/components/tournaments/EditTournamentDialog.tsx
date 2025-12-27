@@ -164,8 +164,8 @@ export function EditTournamentDialog({
 
       onSuccess?.();
       onOpenChange(false);
-    } catch (error: any) {
-      toast.error("Ошибка сохранения: " + error.message);
+    } catch (error: unknown) {
+      toast.error("Ошибка сохранения: " + (error as Error).message);
     } finally {
       setLoading(false);
     }

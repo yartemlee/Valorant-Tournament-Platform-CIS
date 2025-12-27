@@ -1,4 +1,4 @@
-import { Team, TeamWithMembers } from '@/types/common.types';
+import { Team } from '@/types/common.types';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
       }
 
       // Используем безопасный RPC для подачи заявки с DB-валидацией
-      const { data, error } = await supabase.rpc('rpc_apply_to_team', {
+      const { data: _rpcData, error } = await supabase.rpc('rpc_apply_to_team', {
         target_team_id: team.id,
         note: null
       });
@@ -108,7 +108,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
         queryClient.invalidateQueries({ queryKey: ["team-applications", team.id] }),
         queryClient.invalidateQueries({ queryKey: ["team-applications-count"] }),
       ]);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Ошибка при отправке заявки. Не удалось отправить заявку. Попробуйте ещё раз");
     } finally {
       setIsApplying(false);
