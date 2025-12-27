@@ -1,4 +1,4 @@
-import { Profile, Tournament, Match, TeamWithMembers } from '@/types/common.types';
+import { TeamWithMembers } from '@/types/common.types';
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -73,7 +73,6 @@ const TeamDetails = () => {
       const { data, error } = await query.maybeSingle();
 
       if (error) {
-        console.error("Error fetching team:", error);
         return null;
       }
 
@@ -92,7 +91,7 @@ const TeamDetails = () => {
   const memberCount = teamMembers.length;
   const isFull = memberCount >= 10;
 
-  const handleApply = async () => {
+  const _handleApply = async () => {
     if (!currentUserId) {
       toast({
         title: "Требуется авторизация",
@@ -112,7 +111,6 @@ const TeamDetails = () => {
         .single();
 
       if (profileError) {
-        console.error("Profile fetch error:", profileError);
         throw new Error("Не удалось проверить статус команды");
       }
 
@@ -134,7 +132,6 @@ const TeamDetails = () => {
       });
 
       if (error) {
-        console.error("RPC error:", error);
 
         // Обрабатываем известные ошибки с понятными сообщениями
         if (error.message?.includes('already_in_team')) {
@@ -210,8 +207,7 @@ const TeamDetails = () => {
         queryClient.invalidateQueries({ queryKey: ["team-applications", id] }),
         queryClient.invalidateQueries({ queryKey: ["team-applications-count"] }),
       ]);
-    } catch (error) {
-      console.error("Application process error:", error);
+    } catch (_error) {
       toast({
         title: "Ошибка при отправке заявки",
         description: "Не удалось отправить заявку. Попробуйте ещё раз.",

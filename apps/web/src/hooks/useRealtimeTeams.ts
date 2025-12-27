@@ -24,7 +24,6 @@ export function useRealtimeTeams(options: UseRealtimeTeamsOptions = {}) {
     if (!teamId && !watchAll) return;
 
     const channelName = teamId ? `teams:${teamId}` : 'teams:all';
-    console.log(`[Realtime] Subscribing to teams: ${channelName}`);
 
     let channelBuilder = supabase.channel(channelName);
 
@@ -38,9 +37,7 @@ export function useRealtimeTeams(options: UseRealtimeTeamsOptions = {}) {
           table: "teams",
           filter: `id=eq.${teamId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Team change:', payload);
-          
+        (_payload) => {
           // Инвалидируем запросы для этой команды
           queryClient.invalidateQueries({ queryKey: ["team", teamId] });
           queryClient.invalidateQueries({ queryKey: ["team-manage", teamId] });
@@ -56,21 +53,16 @@ export function useRealtimeTeams(options: UseRealtimeTeamsOptions = {}) {
           schema: "public",
           table: "teams",
         },
-        (payload) => {
-          console.log('[Realtime] Teams change:', payload);
-          
+        (_payload) => {
           // Инвалидируем список команд
           queryClient.invalidateQueries({ queryKey: ["teams"] });
         }
       );
     }
 
-    const channel = channelBuilder.subscribe((status) => {
-      console.log(`[Realtime] Teams subscription status:`, status);
-    });
+    const channel = channelBuilder.subscribe();
 
     return () => {
-      console.log(`[Realtime] Unsubscribing from teams: ${channelName}`);
       supabase.removeChannel(channel);
     };
   }, [teamId, watchAll, queryClient]);

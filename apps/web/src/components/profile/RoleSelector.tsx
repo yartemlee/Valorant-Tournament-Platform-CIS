@@ -141,8 +141,7 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
         if (error) throw error;
         onUpdate([...roles, data]);
       }
-    } catch (error) {
-      console.error("Error updating role:", error);
+    } catch {
       // Revert local state on error
       const roleData = roles.find(r => r.role === role);
       const level = roleData ? roleData.comfort_level : "not_played";
@@ -156,33 +155,23 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
   const handleAgentClick = async (agentName: string) => {
     if (!isEditable) return;
 
-    console.log('🔵 Agent clicked:', agentName);
-    console.log('🔵 Current agents state:', agents);
-
     try {
       setUpdating(true);
       const currentStatus = getAgentStatus(agentName);
-      console.log('🔵 Current status:', currentStatus);
 
       const currentIndex = agentProficiencyLevels.findIndex(l => l.value === currentStatus);
       const nextIndex = (currentIndex + 1) % agentProficiencyLevels.length;
       const nextLevel = agentProficiencyLevels[nextIndex].value;
 
-      console.log('🔵 Next level:', nextLevel);
-
       await updateAgentSkill(agentName, nextLevel);
-      console.log('🟢 Agent updated successfully');
-    } catch (error) {
-      console.error("❌ Error toggling agent:", error);
+    } catch {
     } finally {
       setUpdating(false);
     }
   };
 
   const updateAgentSkill = async (agentName: string, skill: AgentProficiencyLevel) => {
-    console.log('🔷 updateAgentSkill called:', agentName, skill);
     const existingAgent = agents.find(a => a.agent_name === agentName);
-    console.log('🔷 Existing agent:', existingAgent);
 
     if (skill === "not_played") {
       if (existingAgent) {
@@ -192,11 +181,7 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
           .eq("id", existingAgent.id);
 
         if (error) throw error;
-        setAgents(prev => {
-          const newAgents = prev.filter(a => a.id !== existingAgent.id);
-          console.log('🟣 Agents after delete:', newAgents);
-          return newAgents;
-        });
+        setAgents(prev => prev.filter(a => a.id !== existingAgent.id));
       }
     } else {
       if (existingAgent) {
@@ -206,13 +191,9 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
           .eq("id", existingAgent.id);
 
         if (error) throw error;
-        setAgents(prev => {
-          const newAgents = prev.map(a =>
-            a.id === existingAgent.id ? { ...a, skill_level: skill } : a
-          );
-          console.log('🟣 Agents after update:', newAgents);
-          return newAgents;
-        });
+        setAgents(prev => prev.map(a =>
+          a.id === existingAgent.id ? { ...a, skill_level: skill } : a
+        ));
       } else {
         const { data, error } = await supabase
           .from("player_agents")
@@ -225,11 +206,7 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
           .single();
 
         if (error) throw error;
-        setAgents(prev => {
-          const newAgents = [...prev, data];
-          console.log('🟣 Agents after insert:', newAgents);
-          return newAgents;
-        });
+        setAgents(prev => [...prev, data]);
       }
     }
   };

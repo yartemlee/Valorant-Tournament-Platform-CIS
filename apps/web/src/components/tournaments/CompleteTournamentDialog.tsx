@@ -125,8 +125,7 @@ export function CompleteTournamentDialog({
           toast.info("Не удалось определить призёров. Выберите вручную.");
           setAutoDetect(false);
         }
-      } catch (error) {
-        console.error("Ошибка определения призёров:", error);
+      } catch {
         toast.error("Ошибка определения призёров");
         setAutoDetect(false);
       }
@@ -185,14 +184,11 @@ export function CompleteTournamentDialog({
         });
 
         if (distError) {
-          console.error("Error distributing prizes:", distError);
           toast.error("Ошибка распределения призового фонда");
         } else {
-          console.log("Prizes distributed:", distResult);
           toast.success("Призовой фонд распределен!");
         }
-      } catch (e) {
-        console.error("Exception distributing prizes:", e);
+      } catch {
       }
 
       // Сохраняем результаты турнира
@@ -212,21 +208,16 @@ export function CompleteTournamentDialog({
         .update({ status: "completed" })
         .eq("id", tournamentId);
 
-      // Очищаем фантомные данные после завершения турнира
       try {
         await cleanupTournamentPhantoms(tournamentId);
-        console.log("Фантомные данные турнира очищены");
-      } catch (error) {
-        console.error("Ошибка очистки фантомных данных:", error);
-        // Не блокируем завершение турнира если очистка не удалась
+      } catch {
       }
 
       toast.success("Турнир завершён. Медали начислены командам и всем участникам!");
       onSuccess?.();
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       toast.error("Ошибка завершения турнира");
-      console.error("Ошибка завершения турнира:", error);
     } finally {
       setLoading(false);
     }

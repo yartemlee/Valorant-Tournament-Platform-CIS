@@ -21,8 +21,6 @@ export function useRealtimeProfiles(options: UseRealtimeProfilesOptions) {
   useEffect(() => {
     if (!userId) return;
 
-    console.log(`[Realtime] Subscribing to profiles for user: ${userId}`);
-
     const channel = supabase
       .channel(`profiles:${userId}`)
       .on(
@@ -33,20 +31,14 @@ export function useRealtimeProfiles(options: UseRealtimeProfilesOptions) {
           table: "profiles",
           filter: `id=eq.${userId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Profile change:', payload);
-          
-          // Инвалидируем запросы профиля
+        () => {
           queryClient.invalidateQueries({ queryKey: ["profile", userId] });
           queryClient.invalidateQueries({ queryKey: ["current-user-profile"] });
         }
       )
-      .subscribe((status) => {
-        console.log(`[Realtime] Profile subscription status for ${userId}:`, status);
-      });
+      .subscribe();
 
     return () => {
-      console.log(`[Realtime] Unsubscribing from profiles for user: ${userId}`);
       supabase.removeChannel(channel);
     };
   }, [userId, queryClient]);

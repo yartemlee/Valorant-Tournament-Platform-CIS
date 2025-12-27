@@ -35,8 +35,7 @@ export const valorantApi = {
             const data = await response.json();
             agentsCache = data.data;
             return agentsCache || [];
-        } catch (error) {
-            console.error("Error fetching Valorant agents:", error);
+        } catch {
             toast.error("Не удалось загрузить данные агентов");
             return [];
         }

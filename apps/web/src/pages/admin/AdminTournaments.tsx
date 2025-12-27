@@ -46,8 +46,7 @@ const AdminTournaments = () => {
 
             if (error) throw error;
             setTournaments(data || []);
-        } catch (error) {
-            console.error("Error fetching tournaments:", error);
+        } catch {
             toast.error("Ошибка загрузки турниров");
         } finally {
             setLoading(false);
@@ -72,8 +71,7 @@ const AdminTournaments = () => {
 
             toast.success("Турнир удален");
             fetchTournaments();
-        } catch (error) {
-            console.error("Error deleting tournament:", error);
+        } catch {
             toast.error("Ошибка удаления турнира");
         }
     };

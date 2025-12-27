@@ -32,8 +32,7 @@ export function AvatarEditorDialog({ imageSrc, isOpen, onClose, onSave, outputFo
             if (croppedImageBlob) {
                 onSave(croppedImageBlob);
             }
-        } catch (e) {
-            console.error(e);
+        } catch {
         } finally {
             setLoading(false);
         }

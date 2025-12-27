@@ -45,8 +45,7 @@ const AdminLayout = () => {
             }
 
             setLoading(false);
-        } catch (error) {
-            console.error("Auth check error:", error);
+        } catch {
             navigate("/");
         }
     };

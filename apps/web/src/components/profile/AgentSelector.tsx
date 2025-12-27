@@ -67,8 +67,7 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
         onUpdate(agents.filter(a => a.id !== agentData.id));
         toast.success(`Агент ${agentName} удален`);
       }
-    } catch (error) {
-      console.error("Error toggling agent:", error);
+    } catch {
       toast.error("Ошибка обновления агента");
     } finally {
       setUpdating(false);
@@ -93,8 +92,7 @@ export function AgentSelector({ userId, agents, onUpdate, isEditable }: AgentSel
       onUpdate(agents.map(a =>
         a.id === agentData.id ? { ...a, skill_level: skill } : a
       ));
-    } catch (error) {
-      console.error("Error updating skill:", error);
+    } catch {
       toast.error("Ошибка обновления уровня");
     } finally {
       setUpdating(false);

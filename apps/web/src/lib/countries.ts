@@ -172,8 +172,7 @@ export const getCountryFlag = (countryCode: string): string => {
         );
 
         return flag;
-    } catch (error) {
-        console.error("Error generating flag for country code:", countryCode, error);
+    } catch {
         return countryCode;
     }
 };

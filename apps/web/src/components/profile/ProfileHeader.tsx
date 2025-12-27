@@ -90,8 +90,7 @@ export function ProfileHeader({ profile, isOwnProfile, isTeamMember, onProfileUp
       toast.success("Аватар успешно обновлен");
       setSelectedImage(null);
 
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
+    } catch {
       toast.error("Ошибка при загрузке аватара");
     } finally {
       setUploading(false);
@@ -120,8 +119,7 @@ export function ProfileHeader({ profile, isOwnProfile, isTeamMember, onProfileUp
 
       toast.success("Аватар удален");
 
-    } catch (error) {
-      console.error('Error deleting avatar:', error);
+    } catch {
       toast.error("Ошибка при удалении аватара");
     } finally {
       setUploading(false);

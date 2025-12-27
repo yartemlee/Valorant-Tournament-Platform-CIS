@@ -47,8 +47,6 @@ export function ApplyToTeamDialog({
             });
 
             if (error) {
-                console.error("RPC error:", error);
-
                 // Handle known errors with friendly messages
                 if (error.message?.includes('already_in_team')) {
                     toast.error("Вы уже состоите в команде. Сначала покиньте текущую.");
@@ -84,7 +82,6 @@ export function ApplyToTeamDialog({
             onOpenChange(false);
             setMessage("");
         } catch (error: any) {
-            console.error("Error sending application:", error);
             toast.error(error.message || "Ошибка отправки заявки");
         } finally {
             setIsSubmitting(false);

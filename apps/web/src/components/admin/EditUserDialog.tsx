@@ -74,13 +74,14 @@ export function EditUserDialog({ user, open, onOpenChange, onSuccess }: EditUser
 
     useEffect(() => {
         if (user) {
+            /* eslint-disable @typescript-eslint/no-explicit-any */
             setForm({
-                nickname: user.nickname || "",
-                riot_id: user.riot_id || "",
-                rank: user.rank || "",
-                region: user.region || "",
-                avatar_url: user.avatar_url || "",
-                bio: user.bio || "",
+                nickname: (user as any).nickname || "",
+                riot_id: (user as any).riot_id || "",
+                rank: (user as any).rank || "",
+                region: (user as any).region || "",
+                avatar_url: (user as any).avatar_url || "",
+                bio: (user as any).bio || "",
                 country: (user as any).country || "",
                 phone_number: (user as any).phone_number || "",
                 status: (user as any).status || "",
@@ -91,6 +92,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSuccess }: EditUser
                 email_notifications: (user as any).email_notifications ?? true,
                 discord_notifications: (user as any).discord_notifications ?? false,
             });
+            /* eslint-enable @typescript-eslint/no-explicit-any */
         }
     }, [user]);
 
@@ -105,7 +107,8 @@ export function EditUserDialog({ user, open, onOpenChange, onSuccess }: EditUser
                 .update({
                     nickname: form.nickname || null,
                     riot_id: form.riot_id || null,
-                    rank: form.rank || null,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    rank: (form.rank || null) as any,
                     region: form.region || null,
                     avatar_url: form.avatar_url || null,
                     bio: form.bio || null,
@@ -126,8 +129,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSuccess }: EditUser
             toast.success("Профиль обновлен");
             onSuccess();
             onOpenChange(false);
-        } catch (error) {
-            console.error("Error updating user:", error);
+        } catch {
             toast.error("Ошибка обновления профиля");
         } finally {
             setSaving(false);

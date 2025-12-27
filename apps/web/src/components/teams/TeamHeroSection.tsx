@@ -110,8 +110,7 @@ export function TeamHeroSection({
       toast.success("Логотип команды обновлен");
       setSelectedImage(null);
 
-    } catch (error) {
-      console.error('Error uploading logo:', error);
+    } catch {
       toast.error("Ошибка при загрузке логотипа");
     } finally {
       setUploading(false);
@@ -136,8 +135,7 @@ export function TeamHeroSection({
 
       toast.success("Логотип удален");
 
-    } catch (error) {
-      console.error('Error deleting logo:', error);
+    } catch {
       toast.error("Ошибка при удалении логотипа");
     } finally {
       setUploading(false);

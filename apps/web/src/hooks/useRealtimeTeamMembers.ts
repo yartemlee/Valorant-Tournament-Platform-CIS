@@ -21,8 +21,6 @@ export function useRealtimeTeamMembers(options: UseRealtimeTeamMembersOptions) {
   useEffect(() => {
     if (!teamId) return;
 
-    console.log(`[Realtime] Subscribing to team_members for team: ${teamId}`);
-
     const channel = supabase
       .channel(`team_members:${teamId}`)
       .on(
@@ -33,24 +31,19 @@ export function useRealtimeTeamMembers(options: UseRealtimeTeamMembersOptions) {
           table: "team_members",
           filter: `team_id=eq.${teamId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Team members change:', payload);
-          
+        () => {
           // Инвалидируем все запросы связанные с командой
           queryClient.invalidateQueries({ queryKey: ["team", teamId] });
           queryClient.invalidateQueries({ queryKey: ["team-manage", teamId] });
           queryClient.invalidateQueries({ queryKey: ["team-member", teamId] });
-          
+
           // Также обновляем общий список команд (там может быть счётчик участников)
           queryClient.invalidateQueries({ queryKey: ["teams"] });
         }
       )
-      .subscribe((status) => {
-        console.log(`[Realtime] Team members subscription status for ${teamId}:`, status);
-      });
+      .subscribe();
 
     return () => {
-      console.log(`[Realtime] Unsubscribing from team_members for team: ${teamId}`);
       supabase.removeChannel(channel);
     };
   }, [teamId, queryClient]);

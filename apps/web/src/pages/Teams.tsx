@@ -39,11 +39,10 @@ const Teams = () => {
   });
 
   // Get all teams using simple select (no nested joins)
-  const { data: teams, isLoading, isError, error, refetch } = useQuery({
+  const { data: teams, isLoading, isError, refetch } = useQuery({
     queryKey: ["teams", { status: statusFilter, search: searchQuery ?? "" }],
     enabled: !sessionLoading,
     queryFn: async () => {
-      console.time('fetchTeams');
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
 
@@ -70,16 +69,12 @@ const Teams = () => {
         const { data, error } = await query;
 
         if (error) {
-          console.error('fetchTeams failed:', error);
           throw error;
         }
 
-        console.timeEnd('fetchTeams');
         return data || [];
-      } catch (error) {
-        console.error('fetchTeams exception:', error);
-        console.timeEnd('fetchTeams');
-        throw error;
+      } catch (_error) {
+        throw _error;
       } finally {
         clearTimeout(timeout);
       }
@@ -202,6 +197,7 @@ const Teams = () => {
                       style={{ animationDelay: `${0.2 + index * 0.05}s` }}
                     >
                       <TeamCard
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         team={team as any}
                         isUserTeam={team.id === profile?.current_team_id}
                       />

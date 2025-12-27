@@ -104,8 +104,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
 
       onProfileUpdate(data);
       toast.success("Настройки сохранены");
-    } catch (error) {
-      console.error("Error saving profile:", error);
+    } catch {
       toast.error("Ошибка сохранения настроек");
     } finally {
       setSaving(false);

@@ -7,11 +7,12 @@
       "@/*": ["./src/*"],
       "@shared/*": ["../../packages/shared/src/*"]
     },
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedParameters": true,
     "skipLibCheck": true,
-    "allowJs": true,
-    "noUnusedLocals": false,
-    "strictNullChecks": false
+    "allowJs": false,
+    "noUnusedLocals": true,
+    "strictNullChecks": true
   }
 }

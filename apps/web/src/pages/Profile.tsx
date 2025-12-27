@@ -1,4 +1,4 @@
-import { Profile as ProfileType, Tournament, Match } from '@/types/common.types';
+import { Profile as ProfileType } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -17,7 +17,7 @@ export default function Profile() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [_currentUser, setCurrentUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
@@ -75,17 +75,11 @@ export default function Profile() {
             .single();
 
           if (currentUserProfile) {
-            console.log("Checking team membership:", {
-              currentUserTeam: currentUserProfile.current_team_id,
-              targetUserTeam: profileData.current_team_id,
-              match: currentUserProfile.current_team_id === profileData.current_team_id
-            });
             setCurrentUserTeamId(currentUserProfile.current_team_id);
           }
         }
 
-      } catch (error) {
-        console.error("Error loading profile:", error);
+      } catch (_error) {
         toast.error("Ошибка загрузки профиля");
       } finally {
         setLoading(false);

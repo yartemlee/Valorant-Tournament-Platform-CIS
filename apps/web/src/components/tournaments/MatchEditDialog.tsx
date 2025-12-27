@@ -1,4 +1,4 @@
-import { Match, Tournament, BracketMatch } from '@/types/common.types';
+import { BracketMatch } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Play, CheckCircle, Edit3, Trophy } from "lucide-react";
+import { Play, CheckCircle, Trophy } from "lucide-react";
 
 interface MatchEditDialogProps {
   match: BracketMatch | null;
@@ -82,8 +82,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
       toast.success("Матч обновлён");
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
-      console.error("Error updating match:", error);
+    } catch {
       toast.error("Ошибка обновления матча");
     } finally {
       setLoading(false);
@@ -94,7 +93,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
    * Продвигает команды в следующие матчи после завершения текущего
    * Обрабатывает все сценарии: обычные раунды, полуфиналы, финалы
    */
-  const advanceWinner = async (currentMatch, winnerId: string, loserId: string | null) => {
+  const advanceWinner = async (currentMatch: BracketMatch, winnerId: string, loserId: string | null) => {
     try {
       // Получить информацию о турнире
       const { data: tournament } = await supabase
@@ -344,14 +343,12 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
           }
         }
       }
-    } catch (error) {
-      console.error("Error advancing winner:", error);
-      // Показываем ошибку пользователю, но не блокируем сохранение матча
+    } catch {
       toast.error("Команды продвинуты в следующий раунд с ошибками");
     }
   };
 
-  const getStatusBadge = () => {
+  const _getStatusBadge = () => {
     switch (status) {
       case "pending":
         return <Badge variant="outline">Не началась</Badge>;

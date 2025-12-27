@@ -37,16 +37,13 @@ export function useRealtimeTeamApplications(options: UseRealtimeTeamApplications
           table: "team_applications",
           filter: `applicant_id=eq.${userId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Team application change:', payload);
+        () => {
           // Инвалидируем запросы для заявителя
           queryClient.invalidateQueries({ queryKey: ["my-team-applications", userId] });
           queryClient.invalidateQueries({ queryKey: ["notifications-count", userId] });
         }
       )
-      .subscribe((status) => {
-        console.log('[Realtime] Team applications subscription status:', status);
-      });
+      .subscribe();
 
     channels.push(applicantChannel);
 

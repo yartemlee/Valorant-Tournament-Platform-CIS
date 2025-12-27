@@ -140,13 +140,13 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
       }
 
       if (filters.hideFullLobbies) {
-        query = query.lt('current_size', supabase.rpc('max_size'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        query = query.lt('current_size', supabase.rpc('max_size' as any));
       }
 
       const { data, error } = await query;
 
       if (error) {
-        console.error('[useLFGLobbies] Error fetching lobbies:', error);
         throw error;
       }
 
@@ -198,16 +198,15 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
         p_description: params.description ?? null,
         p_game_mode: params.gameMode,
         p_max_size: params.maxSize,
-        p_min_rank: params.minRank ?? null,
-        p_max_rank: params.maxRank ?? null,
-        p_region: params.region ?? 'eu',
+        p_min_rank: (params.minRank as Database['public']['Enums']['valorant_rank']) ?? null,
+        p_max_rank: (params.maxRank as Database['public']['Enums']['valorant_rank']) ?? null,
+        p_region: (params.region as Database['public']['Enums']['valorant_region']) ?? 'eu',
         p_is_private: params.isPrivate ?? false,
         p_voice_required: params.voiceRequired ?? false,
         p_discord_link: params.discordLink ?? null,
       });
 
       if (error) {
-        console.error('[useLFGLobbies] Error creating lobby:', error);
         throw error;
       }
 
@@ -316,8 +315,8 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
           title: params.title,
           description: params.description ?? null,
           max_size: params.maxSize,
-          min_rank: params.minRank ?? null,
-          max_rank: params.maxRank ?? null,
+          min_rank: (params.minRank as Database['public']['Enums']['valorant_rank']) ?? null,
+          max_rank: (params.maxRank as Database['public']['Enums']['valorant_rank']) ?? null,
           is_private: params.isPrivate ?? false,
           voice_required: params.voiceRequired ?? false,
         })
@@ -343,7 +342,10 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
     mutationFn: async ({ lobbyId, message }: { lobbyId: string; message?: string }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase.rpc('request_to_join_lfg_lobby', {
+
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await supabase.rpc('request_to_join_lfg_lobby' as any, {
         p_lobby_id: lobbyId,
         p_message: message || null,
       });
@@ -582,12 +584,12 @@ export function useLobbyRequests(lobbyId: string | undefined) {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching lobby requests:', error);
         return [];
       }
 
       // Get player_roles and player_agents for each requester
       const requestsWithExtras = await Promise.all(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (data || []).map(async (request: any) => {
           const userId = request.requester_id;
 
@@ -671,10 +673,6 @@ export function useMyLobbyRequest(lobbyId: string | undefined) {
         .single();
 
       if (error) {
-        // PGRST116 = no rows found, which is expected
-        if (error.code !== 'PGRST116') {
-          console.error('Error fetching my request:', error);
-        }
         return null;
       }
 
@@ -713,7 +711,6 @@ export function useMyPendingRequests() {
         .eq('requester_id', user.id);
 
       if (error) {
-        console.error('Error fetching my requests:', error);
         return [];
       }
 

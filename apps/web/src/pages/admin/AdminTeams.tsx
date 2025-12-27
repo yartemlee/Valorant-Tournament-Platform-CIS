@@ -45,8 +45,7 @@ const AdminTeams = () => {
 
             if (error) throw error;
             setTeams(data || []);
-        } catch (error) {
-            console.error("Error fetching teams:", error);
+        } catch {
             toast.error("Ошибка загрузки команд");
         } finally {
             setLoading(false);
@@ -71,8 +70,7 @@ const AdminTeams = () => {
 
             toast.success("Команда удалена");
             fetchTeams();
-        } catch (error) {
-            console.error("Error deleting team:", error);
+        } catch {
             toast.error("Ошибка удаления команды");
         }
     };

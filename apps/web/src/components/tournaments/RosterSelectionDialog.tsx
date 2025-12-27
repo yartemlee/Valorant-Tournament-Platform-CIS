@@ -57,7 +57,6 @@ export const RosterSelectionDialog = ({
 
         if (error) {
             toast.error("Ошибка загрузки участников команды");
-            console.error(error);
         } else {
             // Filter out members without profiles (shouldn't happen with inner join logic but safe to check)
             const validMembers = data?.filter(m => m.profiles) as any as TeamMember[];

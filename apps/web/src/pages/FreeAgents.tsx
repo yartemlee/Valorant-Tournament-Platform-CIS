@@ -20,7 +20,7 @@ const rankOrder = [
 
 const FreeAgents = () => {
     const { session } = useAuth();
-    const queryClient = useQueryClient();
+    const _queryClient = useQueryClient();
 
     const [filters, setFilters] = useState<FreeAgentFilters>({
         search: "",
@@ -154,12 +154,9 @@ const FreeAgents = () => {
 
     // Filter cards based on current filters
     const filteredCards = useMemo(() => {
-        console.log("Cards from query:", cards);
-
         return cards.filter((card) => {
             // Skip cards without valid profiles
             if (!card.profiles) {
-                console.warn("Card without profiles:", card);
                 return false;
             }
 
@@ -231,7 +228,6 @@ const FreeAgents = () => {
             refetchMyCard();
             refetch();
         } catch (error) {
-            console.error("Error saving card:", error);
             toast.error("Ошибка сохранения карточки");
             throw error;
         }
@@ -253,8 +249,7 @@ const FreeAgents = () => {
             toast.success("Карточка удалена");
             refetchMyCard();
             refetch();
-        } catch (error) {
-            console.error("Error deleting card:", error);
+        } catch (_error) {
             toast.error("Ошибка удаления карточки");
         }
     };

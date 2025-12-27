@@ -96,7 +96,6 @@ const CreateTeam = () => {
       if (!slugError) {
         navigate(`/teams/${slug}`);
       } else {
-        console.error("Error setting slug:", slugError);
         navigate(`/teams/${teamId}`);
       }
     } catch (error) {

@@ -36,21 +36,22 @@ interface TeamRosterTabProps {
   onCaptainTransferred?: () => void;
 }
 
-export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId, onCaptainTransferred }: TeamRosterTabProps) {
+export function TeamRosterTab({ team, isCaptain, currentUserId, onCaptainTransferred }: TeamRosterTabProps) {
   const queryClient = useQueryClient();
   const [removingMember, setRemovingMember] = useState<string | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [transferringCaptaincy, setTransferringCaptaincy] = useState<string | null>(null);
 
-  const isManager = isOwner || isCoach;
+
 
   const handleRoleChange = async (memberUserId: string, newRole: string) => {
     setUpdatingRole(memberUserId);
     try {
       // Use secure RPC that validates captain role
-      const { data, error } = await supabase.rpc('set_member_role', {
+      const { error } = await supabase.rpc('set_member_role', {
         team_id: team.id,
         user_id: memberUserId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         new_role: newRole as any,
       });
 
@@ -79,17 +80,17 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
       queryClient.invalidateQueries({ queryKey: ["team-member"] });
-    } catch (error) {
-      toast.error(error.message || "Ошибка изменения роли");
+    } catch (error: any) {
+      toast.error(error?.message || "Ошибка изменения роли");
     } finally {
       setUpdatingRole(null);
     }
   };
 
-  const handleTransferCaptaincy = async (newCaptainId: string, newCaptainUserId: string) => {
+  const handleTransferCaptaincy = async (_newCaptainId: string, newCaptainUserId: string) => {
     try {
       // Call atomic RPC function
-      const { data, error } = await supabase.rpc('transfer_captain', {
+      const { error } = await supabase.rpc('transfer_captain', {
         team_id: team.id,
         new_captain_id: newCaptainUserId
       });
@@ -134,16 +135,19 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
       if (onCaptainTransferred) {
         onCaptainTransferred();
       }
-    } catch (error) {
-      toast.error(error.message || "Ошибка передачи капитанства");
+      if (onCaptainTransferred) {
+        onCaptainTransferred();
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Ошибка передачи капитанства");
       setTransferringCaptaincy(null);
     }
   };
 
-  const handleRemoveMember = async (memberId: string, userId: string) => {
+  const handleRemoveMember = async (_memberId: string, userId: string) => {
     try {
       // Use secure RPC that validates captain role and prevents self-kick
-      const { data, error } = await supabase.rpc('kick_member', {
+      const { error } = await supabase.rpc('kick_member', {
         team_id: team.id,
         user_id: userId,
       });
@@ -172,8 +176,8 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
       ]);
 
       setRemovingMember(null);
-    } catch (error) {
-      toast.error(error.message || "Ошибка удаления игрока");
+    } catch (error: any) {
+      toast.error(error?.message || "Ошибка удаления игрока");
       setRemovingMember(null);
     }
   };
@@ -188,7 +192,7 @@ export function TeamRosterTab({ team, isOwner, isCaptain, isCoach, currentUserId
           >
             <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarImage src={member.profiles?.avatar_url} />
+                <AvatarImage src={member.profiles?.avatar_url || undefined} />
                 <AvatarFallback>
                   {member.profiles?.username?.[0]?.toUpperCase() || "?"}
                 </AvatarFallback>

@@ -159,7 +159,7 @@ export function TeamSettingsTab({ team, isOwner, isCaptain, isCoach }: TeamSetti
         .from("tournament_participants")
         .delete()
         .eq("team_id", team.id);
-      if (tournamentsError) console.warn("Failed to remove tournament participations:", tournamentsError);
+      if (tournamentsError) { /* ignore tournament participation removal error */ }
 
       // 6. Удаляем саму команду
       const { error } = await supabase.from("teams").delete().eq("id", team.id);

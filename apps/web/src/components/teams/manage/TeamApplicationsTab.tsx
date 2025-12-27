@@ -40,7 +40,6 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching applications:", error);
         throw error;
       }
       return data || [];
@@ -80,7 +79,6 @@ export function TeamApplicationsTab({ teamId, session }: TeamApplicationsTabProp
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching invites:", error);
         throw error;
       }
       return data || [];

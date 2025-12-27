@@ -90,8 +90,7 @@ export default function MatchRequestDetails() {
             if (messagesError) throw messagesError;
             setMessages(messagesData || []);
             scrollToBottom();
-        } catch (error: any) {
-            console.error("Error fetching data:", error);
+        } catch {
             toast.error("Ошибка загрузки данных");
         } finally {
             setLoading(false);
@@ -123,8 +122,7 @@ export default function MatchRequestDetails() {
             setNewMessage("");
             // Optimistic update is handled by subscription, but for safety:
             // fetchMessages(); 
-        } catch (error: any) {
-            console.error("Error sending message:", error);
+        } catch {
             toast.error("Ошибка отправки сообщения");
         }
     };
@@ -145,8 +143,7 @@ export default function MatchRequestDetails() {
             if (error) throw error;
             toast.success("Статус обновлен");
             fetchData();
-        } catch (error: any) {
-            console.error("Error updating status:", error);
+        } catch {
             toast.error("Ошибка обновления статуса");
         }
     };

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { SignInCredentials, SignUpCredentials } from '@/types/common.types';
 
 // Declare types for Electron APIs exposed via preload
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
   interface Window {
     lfgApi?: {
@@ -32,6 +33,7 @@ declare global {
     };
   }
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // Helper to check if running in Electron
 const isElectron = (): boolean => {
@@ -63,22 +65,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.access_token) {
         // User logged in - start syncing
         try {
-          console.log('[AuthContext] Starting desktop sync...');
           // Pass both token and URL (URL from vite env variables)
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-          const result = await window.lfgApi!.startSync(session.access_token, supabaseUrl);
-          console.log('[AuthContext] Desktop sync started:', result);
-        } catch (error) {
-          console.error('[AuthContext] Failed to start desktop sync:', error);
+          await window.lfgApi!.startSync(session.access_token, supabaseUrl);
+        } catch {
         }
       } else {
         // User logged out - stop syncing
         try {
-          console.log('[AuthContext] Stopping desktop sync...');
           await window.lfgApi!.stopSync();
-          console.log('[AuthContext] Desktop sync stopped');
-        } catch (error) {
-          console.error('[AuthContext] Failed to stop desktop sync:', error);
+        } catch {
         }
       }
     };
@@ -93,8 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
-      } catch (error) {
-        console.error("Error getting session:", error);
+      } catch {
       } finally {
         setAuthLoading(false);
       }
@@ -140,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

@@ -56,8 +56,7 @@ export function EditTournamentDialog({ tournament, open, onOpenChange, onSuccess
             toast.success("Турнир обновлен");
             onSuccess();
             onOpenChange(false);
-        } catch (error) {
-            console.error("Error updating tournament:", error);
+        } catch {
             toast.error("Ошибка обновления турнира");
         } finally {
             setSaving(false);

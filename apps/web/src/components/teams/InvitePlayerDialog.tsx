@@ -34,7 +34,6 @@ export function InvitePlayerDialog({ open, onOpenChange, teamId }: InvitePlayerD
         .rpc("search_available_players", { search_term: search });
 
       if (error) {
-        console.error("Error searching players:", error);
         return [];
       }
 

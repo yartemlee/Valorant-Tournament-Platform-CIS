@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, BrowserRouter, Routes, Route } from "react-router-dom";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Use HashRouter for Electron (file:// protocol), BrowserRouter for web
 const isElectron = window.location.protocol === 'file:';
@@ -73,46 +74,49 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Router>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/profile/:username" element={<Profile />} />
-              <Route path="/tournaments" element={<Tournaments />} />
-              <Route path="/tournaments/:id" element={<TournamentDetails />} />
-              <Route path="/teams" element={<Teams />} />
-              <Route path="/teams/create" element={<CreateTeam />} />
-              <Route path="/teams/:id" element={<TeamDetails />} />
-              <Route path="/teams/:id/manage" element={<TeamManage />} />
-              <Route path="/free-agents" element={<FreeAgents />} />
-              <Route path="/find-teammates" element={<FindTeammates />} />
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/:username" element={<Profile />} />
+                <Route path="/tournaments" element={<Tournaments />} />
+                <Route path="/tournaments/:id" element={<TournamentDetails />} />
+                <Route path="/teams" element={<Teams />} />
+                <Route path="/teams/create" element={<CreateTeam />} />
+                <Route path="/teams/:id" element={<TeamDetails />} />
+                <Route path="/teams/:id/manage" element={<TeamManage />} />
+                <Route path="/free-agents" element={<FreeAgents />} />
+                <Route path="/find-teammates" element={<FindTeammates />} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="teams" element={<AdminTeams />} />
-                <Route path="tournaments" element={<AdminTournaments />} />
-                <Route path="tournaments/:tournamentId/requests" element={<MatchRequestsList />} />
-                <Route path="requests/:requestId" element={<MatchRequestDetails />} />
-                <Route path="free-agents" element={<AdminFreeAgents />} />
-              </Route>
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Router>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+                {/* Admin Routes */}
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="teams" element={<AdminTeams />} />
+                  <Route path="tournaments" element={<AdminTournaments />} />
+                  <Route path="tournaments/:tournamentId/requests" element={<MatchRequestsList />} />
+                  <Route path="requests/:requestId" element={<MatchRequestDetails />} />
+                  <Route path="free-agents" element={<AdminFreeAgents />} />
+                </Route>
+
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Router>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

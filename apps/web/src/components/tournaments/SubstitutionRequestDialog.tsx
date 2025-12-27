@@ -68,8 +68,7 @@ export function SubstitutionRequestDialog({
                 }));
                 setTeamMembers(players);
             }
-        } catch (error) {
-            console.error("Error fetching team members:", error);
+        } catch {
             toast.error("Ошибка загрузки состава команды");
         } finally {
             setFetching(false);
@@ -109,7 +108,6 @@ export function SubstitutionRequestDialog({
             setPlayerOut("");
             setPlayerIn("");
         } catch (error: any) {
-            console.error("Error requesting substitution:", error);
             toast.error("Ошибка: " + error.message);
         } finally {
             setLoading(false);

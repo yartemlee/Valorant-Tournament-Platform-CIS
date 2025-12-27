@@ -56,7 +56,6 @@ export function useLFGChat(lobbyId: string | undefined) {
         .limit(100);
 
       if (error) {
-        console.error('[useLFGChat] Error fetching messages:', error);
         throw error;
       }
 
@@ -71,7 +70,6 @@ export function useLFGChat(lobbyId: string | undefined) {
     if (!lobbyId || !user?.id) return;
 
     const channelName = `lfg-chat:${lobbyId}`;
-    console.log('[useLFGChat] Subscribing to:', channelName);
 
     // Store ref value for cleanup
     const timeoutsMap = typingTimeoutRef.current;
@@ -88,8 +86,6 @@ export function useLFGChat(lobbyId: string | undefined) {
           filter: `lobby_id=eq.${lobbyId}`,
         },
         async (payload) => {
-          console.log('[useLFGChat] New message:', payload.new);
-
           // Fetch the complete message with profile
           const { data: newMessage } = await supabase
             .from('lfg_messages')
@@ -139,14 +135,11 @@ export function useLFGChat(lobbyId: string | undefined) {
 
         typingTimeoutRef.current.set(userId, timeout);
       })
-      .subscribe((status) => {
-        console.log('[useLFGChat] Subscription status:', status);
-      });
+      .subscribe();
 
     channelRef.current = channel;
 
     return () => {
-      console.log('[useLFGChat] Unsubscribing from:', channelName);
       supabase.removeChannel(channel);
       channelRef.current = null;
 
@@ -173,9 +166,7 @@ export function useLFGChat(lobbyId: string | undefined) {
         throw new Error(error.message);
       }
     },
-    onError: (error: Error) => {
-      console.error('[useLFGChat] Error sending message:', error);
-    },
+    onError: () => {},
   });
 
   // Send typing indicator

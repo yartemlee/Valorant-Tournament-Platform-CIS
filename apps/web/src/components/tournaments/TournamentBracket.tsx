@@ -1,5 +1,4 @@
-import { Match, Tournament, ParticipantWithTeam, BracketMatch, Database } from '@/types/common.types';
-
+import { ParticipantWithTeam, BracketMatch, Database } from '@/types/common.types';
 /**
  * TournamentBracket Component
  * 
@@ -15,16 +14,15 @@ import { Match, Tournament, ParticipantWithTeam, BracketMatch, Database } from '
  * - Разделение на верхнюю/нижнюю сетки для double elimination
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Shuffle, Zap, Loader2 } from "lucide-react";
+import { Zap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { MatchCard } from "./MatchCard";
 import { MatchEditDialog } from "./MatchEditDialog";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -79,9 +77,6 @@ export function TournamentBracket({
   // ЭФФЕКТЫ
   // ============================================================================
 
-  useEffect(() => {
-    console.log("confirmDialogOpen changed:", confirmDialogOpen);
-  }, [confirmDialogOpen]);
 
 
 
@@ -91,6 +86,7 @@ export function TournamentBracket({
    * Загружает матчи из базы данных и дополняет их информацией о командах
    */
   const fetchMatches = useCallback(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await supabase
       .from("tournament_matches" as any)
       .select("*")
@@ -99,14 +95,13 @@ export function TournamentBracket({
       .order("match_number", { ascending: true });
 
     if (error) {
-      console.error("Ошибка загрузки матчей:", error);
       setLoading(false);
       return;
     }
 
     // Загружаем информацию о командах для каждого матча
     const matchesWithTeams = await Promise.all(
-      (data || []).map(async (match) => {
+      ((data as any[]) || []).map(async (match) => {
         const team1 = match.team1_id ? await getTeamInfo(match.team1_id) : null;
         const team2 = match.team2_id ? await getTeamInfo(match.team2_id) : null;
         return { ...match, team1, team2 } as BracketMatch;
@@ -140,14 +135,14 @@ export function TournamentBracket({
     fetchMatches();
 
     const channel = supabase
-      .channel(`tournament_matches_${tournamentId}`)
+      .channel(`tournament_matches_${tournamentId} `)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'tournament_matches',
-          filter: `tournament_id=eq.${tournamentId}`
+          filter: `tournament_id = eq.${tournamentId} `
         },
         () => {
           fetchMatches();
@@ -169,10 +164,6 @@ export function TournamentBracket({
    * Вызывается владельцем турнира или администратором
    */
   const generateBracket = async () => {
-    console.log("generateBracket called");
-    console.log("Participants:", participants);
-    console.log("isOwner:", isOwner, "isAdmin:", isAdmin);
-
     if (!isOwner && !isAdmin) return;
 
     // Запрещаем пересоздание сетки, если она уже есть (если не админ)
@@ -207,6 +198,7 @@ export function TournamentBracket({
       // Помечаем турнир как имеющий сгенерированную сетку
       await supabase
         .from("tournaments")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .update({ bracket_generated: true } as any)
         .eq("id", tournamentId);
 
@@ -214,9 +206,8 @@ export function TournamentBracket({
       fetchMatches();
       setConfirmDialogOpen(false);
       onBracketCreated?.();
-    } catch (error) {
+    } catch {
       toast.error("Ошибка создания сетки");
-      console.error("Ошибка генерации сетки:", error);
     } finally {
       setIsGenerating(false);
     }
@@ -232,6 +223,7 @@ export function TournamentBracket({
     setLoading(true);
     try {
       // 1. Удаляем существующие матчи
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: deleteError } = await supabase
         .from("tournament_matches" as any)
         .delete()
@@ -247,9 +239,8 @@ export function TournamentBracket({
       // и у нас есть права админа
       await generateBracket();
 
-    } catch (error) {
+    } catch {
       toast.error("Ошибка пересоздания сетки");
-      console.error("Ошибка пересоздания сетки:", error);
       setLoading(false);
     }
   };
@@ -327,6 +318,8 @@ export function TournamentBracket({
     });
 
     // Сохраняем все матчи в базу данных
+    // Сохраняем все матчи в базу данных
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await supabase.from("tournament_matches" as any).insert(matchesToCreate);
   }
 
@@ -439,6 +432,7 @@ export function TournamentBracket({
       best_of: 5,  // Гранд-финал всегда BO5
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await supabase.from("tournament_matches" as any).insert(matchesToCreate);
   }
 
@@ -507,7 +501,7 @@ export function TournamentBracket({
     if (round === realTotalRounds) return "Финал";
     if (round === realTotalRounds - 1) return "Полуфинал";
     if (round === realTotalRounds - 2) return "Четвертьфинал";
-    return `Раунд ${round}`;
+    return `Раунд ${round} `;
   };
 
   // ============================================================================
@@ -540,7 +534,6 @@ export function TournamentBracket({
 
               const isLastRound = roundIndex === rounds.length - 1;
               const isThirdPlaceRound = hasThirdPlace && isLastRound;
-              const isFirstRound = roundIndex === 0;
 
               // Расчет отступов для текущего раунда
               // Если это раунд за 3-е место, используем отступы как для финала (предыдущего раунда),
@@ -577,16 +570,16 @@ export function TournamentBracket({
                   <div
                     className="flex flex-col flex-grow"
                     style={{
-                      paddingTop: `${paddingTop}px`,
-                      gap: `${calculatedGap}px`
+                      paddingTop: `${paddingTop} px`,
+                      gap: `${calculatedGap} px`
                     }}
                   >
                     {pairs.map((pair, pairIndex) => (
                       <div key={pairIndex} className="relative flex flex-col justify-center"
-                        style={{ gap: `${calculatedGap}px` }}
+                        style={{ gap: `${calculatedGap} px` }}
                       >
                         {pair.map((match, matchIndex) => (
-                          <div key={match.id} className="relative z-10" style={{ height: `${MATCH_HEIGHT}px` }}>
+                          <div key={match.id} className="relative z-10" style={{ height: `${MATCH_HEIGHT} px` }}>
                             <MatchCard
                               match={match}
                               isOwner={isOwner}
@@ -600,14 +593,14 @@ export function TournamentBracket({
                                   // Верхний матч: линия вниз
                                   <div className="absolute top-1/2 right-[-24px] w-6 border-t border-r border-border rounded-tr-xl"
                                     style={{
-                                      height: `${(calculatedGap / 2) + (MATCH_HEIGHT / 2)}px`,
+                                      height: `${(calculatedGap / 2) + (MATCH_HEIGHT / 2)} px`,
                                     }}
                                   />
                                 ) : (
                                   // Нижний матч: линия вверх
                                   <div className="absolute bottom-1/2 right-[-24px] w-6 border-b border-r border-border rounded-br-xl"
                                     style={{
-                                      height: `${(calculatedGap / 2) + (MATCH_HEIGHT / 2)}px`
+                                      height: `${(calculatedGap / 2) + (MATCH_HEIGHT / 2)} px`
                                     }}
                                   />
                                 )}
@@ -651,10 +644,7 @@ export function TournamentBracket({
         <div className="text-center py-8 space-y-4">
           <p className="text-muted-foreground">Сетка ещё не создана</p>
           {isOwner && (
-            <Button onClick={() => {
-              console.log("Open dialog button clicked");
-              setConfirmDialogOpen(true);
-            }}>
+            <Button onClick={() => setConfirmDialogOpen(true)}>
               Создать сетку
             </Button>
           )}
@@ -664,10 +654,7 @@ export function TournamentBracket({
           {/* Кнопки управления */}
           <div className="flex gap-3">
             {isOwner && matches.length === 0 && (
-              <Button onClick={() => {
-                console.log("Open dialog button (top) clicked");
-                setConfirmDialogOpen(true);
-              }}>
+              <Button onClick={() => setConfirmDialogOpen(true)}>
                 Создать сетку
               </Button>
             )}
@@ -731,7 +718,6 @@ export function TournamentBracket({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isGenerating}>Отмена</AlertDialogCancel>
             <Button onClick={(e) => {
-              console.log("Button clicked");
               e.preventDefault();
               generateBracket();
             }} disabled={isGenerating}>

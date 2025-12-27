@@ -1,4 +1,4 @@
-import { Match, Tournament } from '@/types/common.types';
+import { Tournament } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -141,10 +141,11 @@ export function EditTournamentDialog({
 
     try {
       // Use RPC to handle potential payment and update
-      const { data, error } = await supabase.rpc('update_tournament_with_payment', {
-        p_tournament_id: tournament?.id,
+      const { error } = await supabase.rpc('update_tournament_with_payment', {
+        p_tournament_id: tournament?.id || '',
         p_title: formData.title,
         p_description: formData.description,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         p_format: formData.format as any,
         p_start_time: new Date(formData.start_time).toISOString(),
         p_prize_pool: formData.prize_pool,
@@ -165,7 +166,6 @@ export function EditTournamentDialog({
       onOpenChange(false);
     } catch (error: any) {
       toast.error("Ошибка сохранения: " + error.message);
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -186,9 +186,8 @@ export function EditTournamentDialog({
       onOpenChange(false);
       setDeleteDialogOpen(false);
       navigate("/tournaments");
-    } catch (error) {
+    } catch {
       toast.error("Ошибка удаления турнира");
-      console.error(error);
     }
   };
 

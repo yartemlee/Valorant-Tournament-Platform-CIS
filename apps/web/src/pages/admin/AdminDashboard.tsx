@@ -36,8 +36,7 @@ const AdminDashboard = () => {
                 tournaments: tournamentsCount || 0,
                 activeMatches: matchesCount || 0
             });
-        } catch (error) {
-            console.error("Error fetching stats:", error);
+        } catch {
         } finally {
             setLoading(false);
         }

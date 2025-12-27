@@ -82,8 +82,7 @@ const TournamentDetails = () => {
           table: 'tournament_registrations',
           filter: `tournament_id=eq.${id}`
         },
-        (payload) => {
-          console.log('Real-time update:', payload);
+        () => {
           // Refetch participants when any change occurs
           refetchParticipants();
         }
@@ -290,7 +289,6 @@ const TournamentDetails = () => {
     ]);
 
     if (error) {
-      console.error(error);
       if (error.code === '23505') {
         toast.error("Команда уже зарегистрирована на этот турнир");
         fetchData(); // Refresh to update UI state

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+
 import { Search, Plus, Users, RefreshCw, UserX, Sparkles, Gamepad2, MonitorCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,7 +41,7 @@ const REGIONS = [
 ];
 
 export default function FindTeammates() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showJoinRequestDialog, setShowJoinRequestDialog] = useState(false);
@@ -61,6 +61,7 @@ export default function FindTeammates() {
   // Local Valorant running state (from Electron's direct injection)
   const [valorantRunning, setValorantRunning] = useState<boolean>(() => {
     // Check initial value from window
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const status = (window as any).__valorantStatus__;
     return status?.isRunning ?? false;
   });
@@ -69,15 +70,16 @@ export default function FindTeammates() {
   useEffect(() => {
     if (!isElectron) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleStatusChange = (event: any) => {
       const detail = event.detail || {};
-      console.log('[FindTeammates] Valorant status changed:', detail);
       setValorantRunning(detail.isRunning ?? false);
     };
 
     window.addEventListener('valorant-status-changed', handleStatusChange);
 
     // Also check current value on mount
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentStatus = (window as any).__valorantStatus__;
     if (currentStatus) {
       setValorantRunning(currentStatus.isRunning ?? false);
@@ -167,27 +169,25 @@ export default function FindTeammates() {
       const region = firstServer ? (serverToRegion[firstServer] || 'eu') : 'eu';
 
       // Если Desktop App подключен и есть валидный queue - меняем режим в Valorant
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const lfgApi = (window as any).lfgApi;
       if (lfgApi?.changeQueue && valorantQueueId && isValorantActive) {
         try {
-          const result = await lfgApi.changeQueue(valorantQueueId);
-          if (result.success) {
-            console.log(`[LFG] Changed Valorant queue to: ${valorantQueueId}`);
-          } else {
-            console.warn(`[LFG] Failed to change queue: ${result.error}`);
-          }
+          await lfgApi.changeQueue(valorantQueueId);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-          console.error('[LFG] Error changing queue:', error);
         }
       }
 
       await createLobby.mutateAsync({
         title: values.title,
         description: values.description,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         gameMode: gameMode as any,
         maxSize: maxSize,
         minRank: values.minRank && values.minRank !== 'none' ? values.minRank : undefined,
         maxRank: values.maxRank && values.maxRank !== 'none' ? values.maxRank : undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         region: region as any,
         isPrivate: values.isPrivate,
         voiceRequired: values.voiceRequired,
@@ -210,7 +210,7 @@ export default function FindTeammates() {
     [joinLobby]
   );
 
-  const handleViewLobby = useCallback((lobbyId: string) => {
+  const handleViewLobby = useCallback((_lobbyId: string) => {
     // For now, joining to view
     // In future, could show a preview
   }, []);

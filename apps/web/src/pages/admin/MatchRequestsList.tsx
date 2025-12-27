@@ -52,8 +52,7 @@ export default function MatchRequestsList() {
 
             if (error) throw error;
             setRequests(data || []);
-        } catch (error: any) {
-            console.error("Error fetching match requests:", error);
+        } catch {
             toast.error("Ошибка загрузки жалоб");
         } finally {
             setLoading(false);

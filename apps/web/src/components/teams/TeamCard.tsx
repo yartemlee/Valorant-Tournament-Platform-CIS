@@ -44,7 +44,6 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
         .single();
 
       if (profileError) {
-        console.error("Profile fetch error:", profileError);
         throw new Error("Не удалось проверить статус команды");
       }
 
@@ -62,8 +61,6 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
       });
 
       if (error) {
-        console.error("RPC error:", error);
-
         // Обрабатываем известные ошибки с понятными сообщениями
         if (error.message.includes('already_in_team')) {
           toast.error("Вы уже состоите в команде. Чтобы вступить в другую — сначала покиньте текущую");

@@ -52,8 +52,7 @@ export function EditTeamDialog({ team, open, onOpenChange, onSuccess }: EditTeam
             toast.success("Команда обновлена");
             onSuccess();
             onOpenChange(false);
-        } catch (error) {
-            console.error("Error updating team:", error);
+        } catch {
             toast.error("Ошибка обновления команды");
         } finally {
             setSaving(false);

@@ -91,7 +91,6 @@ export function InviteToTeamDialog({
             onOpenChange(false);
             setMessage("");
         } catch (error: any) {
-            console.error("Error sending invite:", error);
             if (error.code === "23505") {
                 toast.error("Этот игрок уже приглашен в команду");
             } else {

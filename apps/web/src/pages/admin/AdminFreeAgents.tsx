@@ -68,8 +68,7 @@ const AdminFreeAgents = () => {
 
             if (error) throw error;
             setCards((data as FreeAgentCardWithProfile[]) || []);
-        } catch (error) {
-            console.error("Error fetching cards:", error);
+        } catch {
             toast.error("Ошибка загрузки карточек");
         } finally {
             setLoading(false);
@@ -89,8 +88,7 @@ const AdminFreeAgents = () => {
 
             toast.success("Карточка удалена");
             fetchCards();
-        } catch (error) {
-            console.error("Error deleting card:", error);
+        } catch {
             toast.error("Ошибка удаления карточки");
         }
     };
@@ -106,8 +104,7 @@ const AdminFreeAgents = () => {
 
             toast.success(card.is_active ? "Карточка скрыта" : "Карточка активирована");
             fetchCards();
-        } catch (error) {
-            console.error("Error toggling card:", error);
+        } catch {
             toast.error("Ошибка изменения статуса");
         }
     };

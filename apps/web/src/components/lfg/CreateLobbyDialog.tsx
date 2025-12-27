@@ -645,8 +645,7 @@ export function CreateLobbyDialog({ open, onOpenChange, onSubmit }: CreateLobbyD
                         field.onChange(result.code);
                       }
                     }
-                  } catch (error) {
-                    console.error('Failed to generate party code:', error);
+                  } catch {
                   } finally {
                     setIsGenerating(false);
                   }

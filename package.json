@@ -19,9 +19,17 @@
     "clean": "rm -rf node_modules apps/web/node_modules apps/desktop/node_modules packages/shared/node_modules",
     "db:migrate": "supabase db push",
     "db:types": "supabase gen types typescript --local > packages/shared/src/types/database.types.ts",
-    "preview": "node scripts/run-web.js preview"
+    "preview": "node scripts/run-web.js preview",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  },
+  "lint-staged": {
+    "apps/web/src/**/*.{ts,tsx}": [
+      "eslint --config apps/web/eslint.config.js --fix --max-warnings=0 --no-warn-ignored"
+    ]
   }
 }

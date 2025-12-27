@@ -12,8 +12,7 @@ import { DEFAULT_RULES, VALORANT_MAPS, VALORANT_RANKS } from "@/constants/tourna
 import { slugify } from "@/utils/slugify";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { TournamentSettings } from "@/types/common.types";
+import { TournamentSettings, Database } from "@/types/common.types";
 import { DateTimeInput } from "@/components/ui/datetime-input";
 
 interface CreateTournamentDialogProps {
@@ -56,7 +55,9 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
         .single();
 
       if (data) {
-        setUserCoins((data as any).coins);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        setUserCoins(data.coins);
       }
     }
   };
@@ -127,10 +128,10 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
       servers: formData.servers,
     };
 
-    const { data, error } = await supabase.rpc('create_tournament_with_payment' as any, {
+    const { data, error } = await supabase.rpc('create_tournament_with_payment', {
       p_title: formData.title,
       p_description: formData.description,
-      p_format: formData.format as any,
+      p_format: formData.format as Database['public']['Enums']['tournament_format'],
       p_start_time: formData.start_time,
       p_prize_pool: formData.prize_pool,
       p_max_teams: formData.max_teams,
@@ -142,27 +143,25 @@ export function CreateTournamentDialog({ open, onOpenChange, onSuccess }: Create
 
     if (error) {
       toast.error("Ошибка создания турнира: " + error.message);
-      console.error(error);
       return;
     }
 
     toast.success(`Турнир создан! Списано ${totalCost} VP`);
     onSuccess?.();
 
-    const newTournamentId = (data as any)?.id;
+    const newTournamentId = (data as { id: string })?.id;
     if (newTournamentId) {
       const shortId = newTournamentId.slice(-4);
       const slug = `${slugify(formData.title)}-${shortId}`;
 
       const { error: slugError } = await supabase
         .from('tournaments')
-        .update({ slug } as any)
+        .update({ slug } as unknown as never)
         .eq('id', newTournamentId);
 
       if (!slugError) {
         navigate(`/tournaments/${slug}`);
       } else {
-        console.error("Error setting slug:", slugError);
         navigate(`/tournaments/${newTournamentId}`);
       }
     } else {

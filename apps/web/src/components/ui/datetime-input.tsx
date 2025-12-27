@@ -11,6 +11,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
     ({ className, placeholder = "Выберите дату и время", value, ...props }, ref) => {
         const inputRef = React.useRef<HTMLInputElement>(null);
         const [hasValue, setHasValue] = React.useState(!!value);
+        const [isPickerOpen, setIsPickerOpen] = React.useState(false);
 
         // Merge refs
         React.useImperativeHandle(ref, () => inputRef.current!);
@@ -20,17 +21,26 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
             setHasValue(!!value);
         }, [value]);
 
-        const handleOpenPicker = (e: React.MouseEvent) => {
+        const handleTogglePicker = (e: React.MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
-            // Trigger the native date picker
-            if (inputRef.current) {
-                inputRef.current.showPicker?.();
+
+            if (isPickerOpen) {
+                // If picker is open, blur to close it
+                inputRef.current?.blur();
+                setIsPickerOpen(false);
+            } else {
+                // If picker is closed, open it
+                if (inputRef.current) {
+                    inputRef.current.showPicker?.();
+                    setIsPickerOpen(true);
+                }
             }
         };
 
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             setHasValue(!!e.target.value);
+            setIsPickerOpen(false); // Picker closes after selection
             props.onChange?.(e);
         };
 
@@ -42,6 +52,14 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
             }
         };
 
+        // Track when picker closes via blur
+        const handleBlur = () => {
+            // Small delay to allow for click events to process first
+            setTimeout(() => {
+                setIsPickerOpen(false);
+            }, 100);
+        };
+
         return (
             <div className="relative w-full">
                 <input
@@ -49,7 +67,8 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
                     ref={inputRef}
                     value={value}
                     onKeyDown={handleKeyDown}
-                    onClick={handleOpenPicker}
+                    onClick={handleTogglePicker}
+                    onBlur={handleBlur}
                     className={cn(
                         "flex h-10 w-full rounded-md border border-input bg-background pl-3 pr-10 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm cursor-pointer select-none",
                         "[color-scheme:dark]",
@@ -78,7 +97,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
                 {/* Custom Calendar Icon - Clickable, always at right edge */}
                 <button
                     type="button"
-                    onClick={handleOpenPicker}
+                    onClick={handleTogglePicker}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer z-10"
                     tabIndex={-1}
                     aria-label="Выбрать дату"

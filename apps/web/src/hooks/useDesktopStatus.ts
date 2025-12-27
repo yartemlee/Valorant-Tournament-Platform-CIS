@@ -38,7 +38,6 @@ export function useDesktopStatus() {
         .maybeSingle();
 
       if (error) {
-        console.error('[useDesktopStatus] Error fetching session:', error);
         return null;
       }
 
@@ -53,7 +52,6 @@ export function useDesktopStatus() {
     if (!user?.id) return;
 
     const channelName = `desktop-session:${user.id}`;
-    console.log('[useDesktopStatus] Subscribing to:', channelName);
 
     const channel = supabase
       .channel(channelName)
@@ -66,8 +64,6 @@ export function useDesktopStatus() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[useDesktopStatus] Change:', payload.eventType);
-
           if (payload.eventType === 'DELETE') {
             setRealtimeStatus({
               isOnline: false,
@@ -87,12 +83,9 @@ export function useDesktopStatus() {
           queryClient.invalidateQueries({ queryKey: ['desktop-session', user.id] });
         }
       )
-      .subscribe((status) => {
-        console.log('[useDesktopStatus] Subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
-      console.log('[useDesktopStatus] Unsubscribing from:', channelName);
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);

@@ -50,8 +50,7 @@ const AdminUsers = () => {
             if (profilesError) throw profilesError;
 
             setUsers(profiles as Profile[]);
-        } catch (error) {
-            console.error("Error fetching users:", error);
+        } catch {
             toast.error("Ошибка загрузки пользователей");
         } finally {
             setLoading(false);
@@ -74,8 +73,7 @@ const AdminUsers = () => {
 
             toast.success("Роль обновлена");
             fetchUsers();
-        } catch (error) {
-            console.error("Error updating role:", error);
+        } catch {
             toast.error("Ошибка обновления роли");
         }
     };
@@ -93,8 +91,7 @@ const AdminUsers = () => {
 
             toast.success("Пользователь удален");
             fetchUsers();
-        } catch (error) {
-            console.error("Error deleting user:", error);
+        } catch {
             toast.error("Ошибка удаления пользователя");
         }
     };

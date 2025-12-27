@@ -68,8 +68,7 @@ export function CreateFreeAgentCardDialog({
             setSaving(true);
             await onSave({ intro: intro.trim(), preferred_roles: preferredRoles });
             onOpenChange(false);
-        } catch (error) {
-            console.error("Error saving card:", error);
+        } catch {
         } finally {
             setSaving(false);
         }

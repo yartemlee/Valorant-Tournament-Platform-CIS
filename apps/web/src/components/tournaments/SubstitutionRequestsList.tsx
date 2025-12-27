@@ -46,8 +46,7 @@ export function SubstitutionRequestsList({ tournamentId }: SubstitutionRequestsL
 
             if (error) throw error;
             setRequests(data || []);
-        } catch (error) {
-            console.error("Error fetching requests:", error);
+        } catch {
             toast.error("Ошибка загрузки запросов на замену");
         } finally {
             setLoading(false);
@@ -97,7 +96,6 @@ export function SubstitutionRequestsList({ tournamentId }: SubstitutionRequestsL
             toast.success(status === 'approved' ? "Замена одобрена" : "Замена отклонена");
             fetchRequests();
         } catch (error: any) {
-            console.error("Error processing request:", error);
             toast.error("Ошибка: " + error.message);
         } finally {
             setProcessingId(null);

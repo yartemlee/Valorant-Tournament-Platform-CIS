@@ -74,6 +74,57 @@ Migrations in `supabase/migrations/`. Database types auto-generated in `src/type
 
 ## Coding Conventions
 
+### Zero Any Policy (CRITICAL)
+
+**НИКОГДА не используй тип `any`!** Это строгое правило проекта.
+
+```typescript
+// ЗАПРЕЩЕНО
+const data: any = response;
+function handle(e: any) { }
+const items = data as any[];
+
+// ПРАВИЛЬНО
+const data: UserResponse = response;
+function handle(e: React.ChangeEvent<HTMLInputElement>) { }
+const items: User[] = data;
+```
+
+**Что делать вместо `any`:**
+
+1. **Используй конкретные типы из `@/types/database.types.ts`**
+   ```typescript
+   import { Database } from '@/types/database.types';
+   type Team = Database['public']['Tables']['teams']['Row'];
+   ```
+
+2. **Для событий — используй React типы**
+   ```typescript
+   onChange={(e: React.ChangeEvent<HTMLInputElement>) => ...}
+   onClick={(e: React.MouseEvent<HTMLButtonElement>) => ...}
+   onSubmit={(e: React.FormEvent<HTMLFormElement>) => ...}
+   ```
+
+3. **Для неизвестных данных — используй `unknown` с проверкой**
+   ```typescript
+   const data: unknown = await fetchData();
+   if (isUser(data)) { /* теперь data имеет тип User */ }
+   ```
+
+4. **Для generics — используй параметры типов**
+   ```typescript
+   function getFirst<T>(arr: T[]): T | undefined { return arr[0]; }
+   ```
+
+5. **Для сложных Supabase ответов — используй type assertions**
+   ```typescript
+   const { data } = await supabase.from('teams').select('*, captain:profiles(*)');
+   type TeamWithCaptain = Team & { captain: Profile };
+   const teams = data as TeamWithCaptain[] | null;
+   ```
+
+**Pre-commit hook блокирует коммиты с `any`!**
+
 ### Styling
 - Use TailwindCSS utility classes exclusively
 - Use `cn()` from `src/lib/utils.ts` for conditional classes

@@ -37,16 +37,13 @@ export function useRealtimeTeamInvitations(options: UseRealtimeTeamInvitationsOp
           table: "team_invitations",
           filter: `invited_user_id=eq.${userId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Team invitation change:', payload);
+        () => {
           // Инвалидируем запросы для игрока
           queryClient.invalidateQueries({ queryKey: ["my-team-invites", userId] });
           queryClient.invalidateQueries({ queryKey: ["notifications-count", userId] });
         }
       )
-      .subscribe((status) => {
-        console.log('[Realtime] Team invitations subscription status:', status);
-      });
+      .subscribe();
 
     channels.push(playerChannel);
 
