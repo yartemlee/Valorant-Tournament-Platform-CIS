@@ -1,4 +1,4 @@
-import { TeamWithMembers } from '@/types/common.types';
+import { TeamWithMembers, Database } from '@/types/common.types';
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -51,8 +51,8 @@ export function TeamRosterTab({ team, isCaptain, currentUserId, onCaptainTransfe
       const { error } = await supabase.rpc('set_member_role', {
         team_id: team.id,
         user_id: memberUserId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        new_role: newRole as any,
+         
+        new_role: newRole as Database['public']['Enums']['team_role'],
       });
 
       if (error) {
@@ -80,8 +80,9 @@ export function TeamRosterTab({ team, isCaptain, currentUserId, onCaptainTransfe
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
       queryClient.invalidateQueries({ queryKey: ["team-member"] });
-    } catch (error: any) {
-      toast.error(error?.message || "Ошибка изменения роли");
+    } catch (error: unknown) {
+      const errObj = error as { message?: string };
+      toast.error(errObj?.message || "Ошибка изменения роли");
     } finally {
       setUpdatingRole(null);
     }
@@ -138,8 +139,9 @@ export function TeamRosterTab({ team, isCaptain, currentUserId, onCaptainTransfe
       if (onCaptainTransferred) {
         onCaptainTransferred();
       }
-    } catch (error: any) {
-      toast.error(error?.message || "Ошибка передачи капитанства");
+    } catch (error: unknown) {
+      const errObj = error as { message?: string };
+      toast.error(errObj?.message || "Ошибка передачи капитанства");
       setTransferringCaptaincy(null);
     }
   };
@@ -176,8 +178,9 @@ export function TeamRosterTab({ team, isCaptain, currentUserId, onCaptainTransfe
       ]);
 
       setRemovingMember(null);
-    } catch (error: any) {
-      toast.error(error?.message || "Ошибка удаления игрока");
+    } catch (error: unknown) {
+      const errObj = error as { message?: string };
+      toast.error(errObj?.message || "Ошибка удаления игрока");
       setRemovingMember(null);
     }
   };

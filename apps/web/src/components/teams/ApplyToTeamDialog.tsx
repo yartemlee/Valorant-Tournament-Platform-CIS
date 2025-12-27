@@ -41,9 +41,9 @@ export function ApplyToTeamDialog({
         setIsSubmitting(true);
         try {
             // Use existing RPC that handles all validations
-            const { error } = await (supabase.rpc as any)('rpc_apply_to_team', {
+            const { error } = await supabase.rpc('rpc_apply_to_team', {
                 target_team_id: team.id,
-                note: skipMessage ? null : message.trim() || null
+                note: skipMessage ? undefined : message.trim() || undefined
             });
 
             if (error) {
@@ -81,8 +81,9 @@ export function ApplyToTeamDialog({
 
             onOpenChange(false);
             setMessage("");
-        } catch (error: any) {
-            toast.error(error.message || "Ошибка отправки заявки");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Ошибка отправки заявки";
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
         }

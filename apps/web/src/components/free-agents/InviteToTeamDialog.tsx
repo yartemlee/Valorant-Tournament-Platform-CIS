@@ -90,11 +90,12 @@ export function InviteToTeamDialog({
 
             onOpenChange(false);
             setMessage("");
-        } catch (error: any) {
-            if (error.code === "23505") {
+        } catch (error: unknown) {
+            const pgError = error as { code?: string; message?: string };
+            if (pgError.code === "23505") {
                 toast.error("Этот игрок уже приглашен в команду");
             } else {
-                toast.error(error.message || "Ошибка отправки приглашения");
+                toast.error(pgError.message || "Ошибка отправки приглашения");
             }
         } finally {
             setIsSubmitting(false);

@@ -23,18 +23,14 @@ export default tseslint.config(
       "**/Profile.tsx",
       "**/Teams.tsx",
       "**/FreeAgents.tsx",
-      "**/ApplyToTeamDialog.tsx",
-      "**/InviteToTeamDialog.tsx",
       "**/SettingsTab.tsx",
       "**/PhantomDataControls.tsx",
       "**/RosterSelectionDialog.tsx",
       "**/SubstitutionRequestDialog.tsx",
       "**/SubstitutionRequestsList.tsx",
-      "**/CreateTeam.tsx",
       "**/AdminLayout.tsx",
       "**/MatchRequestDetails.tsx",
       "**/MatchRequestsList.tsx",
-      "**/TeamRosterTab.tsx",
 
     ]
   },

@@ -67,12 +67,12 @@ const CreateTeam = () => {
 
       // Create team using RPC
       const { data: teamIdData, error: rpcError } = await supabase.rpc(
-        'create_team_with_captain' as any,
+        'create_team_with_captain',
         {
           name_input: formData.name,
           tag_input: formData.tag.toUpperCase(),
-          description_input: formData.description || null,
-          logo_url_input: formData.logo_url || null,
+          description_input: formData.description || "",
+          logo_url_input: formData.logo_url || "",
           is_recruiting_input: formData.is_recruiting,
         }
       );
@@ -85,7 +85,7 @@ const CreateTeam = () => {
       const slug = slugify(formData.name);
       const { error: slugError } = await supabase
         .from('teams')
-        .update({ slug } as any)
+        .update({ slug })
         .eq('id', teamId);
 
       toast({
@@ -98,13 +98,14 @@ const CreateTeam = () => {
       } else {
         navigate(`/teams/${teamId}`);
       }
-    } catch (error) {
-      let errorMessage = error.message;
+    } catch (error: unknown) {
+      const errObj = error as { message?: string };
+      let errorMessage = errObj.message || "Ошибка создания команды";
 
       // Handle duplicate name/tag errors
-      if (error.message?.includes("teams_name_key")) {
+      if (errObj.message?.includes("teams_name_key")) {
         errorMessage = "Команда с таким названием уже существует";
-      } else if (error.message?.includes("teams_tag_key")) {
+      } else if (errObj.message?.includes("teams_tag_key")) {
         errorMessage = "Команда с таким тегом уже существует";
       }
 
