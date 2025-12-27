@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Users } from "lucide-react";
@@ -33,14 +33,7 @@ export const RosterSelectionDialog = ({
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (open && teamId) {
-            fetchTeamMembers();
-            setSelectedIds([]); // Reset selection on open
-        }
-    }, [open, teamId]);
-
-    const fetchTeamMembers = async () => {
+    const fetchTeamMembers = useCallback(async () => {
         setLoading(true);
         const { data, error } = await supabase
             .from("team_members")
@@ -58,12 +51,18 @@ export const RosterSelectionDialog = ({
         if (error) {
             toast.error("Ошибка загрузки участников команды");
         } else {
-            // Filter out members without profiles (shouldn't happen with inner join logic but safe to check)
-            const validMembers = data?.filter(m => m.profiles) as any as TeamMember[];
-            setMembers(validMembers || []);
+            const validMembers = (data?.filter(m => m.profiles) ?? []) as unknown as TeamMember[];
+            setMembers(validMembers);
         }
         setLoading(false);
-    };
+    }, [teamId]);
+
+    useEffect(() => {
+        if (open && teamId) {
+            fetchTeamMembers();
+            setSelectedIds([]);
+        }
+    }, [open, teamId, fetchTeamMembers]);
 
     const toggleSelection = (userId: string) => {
         const member = members.find(m => m.user_id === userId);
@@ -115,8 +114,8 @@ export const RosterSelectionDialog = ({
                                     <div
                                         key={member.user_id}
                                         className={`flex items-center space-x-3 p-2 rounded-lg border border-border transition-colors ${hasRiotId
-                                                ? "hover:bg-accent/50 cursor-pointer"
-                                                : "opacity-50 cursor-not-allowed"
+                                            ? "hover:bg-accent/50 cursor-pointer"
+                                            : "opacity-50 cursor-not-allowed"
                                             }`}
                                         onClick={() => toggleSelection(member.user_id)}
                                     >

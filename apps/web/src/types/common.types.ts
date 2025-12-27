@@ -72,3 +72,21 @@ export interface SocialLinks {
     twitter?: string;
     instagram?: string;
 }
+
+export type MatchRequestStatus = 'open' | 'in_progress' | 'resolved' | 'rejected';
+export type MatchRequestType = 'score_dispute' | 'tech_issue' | 'cheating' | 'other';
+
+export interface MatchRequest {
+    id: string;
+    match_id: string;
+    reporter_id: string;
+    request_type: MatchRequestType;
+    status: MatchRequestStatus;
+    description: string;
+    evidence_urls?: string[];
+    admin_notes?: string;
+    created_at: string;
+    updated_at: string;
+    resolved_by?: string;
+    resolved_at?: string;
+}

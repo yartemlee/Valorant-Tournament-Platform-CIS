@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import {
@@ -14,24 +14,35 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, MessageSquare } from "lucide-react";
-import { MatchRequest, MatchRequestStatus, MatchRequestType } from "@/types/common.types";
+import { MatchRequestStatus, MatchRequestType } from "@/types/common.types";
 import { toast } from "sonner";
+
+interface MatchRequestWithDetails {
+    id: string;
+    request_type: MatchRequestType;
+    status: MatchRequestStatus;
+    created_at: string;
+    match: {
+        id: string;
+        tournament_id: string;
+        round_number: number;
+        match_number: number;
+    };
+    reporter?: {
+        username: string;
+        avatar_url: string | null;
+    };
+}
 
 export default function MatchRequestsList() {
     const { tournamentId } = useParams<{ tournamentId: string }>();
-    const [requests, setRequests] = useState<any[]>([]);
+    const [requests, setRequests] = useState<MatchRequestWithDetails[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (tournamentId) {
-            fetchRequests();
-        }
-    }, [tournamentId]);
-
-    const fetchRequests = async () => {
+    const fetchRequests = useCallback(async () => {
+        if (!tournamentId) return;
         setLoading(true);
         try {
-            // Join with matches to filter by tournament_id
             const { data, error } = await supabase
                 .from('match_requests')
                 .select(`
@@ -51,13 +62,19 @@ export default function MatchRequestsList() {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setRequests(data || []);
+            setRequests((data ?? []) as unknown as MatchRequestWithDetails[]);
         } catch {
             toast.error("Ошибка загрузки жалоб");
         } finally {
             setLoading(false);
         }
-    };
+    }, [tournamentId]);
+
+    useEffect(() => {
+        if (tournamentId) {
+            fetchRequests();
+        }
+    }, [tournamentId, fetchRequests]);
 
     const getStatusColor = (status: MatchRequestStatus) => {
         switch (status) {
