@@ -28,7 +28,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
   const [activeSection, setActiveSection] = useState("profile");
   const [formData, setFormData] = useState({
 
-    country: profile.region || profile.country || "",
+    country: profile.country || "",
     phone_number: profile.phone_number || "",
     status: profile.status || "",
     riot_id: (profile.riot_id || "").split("#")[0],
@@ -60,7 +60,7 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
     try {
       setSaving(true);
 
-      const updates: unknown = {
+      const updates: Partial<Profile> & { riot_id?: string } = {
         country: formData.country,
         phone_number: formData.phone_number,
         status: formData.status,
@@ -87,10 +87,10 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
 
       // Only update riot_id if both fields are present or if clearing
       if (formData.riot_id && formData.riot_tag) {
-        (updates as any).riot_id = `${formData.riot_id}#${formData.riot_tag}`;
+        updates.riot_id = `${formData.riot_id}#${formData.riot_tag}`;
       } else if (formData.riot_id) {
         // Fallback if only ID is provided
-        (updates as any).riot_id = formData.riot_id;
+        updates.riot_id = formData.riot_id;
       }
 
       const { data, error } = await supabase

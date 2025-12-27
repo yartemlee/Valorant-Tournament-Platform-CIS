@@ -62,3 +62,13 @@ export interface SignUpCredentials {
         };
     };
 }
+
+export interface SocialLinks {
+    discord?: string;
+    twitch?: string;
+    youtube?: string;
+    tiktok?: string;
+    tracker_gg?: string;
+    twitter?: string;
+    instagram?: string;
+}
