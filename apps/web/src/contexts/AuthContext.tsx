@@ -11,7 +11,6 @@ import {
 } from '@/types/electron.types';
 
 // Declare types for Electron APIs exposed via preload
-/* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
   interface Window {
     lfgApi?: {
@@ -40,7 +39,6 @@ declare global {
     };
   }
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // Helper to check if running in Electron
 const isElectron = (): boolean => {

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import type { Json } from "@/types/database.types";
 
 export type TeamActivityType =
     | "member_joined"
@@ -11,14 +12,12 @@ export type TeamActivityType =
     | "tournament_joined"
     | "tournament_won";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface LogActivityParams {
     teamId: string;
     type: TeamActivityType;
     description: string;
-    data?: Record<string, any>;
+    data?: Json;
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function logTeamActivity({ teamId, type, description, data = {} }: LogActivityParams) {
     try {
