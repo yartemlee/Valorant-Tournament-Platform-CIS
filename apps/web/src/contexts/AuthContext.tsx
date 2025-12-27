@@ -2,6 +2,13 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { SignInCredentials, SignUpCredentials } from '@/types/common.types';
+import {
+  ValorantGameStatus,
+  ValorantLobbyInfo,
+  DesktopHeartbeatData,
+  DesktopStatusData,
+  LFGPartyInfo
+} from '@/types/electron.types';
 
 // Declare types for Electron APIs exposed via preload
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -10,19 +17,19 @@ declare global {
     lfgApi?: {
       startSync: (supabaseToken: string, supabaseUrl?: string) => Promise<{ success: boolean }>;
       stopSync: () => Promise<{ success: boolean }>;
-      getPartyInfo: () => Promise<any>;
-      generatePartyCode: () => Promise<any>;
-      joinPartyByCode: (code: string) => Promise<any>;
-      inviteToParty: (gameName: string, tagLine: string) => Promise<any>;
-      onPartyCodeGenerated: (callback: (data: any) => void) => () => void;
-      onPartyJoinResult: (callback: (data: any) => void) => () => void;
-      onHeartbeat: (callback: (data: any) => void) => () => void;
-      onStatusChanged: (callback: (data: any) => void) => () => void;
+      getPartyInfo: () => Promise<LFGPartyInfo | null>;
+      generatePartyCode: () => Promise<{ success: boolean; code?: string; error?: string }>;
+      joinPartyByCode: (code: string) => Promise<{ success: boolean; partyId?: string; error?: string }>;
+      inviteToParty: (gameName: string, tagLine: string) => Promise<{ success: boolean; error?: string }>;
+      onPartyCodeGenerated: (callback: (data: { partyId: string; code: string }) => void) => () => void;
+      onPartyJoinResult: (callback: (data: { success: boolean; partyId?: string; error?: string }) => void) => () => void;
+      onHeartbeat: (callback: (data: DesktopHeartbeatData) => void) => () => void;
+      onStatusChanged: (callback: (data: DesktopStatusData) => void) => () => void;
     };
     valorantApi?: {
-      getGameStatus: () => Promise<any>;
-      getLobbyInfo: () => Promise<any>;
-      syncToSupabase: (force?: boolean) => Promise<any>;
+      getGameStatus: () => Promise<ValorantGameStatus>;
+      getLobbyInfo: () => Promise<ValorantLobbyInfo | null>;
+      syncToSupabase: (force?: boolean) => Promise<{ success: boolean; synced: number; failed: number }>;
     };
     appApi?: {
       getVersion: () => Promise<string>;

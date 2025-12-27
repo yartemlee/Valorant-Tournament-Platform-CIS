@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
@@ -442,6 +444,154 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_request_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          request_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          request_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          request_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_request_messages_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "match_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_request_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_requests: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          match_id: string
+          reporter_id: string
+          request_type: string
+          resolution_note: string | null
+          resolved_by: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          match_id: string
+          reporter_id: string
+          request_type: string
+          resolution_note?: string | null
+          resolved_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          match_id?: string
+          reporter_id?: string
+          request_type?: string
+          resolution_note?: string | null
+          resolved_by?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_requests_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_requests_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_veto: {
+        Row: {
+          action_order: number
+          action_type: string
+          created_at: string
+          id: string
+          map_name: string | null
+          match_id: string
+          side: string | null
+          team_id: string
+        }
+        Insert: {
+          action_order: number
+          action_type: string
+          created_at?: string
+          id?: string
+          map_name?: string | null
+          match_id: string
+          side?: string | null
+          team_id: string
+        }
+        Update: {
+          action_order?: number
+          action_type?: string
+          created_at?: string
+          id?: string
+          map_name?: string | null
+          match_id?: string
+          side?: string | null
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_veto_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_veto_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1428,6 +1578,7 @@ export type Database = {
           organizer_id: string
           prize_pool: string | null
           rules: string | null
+          settings: Json | null
           slug: string | null
           start_time: string
           status: Database["public"]["Enums"]["tournament_status"]
@@ -1447,6 +1598,7 @@ export type Database = {
           organizer_id: string
           prize_pool?: string | null
           rules?: string | null
+          settings?: Json | null
           slug?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["tournament_status"]
@@ -1466,6 +1618,7 @@ export type Database = {
           organizer_id?: string
           prize_pool?: string | null
           rules?: string | null
+          settings?: Json | null
           slug?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["tournament_status"]
@@ -1543,8 +1696,8 @@ export type Database = {
         }
         Returns: undefined
       }
-      cleanup_expired_lfg_lobbies: { Args: Record<PropertyKey, never>; Returns: number }
-      cleanup_expired_lobbies: { Args: Record<PropertyKey, never>; Returns: number }
+      cleanup_expired_lfg_lobbies: { Args: never; Returns: number }
+      cleanup_expired_lobbies: { Args: never; Returns: number }
       create_lfg_lobby: {
         Args: {
           p_description?: string
@@ -1628,6 +1781,19 @@ export type Database = {
               p_max_teams: number
               p_prize_pool: string
               p_rules: string
+              p_settings?: Json
+              p_start_time: string
+              p_title: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_description: string
+              p_format: Database["public"]["Enums"]["tournament_format"]
+              p_max_teams: number
+              p_prize_pool: string
+              p_rules: string
               p_start_time: string
               p_substitution_limit?: number
               p_title: string
@@ -1642,7 +1808,7 @@ export type Database = {
         Args: { invitation_id_input: string }
         Returns: Json
       }
-      desktop_session_offline: { Args: Record<PropertyKey, never>; Returns: Json }
+      desktop_session_offline: { Args: never; Returns: Json }
       distribute_tournament_prizes: {
         Args: {
           p_first_place_team_id: string
@@ -1680,7 +1846,11 @@ export type Database = {
         Args: { p_action: string; p_request_id: string }
         Returns: Json
       }
-      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      is_lfg_lobby_participant: {
+        Args: { p_lobby_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_team_manager: { Args: { team_id_input: string }; Returns: boolean }
       join_lfg_lobby: { Args: { p_lobby_id: string }; Returns: Json }
       join_lobby: {
@@ -1714,11 +1884,15 @@ export type Database = {
         }
         Returns: Json
       }
+      request_to_join_lfg_lobby: {
+        Args: { p_lobby_id: string; p_message?: string }
+        Returns: Json
+      }
       rpc_apply_to_team: {
         Args: { note?: string; target_team_id: string }
         Returns: Json
       }
-      rpc_cleanup_all_phantoms: { Args: Record<PropertyKey, never>; Returns: Json }
+      rpc_cleanup_all_phantoms: { Args: never; Returns: Json }
       rpc_cleanup_tournament_phantoms: {
         Args: { tournament_id_input: string }
         Returns: Json
@@ -1832,7 +2006,11 @@ export type Database = {
       match_status: "scheduled" | "live" | "completed" | "cancelled"
       scrim_status: "searching" | "in_progress" | "finished" | "cancelled"
       team_role: "captain" | "coach" | "member"
-      tournament_format: "single_elimination" | "double_elimination"
+      tournament_format:
+        | "single_elimination"
+        | "double_elimination"
+        | "round_robin"
+        | "swiss"
       tournament_status:
         | "draft"
         | "registration"
@@ -2025,7 +2203,12 @@ export const Constants = {
       match_status: ["scheduled", "live", "completed", "cancelled"],
       scrim_status: ["searching", "in_progress", "finished", "cancelled"],
       team_role: ["captain", "coach", "member"],
-      tournament_format: ["single_elimination", "double_elimination"],
+      tournament_format: [
+        "single_elimination",
+        "double_elimination",
+        "round_robin",
+        "swiss",
+      ],
       tournament_status: [
         "draft",
         "registration",

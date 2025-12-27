@@ -140,6 +140,8 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
       }
 
       if (filters.hideFullLobbies) {
+        // TODO: Implement proper server-side filtering for full lobbies (e.g. computed column 'is_full')
+        // 'max_size' RPC is missing, so this check effectively does nothing or might fail at runtime depending on client library behavior.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         query = query.lt('current_size', supabase.rpc('max_size' as any));
       }
@@ -195,7 +197,7 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
 
       const { data, error } = await supabase.rpc('create_lfg_lobby', {
         p_title: params.title,
-        p_description: params.description ?? null,
+        p_description: params.description,
         p_game_mode: params.gameMode,
         p_max_size: params.maxSize,
         p_min_rank: (params.minRank as Database['public']['Enums']['valorant_rank']) ?? null,
@@ -203,7 +205,7 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
         p_region: (params.region as Database['public']['Enums']['valorant_region']) ?? 'eu',
         p_is_private: params.isPrivate ?? false,
         p_voice_required: params.voiceRequired ?? false,
-        p_discord_link: params.discordLink ?? null,
+        p_discord_link: params.discordLink,
       });
 
       if (error) {
@@ -344,10 +346,9 @@ export function useLFGLobbies(filters: LobbyFilters = {}) {
 
 
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await supabase.rpc('request_to_join_lfg_lobby' as any, {
+      const { data, error } = await supabase.rpc('request_to_join_lfg_lobby', {
         p_lobby_id: lobbyId,
-        p_message: message || null,
+        p_message: message,
       });
 
       if (error) {
@@ -589,8 +590,7 @@ export function useLobbyRequests(lobbyId: string | undefined) {
 
       // Get player_roles and player_agents for each requester
       const requestsWithExtras = await Promise.all(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (data || []).map(async (request: any) => {
+        (data || []).map(async (request) => {
           const userId = request.requester_id;
 
           // Fetch player_roles
