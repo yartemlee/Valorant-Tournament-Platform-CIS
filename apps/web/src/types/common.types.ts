@@ -90,3 +90,17 @@ export interface MatchRequest {
     resolved_by?: string;
     resolved_at?: string;
 }
+
+export type FreeAgentCard = Tables<'free_agent_cards'>;
+
+export interface FreeAgentCardWithProfile extends FreeAgentCard {
+    profiles: {
+        id: string;
+        username: string;
+        avatar_url: string | null;
+        rank: string | null;
+        country: string | null;
+    } | null;
+    player_roles?: PlayerRole[];
+    player_agents?: PlayerAgent[];
+}

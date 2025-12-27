@@ -11,7 +11,6 @@ export default tseslint.config(
       "build",
       "**/database.types.ts",
       // TODO: Fix these files and remove from ignores
-      "**/EditUserDialog.tsx",
       "**/TournamentBracket.tsx",
       "**/MatchEditDialog.tsx",
       "**/CreateTournamentDialog.tsx",
@@ -22,7 +21,6 @@ export default tseslint.config(
       "**/TeamDetails.tsx",
       "**/Profile.tsx",
       "**/Teams.tsx",
-      "**/FreeAgents.tsx",
 
     ]
   },
