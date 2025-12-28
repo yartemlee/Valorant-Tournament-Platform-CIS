@@ -104,3 +104,45 @@ export interface FreeAgentCardWithProfile extends FreeAgentCard {
     player_roles?: PlayerRole[];
     player_agents?: PlayerAgent[];
 }
+
+// Tournament bracket types
+export interface TeamInfo {
+    name: string;
+    tag: string;
+    logo_url: string | null;
+}
+
+export interface BracketMatch {
+    id: string;
+    tournament_id: string;
+    round_number: number;
+    match_number: number;
+    bracket_type?: string;
+    team1_id: string | null;
+    team2_id: string | null;
+    team1_score: number | null;
+    team2_score: number | null;
+    winner_id: string | null;
+    loser_id: string | null;
+    status: string;
+    best_of: number;
+    next_match_id?: string | null;
+    loser_next_match_id?: string | null;
+    scheduled_time?: string | null;
+    created_at: string;
+    updated_at?: string;
+    // Joined team info
+    team1?: TeamInfo | null;
+    team2?: TeamInfo | null;
+}
+
+export interface ParticipantWithTeam {
+    id: string;
+    tournament_id: string;
+    team_id: string;
+    seed?: number | null;
+    status: string;
+    registered_at: string;
+    // Joined team info
+    team?: Team | null;
+}

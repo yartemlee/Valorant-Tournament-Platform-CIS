@@ -40,7 +40,7 @@ export function TeamSettingsTab({ team, isOwner: _isOwner, isCaptain, isCoach }:
     tag: team.tag,
     description: team.description || "",
     logo_url: team.logo_url || "",
-    is_recruiting: team.is_recruiting,
+    is_recruiting: team.is_recruiting ?? false,
   });
 
   const isManager = isCaptain || isCoach;

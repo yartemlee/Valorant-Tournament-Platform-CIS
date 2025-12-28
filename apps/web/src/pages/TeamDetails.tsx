@@ -128,7 +128,7 @@ const TeamDetails = () => {
       // Используем безопасный RPC для подачи заявки с DB-валидацией
       const { error } = await (supabase.rpc)('rpc_apply_to_team', {
         target_team_id: id!,
-        note: null
+        note: undefined
       });
 
       if (error) {
@@ -274,14 +274,14 @@ const TeamDetails = () => {
             <TeamHeroSection
               team={team}
               memberCount={memberCount}
-              canApply={canApply}
+              canApply={!!canApply}
               isOwner={isOwner}
               isMember={isMemberOfThisTeam}
               isApplying={isApplying}
               isManager={isManager}
               isCaptain={isCaptainOfThisTeam}
               currentUserId={currentUserId}
-              userProfile={profile}
+              userProfile={profile ?? undefined}
               onApply={() => setApplyDialogOpen(true)}
               onManage={() => setManageDialogOpen(true)}
             />

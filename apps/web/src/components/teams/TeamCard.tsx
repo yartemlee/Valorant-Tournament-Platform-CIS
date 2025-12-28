@@ -57,7 +57,7 @@ export function TeamCard({ team, isUserTeam }: TeamCardProps) {
       // Используем безопасный RPC для подачи заявки с DB-валидацией
       const { data: _rpcData, error } = await supabase.rpc('rpc_apply_to_team', {
         target_team_id: team.id,
-        note: null
+        note: undefined
       });
 
       if (error) {

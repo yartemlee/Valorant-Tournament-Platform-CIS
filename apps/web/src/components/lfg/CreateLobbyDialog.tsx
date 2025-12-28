@@ -98,7 +98,7 @@ const SERVERS = [
   { value: 'dubai', label: 'Дубай' },
   { value: 'capetown', label: 'Кейптаун' },
   { value: 'tokyo', label: 'Токио' },
-];
+] as const;
 
 const STANDARD_MAPS = [
   { value: 'abyss', label: 'Abyss' },

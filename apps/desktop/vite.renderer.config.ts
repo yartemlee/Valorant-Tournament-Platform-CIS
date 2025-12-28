@@ -34,6 +34,8 @@ export default defineConfig({
             "@": resolve(__dirname, "../web/src"),
             "@shared": resolve(__dirname, "../../packages/shared/src"),
         },
+        // Dedupe ensures only one copy of these packages is used
+        dedupe: ["react", "react-dom"],
     },
     define: {
         'import.meta.env.VITE_SUPABASE_URL': JSON.stringify("https://yblnsfkhqsfsnrevivpy.supabase.co"),

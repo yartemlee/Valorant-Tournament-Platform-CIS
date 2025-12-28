@@ -239,7 +239,7 @@ export function EditTournamentDialog({
               <Select
                 value={formData.format}
                 onValueChange={(value) => setFormData({ ...formData, format: value })}
-                disabled={tournament?.bracket_generated}
+                disabled={!!tournament?.bracket_generated}
               >
                 <SelectTrigger id="format">
                   <SelectValue />
@@ -300,7 +300,7 @@ export function EditTournamentDialog({
                 max={64}
                 value={formData.max_teams}
                 onChange={(e) => setFormData({ ...formData, max_teams: parseInt(e.target.value) })}
-                disabled={tournament?.bracket_generated}
+                disabled={!!tournament?.bracket_generated}
               />
               {tournament?.bracket_generated && (
                 <p className="text-xs text-muted-foreground">
