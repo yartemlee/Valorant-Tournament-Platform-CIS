@@ -221,7 +221,7 @@ export interface LFGAPI {
   changeQueue: (queueId: string) => Promise<{ success: boolean; error?: string }>;
 
   // Desktop sync
-  startSync: (supabaseToken: string, supabaseUrl?: string) => Promise<{ success: boolean }>;
+  startSync: (supabaseToken: string, supabaseUrl?: string, supabaseAnonKey?: string) => Promise<{ success: boolean }>;
   stopSync: () => Promise<{ success: boolean }>;
 
   // Event listeners

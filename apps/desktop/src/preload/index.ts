@@ -76,8 +76,8 @@ const lfgApi: LFGAPI = {
     invoke(IPC_CHANNELS.LFG_CHANGE_QUEUE, { queueId }),
 
   // Desktop sync
-  startSync: (supabaseToken: string, supabaseUrl?: string) =>
-    invoke(IPC_CHANNELS.DESKTOP_START_SYNC, { supabaseToken, supabaseUrl }),
+  startSync: (supabaseToken: string, supabaseUrl?: string, supabaseAnonKey?: string) =>
+    invoke(IPC_CHANNELS.DESKTOP_START_SYNC, { supabaseToken, supabaseUrl, supabaseAnonKey }),
   stopSync: () => invoke(IPC_CHANNELS.DESKTOP_STOP_SYNC),
 
   // Event listeners

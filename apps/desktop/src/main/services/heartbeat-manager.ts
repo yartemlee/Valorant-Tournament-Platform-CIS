@@ -33,7 +33,8 @@ export class HeartbeatManager {
    */
   async start(
     supabaseUrl: string,
-    supabaseToken: string,
+    supabaseAnonKey: string,
+    accessToken: string,
     userId: string,
     onStatusChange?: (status: DesktopStatusData) => void
   ): Promise<void> {
@@ -42,10 +43,16 @@ export class HeartbeatManager {
       return;
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseToken, {
+    // Create client with anon key and set access token in headers for auth
+    this.supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
       }
     });
 
@@ -107,7 +114,6 @@ export class HeartbeatManager {
 
       // Call RPC function to update desktop session
       const { error } = await this.supabase.rpc('update_desktop_session', {
-        p_is_online: heartbeatData.isOnline,
         p_valorant_running: heartbeatData.valorantRunning,
         p_valorant_status: heartbeatData.valorantStatus,
         p_party_id: heartbeatData.partyId,

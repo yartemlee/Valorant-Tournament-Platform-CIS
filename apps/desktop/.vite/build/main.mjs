@@ -1,11 +1,12 @@
-import { BrowserWindow, shell, ipcMain, app } from "electron";
+import { BrowserWindow, shell, ipcMain, dialog, app } from "electron";
+import require$$6, { watch, existsSync, readFileSync, unlinkSync } from "fs";
+import { exec, execSync } from "child_process";
 import require$$1$1, { join } from "path";
 import require$$1, { promisify } from "util";
 import stream, { Readable } from "stream";
 import require$$3 from "http";
 import https from "https";
 import require$$0$1 from "url";
-import require$$6, { watch, existsSync, readFileSync } from "fs";
 import require$$8 from "crypto";
 import http2 from "http2";
 import require$$4 from "assert";
@@ -13,7 +14,6 @@ import require$$1$2 from "tty";
 import require$$0$2 from "os";
 import zlib from "zlib";
 import { EventEmitter } from "events";
-import { exec } from "child_process";
 function _mergeNamespaces(n, m) {
   for (var i = 0; i < m.length; i++) {
     const e = m[i];
@@ -9228,6 +9228,20 @@ class ValorantLocalAPI {
     if (axiosError.response?.status === 404) {
       throw error;
     }
+    if (axiosError.code === "ECONNREFUSED") {
+      console.log("[ValorantLocalAPI] Connection refused - clearing stale API connection");
+      this.clear();
+      const err = new Error("Riot Client not available");
+      err.name = "RiotClientUnavailable";
+      throw err;
+    }
+    if (axiosError.code === "ECONNRESET" || axiosError.code === "ETIMEDOUT") {
+      console.log(`[ValorantLocalAPI] Connection ${axiosError.code} - clearing API`);
+      this.clear();
+      const err = new Error("Riot Client connection lost");
+      err.name = "RiotClientUnavailable";
+      throw err;
+    }
     if (this.retryCount < this.maxRetries && (!axiosError.response || axiosError.response.status >= 500)) {
       this.retryCount++;
       const delay = this.retryDelay * Math.pow(2, this.retryCount - 1);
@@ -9544,11 +9558,20 @@ class LockfileWatcher extends EventEmitter {
   /**
    * Check if lockfile exists and parse it
    */
-  checkLockfile() {
+  async checkLockfile() {
     try {
       if (existsSync(this.lockfilePath)) {
         const content = readFileSync(this.lockfilePath, "utf-8");
         const lockfileData = this.parseLockfile(content);
+        const isRiotClientRunning = await this.isRiotClientProcessRunning();
+        if (!isRiotClientRunning) {
+          console.log("[LockfileWatcher] Lockfile exists but Riot Client not running - ignoring stale lockfile");
+          if (this.currentLockfileData !== null) {
+            this.currentLockfileData = null;
+            this.emit("lockfile-lost");
+          }
+          return;
+        }
         if (!this.currentLockfileData || this.hasLockfileChanged(lockfileData)) {
           this.currentLockfileData = lockfileData;
           this.emit("lockfile-found", lockfileData);
@@ -9560,7 +9583,18 @@ class LockfileWatcher extends EventEmitter {
         }
       }
     } catch (error) {
-      this.emit("error", error);
+      console.log("[LockfileWatcher] checkLockfile error (ignored):", error.message);
+    }
+  }
+  /**
+   * Check if RiotClientServices.exe is running
+   */
+  async isRiotClientProcessRunning() {
+    try {
+      const { stdout } = await execAsync('tasklist /FI "IMAGENAME eq RiotClientServices.exe" /NH');
+      return stdout.toLowerCase().includes("riotclientservices.exe");
+    } catch {
+      return false;
     }
   }
   /**
@@ -21670,15 +21704,20 @@ class HeartbeatManager {
   /**
    * Start syncing with Supabase
    */
-  async start(supabaseUrl2, supabaseToken, userId, onStatusChange) {
+  async start(supabaseUrl2, supabaseAnonKey, accessToken, userId, onStatusChange) {
     if (this.isRunning) {
       console.log("[HeartbeatManager] Already running");
       return;
     }
-    this.supabase = createClient(supabaseUrl2, supabaseToken, {
+    this.supabase = createClient(supabaseUrl2, supabaseAnonKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
       }
     });
     this.userId = userId;
@@ -21724,7 +21763,6 @@ class HeartbeatManager {
     try {
       const heartbeatData = await this.collectHeartbeatData();
       const { error } = await this.supabase.rpc("update_desktop_session", {
-        p_is_online: heartbeatData.isOnline,
         p_valorant_running: heartbeatData.valorantRunning,
         p_valorant_status: heartbeatData.valorantStatus,
         p_party_id: heartbeatData.partyId,
@@ -22080,15 +22118,20 @@ class CommandListener {
   /**
    * Start listening for commands
    */
-  async start(supabaseUrl2, supabaseToken, userId) {
+  async start(supabaseUrl2, supabaseAnonKey, accessToken, userId) {
     if (this.isListening) {
       console.log("[CommandListener] Already listening");
       return;
     }
-    this.supabase = createClient(supabaseUrl2, supabaseToken, {
+    this.supabase = createClient(supabaseUrl2, supabaseAnonKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
       }
     });
     this.userId = userId;
@@ -22241,7 +22284,9 @@ function setupIpcHandlers(window2) {
   lockfileWatcher.on("lockfile-found", (data) => {
     console.log("[IPC] Riot Client lockfile found, initializing API");
     localApi.initialize(data);
-    lfgService.initialize();
+    lfgService.initialize().catch(() => {
+      console.log("[IPC] LFG service initialization skipped - Valorant not ready");
+    });
   });
   lockfileWatcher.on("lockfile-lost", () => {
     console.log("[IPC] Riot Client lockfile lost, clearing API");
@@ -22353,10 +22398,15 @@ function setupIpcHandlers(window2) {
     console.log(`[IPC] Change queue to ${queueId}:`, result);
     return result;
   });
-  ipcMain.handle(IPC_CHANNELS.DESKTOP_START_SYNC, async (_event, { supabaseToken, supabaseUrl: urlFromRenderer }) => {
+  ipcMain.handle(IPC_CHANNELS.DESKTOP_START_SYNC, async (_event, { supabaseToken, supabaseAnonKey: anonKeyFromRenderer, supabaseUrl: urlFromRenderer }) => {
     supabaseUrl = urlFromRenderer || process.env.VITE_SUPABASE_URL || "";
+    const anonKey = anonKeyFromRenderer || process.env.VITE_SUPABASE_ANON_KEY || "";
     if (!supabaseUrl) {
       console.error("[IPC] Supabase URL not configured");
+      return { success: false };
+    }
+    if (!anonKey) {
+      console.error("[IPC] Supabase anon key not configured");
       return { success: false };
     }
     try {
@@ -22370,13 +22420,15 @@ function setupIpcHandlers(window2) {
       }
       await heartbeatManager.start(
         supabaseUrl,
+        anonKey,
         supabaseToken,
+        // This is the access token
         userId,
         (status) => {
           sendToRenderer(IPC_CHANNELS.DESKTOP_STATUS_CHANGED, status);
         }
       );
-      await commandListener.start(supabaseUrl, supabaseToken, userId);
+      await commandListener.start(supabaseUrl, anonKey, supabaseToken, userId);
       return { success: true };
     } catch (error) {
       console.error("[IPC] DESKTOP_START_SYNC error:", error);
@@ -22424,6 +22476,48 @@ async function cleanup() {
   localApi.clear();
   lfgService.clear();
 }
+process.on("uncaughtException", (error) => {
+  if (error.message?.includes("ECONNREFUSED") || error.message?.includes("ECONNRESET") || error.message?.includes("ETIMEDOUT") || error.message?.includes("Riot Client") || error.name === "RiotClientUnavailable") {
+    console.log("[Main] Network error suppressed (Valorant not running)");
+    return;
+  }
+  console.error("[Main] Uncaught exception:", error);
+});
+process.on("unhandledRejection", (reason) => {
+  const msg = reason instanceof Error ? reason.message : String(reason);
+  if (msg?.includes("ECONNREFUSED") || msg?.includes("ECONNRESET") || msg?.includes("ETIMEDOUT") || msg?.includes("Riot Client")) {
+    console.log("[Main] Promise rejection suppressed (Valorant not running)");
+    return;
+  }
+  console.error("[Main] Unhandled rejection:", reason);
+});
+dialog.showErrorBox = (_title, _content) => {
+};
+function deleteStaleRiotLockfile() {
+  try {
+    const localAppData = process.env.LOCALAPPDATA || "";
+    const lockfilePath = join(localAppData, "Riot Games", "Riot Client", "Config", "lockfile");
+    if (existsSync(lockfilePath)) {
+      try {
+        const output = execSync('tasklist /FI "IMAGENAME eq RiotClientServices.exe" /NH', { encoding: "utf-8" });
+        const isRiotRunning = output.toLowerCase().includes("riotclientservices.exe");
+        if (!isRiotRunning) {
+          console.log("[Main] Deleting stale Riot lockfile (Riot Client not running)");
+          unlinkSync(lockfilePath);
+        }
+      } catch {
+        console.log("[Main] Deleting lockfile (could not verify Riot Client status)");
+        try {
+          unlinkSync(lockfilePath);
+        } catch {
+        }
+      }
+    }
+  } catch (error) {
+    console.log("[Main] Could not check/delete lockfile:", error.message);
+  }
+}
+deleteStaleRiotLockfile();
 const windowManager = new WindowManager();
 app.commandLine.appendSwitch("high-dpi-support", "1");
 app.commandLine.appendSwitch("force-device-scale-factor", "1");

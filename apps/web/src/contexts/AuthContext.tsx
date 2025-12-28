@@ -70,9 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.access_token) {
         // User logged in - start syncing
         try {
-          // Pass both token and URL (URL from vite env variables)
+          // Pass access token, URL, and anon key to desktop
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-          await window.lfgApi!.startSync(session.access_token, supabaseUrl);
+          const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+          await window.lfgApi!.startSync(session.access_token, supabaseUrl, supabaseAnonKey);
         } catch {
         }
       } else {

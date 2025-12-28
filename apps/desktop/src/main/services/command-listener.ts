@@ -40,7 +40,8 @@ export class CommandListener {
    */
   async start(
     supabaseUrl: string,
-    supabaseToken: string,
+    supabaseAnonKey: string,
+    accessToken: string,
     userId: string
   ): Promise<void> {
     if (this.isListening) {
@@ -48,10 +49,16 @@ export class CommandListener {
       return;
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseToken, {
+    // Create client with anon key and set access token in headers for auth
+    this.supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
       }
     });
 

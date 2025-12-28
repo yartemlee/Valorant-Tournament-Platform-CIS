@@ -73,7 +73,7 @@ const lfgApi = {
   inviteToParty: (gameName, tagLine) => invoke(IPC_CHANNELS.LFG_INVITE_TO_PARTY, { gameName, tagLine }),
   changeQueue: (queueId) => invoke(IPC_CHANNELS.LFG_CHANGE_QUEUE, { queueId }),
   // Desktop sync
-  startSync: (supabaseToken, supabaseUrl) => invoke(IPC_CHANNELS.DESKTOP_START_SYNC, { supabaseToken, supabaseUrl }),
+  startSync: (supabaseToken, supabaseUrl, supabaseAnonKey) => invoke(IPC_CHANNELS.DESKTOP_START_SYNC, { supabaseToken, supabaseUrl, supabaseAnonKey }),
   stopSync: () => invoke(IPC_CHANNELS.DESKTOP_STOP_SYNC),
   // Event listeners
   onPartyCodeGenerated: (callback) => on(IPC_CHANNELS.LFG_PARTY_CODE_GENERATED, callback),

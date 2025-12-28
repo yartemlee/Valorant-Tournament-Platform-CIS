@@ -38,7 +38,10 @@ export function setupIpcHandlers(window: BrowserWindow): void {
   lockfileWatcher.on('lockfile-found', (data) => {
     console.log('[IPC] Riot Client lockfile found, initializing API');
     localApi.initialize(data);
-    lfgService.initialize();
+    // Initialize LFG service - catch errors silently (Valorant might not be fully running)
+    lfgService.initialize().catch(() => {
+      console.log('[IPC] LFG service initialization skipped - Valorant not ready');
+    });
     // Don't update status here - wait for VALORANT.exe
   });
 
@@ -200,13 +203,20 @@ export function setupIpcHandlers(window: BrowserWindow): void {
   // Desktop Sync handlers
   // ========================================
 
-  ipcMain.handle(IPC_CHANNELS.DESKTOP_START_SYNC, async (_event, { supabaseToken, supabaseUrl: urlFromRenderer }: { supabaseToken: string; supabaseUrl?: string }) => {
+  ipcMain.handle(IPC_CHANNELS.DESKTOP_START_SYNC, async (_event, { supabaseToken, supabaseAnonKey: anonKeyFromRenderer, supabaseUrl: urlFromRenderer }: { supabaseToken: string; supabaseAnonKey?: string; supabaseUrl?: string }) => {
     // Get Supabase config from renderer or environment
     supabaseUrl = urlFromRenderer || process.env.VITE_SUPABASE_URL || '';
-    supabaseAnonKey = supabaseToken;
+    // anonKey can come from renderer or must be provided
+    const anonKey = anonKeyFromRenderer || process.env.VITE_SUPABASE_ANON_KEY || '';
+    supabaseAnonKey = anonKey;
 
     if (!supabaseUrl) {
       console.error('[IPC] Supabase URL not configured');
+      return { success: false };
+    }
+
+    if (!anonKey) {
+      console.error('[IPC] Supabase anon key not configured');
       return { success: false };
     }
 
@@ -222,17 +232,18 @@ export function setupIpcHandlers(window: BrowserWindow): void {
         return { success: false };
       }
 
-      // Start services
+      // Start services with separate anonKey and accessToken
       await heartbeatManager.start(
         supabaseUrl,
-        supabaseToken,
+        anonKey,
+        supabaseToken,  // This is the access token
         userId,
         (status: DesktopStatusData) => {
           sendToRenderer(IPC_CHANNELS.DESKTOP_STATUS_CHANGED, status);
         }
       );
 
-      await commandListener.start(supabaseUrl, supabaseToken, userId);
+      await commandListener.start(supabaseUrl, anonKey, supabaseToken, userId);
 
       return { success: true };
     } catch (error) {

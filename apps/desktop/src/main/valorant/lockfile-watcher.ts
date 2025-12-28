@@ -109,11 +109,25 @@ export class LockfileWatcher extends EventEmitter {
   /**
    * Check if lockfile exists and parse it
    */
-  private checkLockfile(): void {
+  private async checkLockfile(): Promise<void> {
     try {
       if (existsSync(this.lockfilePath)) {
         const content = readFileSync(this.lockfilePath, 'utf-8');
         const lockfileData = this.parseLockfile(content);
+
+        // Verify that Riot Client process is actually running before trusting the lockfile
+        // This prevents errors from stale lockfiles left over from previous sessions
+        const isRiotClientRunning = await this.isRiotClientProcessRunning();
+
+        if (!isRiotClientRunning) {
+          console.log('[LockfileWatcher] Lockfile exists but Riot Client not running - ignoring stale lockfile');
+          // Don't emit lockfile-found for stale lockfiles
+          if (this.currentLockfileData !== null) {
+            this.currentLockfileData = null;
+            this.emit('lockfile-lost');
+          }
+          return;
+        }
 
         // Only emit if lockfile data changed
         if (!this.currentLockfileData || this.hasLockfileChanged(lockfileData)) {
@@ -128,7 +142,20 @@ export class LockfileWatcher extends EventEmitter {
         }
       }
     } catch (error) {
-      this.emit('error', error as Error);
+      // Silently ignore errors - don't emit error events for lockfile issues
+      console.log('[LockfileWatcher] checkLockfile error (ignored):', (error as Error).message);
+    }
+  }
+
+  /**
+   * Check if RiotClientServices.exe is running
+   */
+  private async isRiotClientProcessRunning(): Promise<boolean> {
+    try {
+      const { stdout } = await execAsync('tasklist /FI "IMAGENAME eq RiotClientServices.exe" /NH');
+      return stdout.toLowerCase().includes('riotclientservices.exe');
+    } catch {
+      return false;
     }
   }
 

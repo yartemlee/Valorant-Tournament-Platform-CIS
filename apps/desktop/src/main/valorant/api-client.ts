@@ -327,6 +327,26 @@ export class ValorantLocalAPI {
       throw error;
     }
 
+    // Handle connection refused - Riot Client/Valorant not running
+    // This means the lockfile is stale - clear API to prevent repeated failures
+    if (axiosError.code === 'ECONNREFUSED') {
+      console.log('[ValorantLocalAPI] Connection refused - clearing stale API connection');
+      this.clear(); // Clear API so isInitialized() returns false
+      // Throw a controlled error that will be caught by callers
+      const err = new Error('Riot Client not available');
+      err.name = 'RiotClientUnavailable'; // Mark as expected error
+      throw err;
+    }
+
+    // Handle connection reset or timeout - these should also clear state
+    if (axiosError.code === 'ECONNRESET' || axiosError.code === 'ETIMEDOUT') {
+      console.log(`[ValorantLocalAPI] Connection ${axiosError.code} - clearing API`);
+      this.clear();
+      const err = new Error('Riot Client connection lost');
+      err.name = 'RiotClientUnavailable';
+      throw err;
+    }
+
     // Retry on network errors or 5xx errors
     if (
       this.retryCount < this.maxRetries &&
