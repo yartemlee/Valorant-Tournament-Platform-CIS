@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Play, CheckCircle, Trophy } from "lucide-react";
@@ -227,7 +227,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
         .eq("tournament_id", currentMatch.tournament_id)
         .eq("round_number", nextRound)
         .eq("match_number", nextMatchNumber)
-        .eq("bracket_type", currentMatch.bracket_type);
+        .eq("bracket_type", currentMatch.bracket_type || "upper");
 
       if (nextMatches && nextMatches.length > 0) {
         const nextMatch = nextMatches[0];
@@ -348,18 +348,7 @@ export function MatchEditDialog({ match, open, onOpenChange, onSuccess }: MatchE
     }
   };
 
-  const _getStatusBadge = () => {
-    switch (status) {
-      case "pending":
-        return <Badge variant="outline">Не началась</Badge>;
-      case "in_progress":
-        return <Badge variant="secondary">В процессе</Badge>;
-      case "completed":
-        return <Badge>Завершена</Badge>;
-      default:
-        return null;
-    }
-  };
+
 
   if (!match) return null;
 

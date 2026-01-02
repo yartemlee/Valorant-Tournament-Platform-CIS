@@ -1,16 +1,49 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import type { User } from "@supabase/supabase-js";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowLeft, Send, CheckCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
-import { MatchRequestWithDetails, MatchRequestMessage } from "@/types/common.types";
+// Local type definitions for match requests
+interface MatchRequestMessage {
+    id: string;
+    request_id: string;
+    sender_id: string;
+    message: string;
+    created_at: string;
+}
+
+interface MatchRequestWithDetails {
+    id: string;
+    match_id: string;
+    reporter_id: string;
+    request_type: string;
+    status: string;
+    description: string;
+    evidence_urls?: string[];
+    admin_notes?: string;
+    created_at: string;
+    updated_at: string;
+    resolved_by?: string;
+    resolved_at?: string;
+    match?: {
+        id: string;
+        tournament_id: string;
+        round_number: number;
+        match_number: number;
+    };
+    reporter?: {
+        username: string;
+        avatar_url: string | null;
+    };
+}
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 
 export default function MatchRequestDetails() {
     const { requestId } = useParams<{ requestId: string }>();
@@ -18,43 +51,10 @@ export default function MatchRequestDetails() {
     const [messages, setMessages] = useState<MatchRequestMessage[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(true);
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        fetchData();
-        getCurrentUser();
-
-        // Subscribe to messages
-        const channel = supabase
-            .channel(`request-${requestId}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'match_request_messages',
-                    filter: `request_id=eq.${requestId}`
-                },
-                (payload) => {
-                    const newMsg = payload.new as MatchRequestMessage;
-                    setMessages((prev) => [...prev, newMsg]);
-                    scrollToBottom();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [requestId]);
-
-    const getCurrentUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) setCurrentUser(user);
-    };
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         if (!requestId) return;
         setLoading(true);
         try {
@@ -78,7 +78,7 @@ export default function MatchRequestDetails() {
                 .single();
 
             if (requestError) throw requestError;
-            setRequest(requestData as any);
+            setRequest(requestData as unknown as MatchRequestWithDetails);
 
             // Fetch messages
             const { data: messagesData, error: messagesError } = await supabase
@@ -95,7 +95,41 @@ export default function MatchRequestDetails() {
         } finally {
             setLoading(false);
         }
+    }, [requestId]);
+
+    const getCurrentUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) setCurrentUser(user);
     };
+
+    useEffect(() => {
+        fetchData();
+        getCurrentUser();
+        // Subscribe to messages
+        const channel = supabase
+            .channel(`request-${requestId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'match_request_messages',
+                    filter: `request_id=eq.${requestId}`
+                },
+                (payload) => {
+                    const newMsg = payload.new as MatchRequestMessage;
+                    setMessages((prev) => [...prev, newMsg]);
+                    scrollToBottom();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [requestId, fetchData]);
+
+
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -138,7 +172,7 @@ export default function MatchRequestDetails() {
                     resolved_by: currentUser?.id,
                     updated_at: new Date().toISOString()
                 })
-                .eq('id', requestId);
+                .eq('id', requestId!);
 
             if (error) throw error;
             toast.success("Статус обновлен");
@@ -247,8 +281,8 @@ export default function MatchRequestDetails() {
                                             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                                 <div
                                                     className={`max-w-[80%] rounded-lg px-4 py-2 text-sm ${isMe
-                                                            ? 'bg-primary text-primary-foreground'
-                                                            : 'bg-background border'
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'bg-background border'
                                                         }`}
                                                 >
                                                     <p>{msg.message}</p>

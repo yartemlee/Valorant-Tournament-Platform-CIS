@@ -5,7 +5,6 @@ import { RoleMasterySlider } from "./RoleMasterySlider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { valorantApi, ValorantAgent } from "@/services/valorantApi";
 import {
-  ProficiencyLevel,
   roleProficiencyLevels,
   agentProficiencyLevels,
   AgentProficiencyLevel
@@ -89,11 +88,7 @@ export function RoleSelector({ userId, roles, onUpdate, isEditable }: RoleSelect
     setLocalComfortLevels(newComfortLevels);
   }, [roles]);
 
-  const _getRoleComfort = (role: string) => {
-    const roleData = roles.find(r => r.role === role);
-    if (!roleData) return "not_played";
-    return roleData.comfort_level as ProficiencyLevel;
-  };
+
 
   const getAgentStatus = (agentName: string): AgentProficiencyLevel => {
     const agentData = agents.find(a => a.agent_name === agentName);

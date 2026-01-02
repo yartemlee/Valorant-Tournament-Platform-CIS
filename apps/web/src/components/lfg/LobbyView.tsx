@@ -52,14 +52,7 @@ const GAME_MODE_LABELS: Record<string, string> = {
   custom: 'Кастом',
 };
 
-const REGION_LABELS: Record<string, string> = {
-  eu: 'Европа (EU)',
-  na: 'Северная Америка (NA)',
-  ap: 'Азия (AP)',
-  kr: 'Корея (KR)',
-  br: 'Бразилия (BR)',
-  latam: 'Латинская Америка (LATAM)',
-};
+
 
 export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -74,7 +67,7 @@ export function LobbyView({ lobby, isOwner, onBack }: LobbyViewProps) {
 
   const { isConnected, isValorantRunning } = useDesktopStatus();
   const { leaveLobby, updateLobbyPartyCode, updateLobby, handleRequest } = useLFGLobbies();
-  const { requests: lobbyRequests, isLoading: isLoadingRequests } = useLobbyRequests(
+  const { requests: lobbyRequests } = useLobbyRequests(
     isOwner && lobby.is_private ? lobby.id : undefined
   );
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);

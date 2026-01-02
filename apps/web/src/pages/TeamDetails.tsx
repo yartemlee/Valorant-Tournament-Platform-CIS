@@ -1,12 +1,11 @@
 import { TeamWithMembers } from '@/types/common.types';
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useToast } from "@/hooks/useToast";
 import { useState } from "react";
 import { TeamHeroSection } from "@/components/teams/TeamHeroSection";
 import { TeamRosterSection } from "@/components/teams/TeamRosterSection";
@@ -21,11 +20,10 @@ import { useRealtimeTeams } from "@/hooks/useRealtimeTeams";
 const TeamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isApplying, setIsApplying] = useState(false);
+
   const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
+  const isApplying = false; // State managed by ApplyToTeamDialog
 
   const {
     id: currentUserId,
@@ -91,132 +89,7 @@ const TeamDetails = () => {
   const memberCount = teamMembers.length;
   const isFull = memberCount >= 10;
 
-  const _handleApply = async () => {
-    if (!currentUserId) {
-      toast({
-        title: "Требуется авторизация",
-        description: "Войдите, чтобы подать заявку",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    setIsApplying(true);
-    try {
-      // Fresh DB check перед отправкой заявки
-      const { data: freshProfile, error: profileError } = await supabase
-        .from("profiles")
-        .select("current_team_id")
-        .eq("id", currentUserId)
-        .single();
-
-      if (profileError) {
-        throw new Error("Не удалось проверить статус команды");
-      }
-
-      if (freshProfile.current_team_id) {
-        toast({
-          title: "Вы уже состоите в команде",
-          description: "Чтобы вступить в другую — сначала покиньте текущую.",
-          variant: "destructive",
-        });
-        queryClient.invalidateQueries({ queryKey: ["profile"] });
-        setIsApplying(false);
-        return;
-      }
-
-      // Используем безопасный RPC для подачи заявки с DB-валидацией
-      const { error } = await (supabase.rpc)('rpc_apply_to_team', {
-        target_team_id: id!,
-        note: undefined
-      });
-
-      if (error) {
-
-        // Обрабатываем известные ошибки с понятными сообщениями
-        if (error.message?.includes('already_in_team')) {
-          toast({
-            title: "Вы уже состоите в команде",
-            description: "Чтобы вступить в другую — сначала покиньте текущую.",
-            variant: "destructive",
-          });
-          queryClient.invalidateQueries({ queryKey: ["profile"] });
-          return;
-        }
-
-        if (error.message?.includes('duplicate_pending')) {
-          toast({
-            title: "Вы уже подали заявку в эту команду",
-            description: "Ожидайте ответа от капитана команды",
-          });
-          return;
-        }
-
-        if (error.message?.includes('not_authenticated')) {
-          toast({
-            title: "Требуется авторизация",
-            description: "Войдите, чтобы подать заявку",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        if (error.message?.includes('team_not_recruiting')) {
-          toast({
-            title: "Набор в команду закрыт",
-            description: "Эта команда больше не принимает новых участников",
-            variant: "destructive",
-          });
-          queryClient.invalidateQueries({ queryKey: ["teams"] });
-          return;
-        }
-
-        if (error.message?.includes('team_full')) {
-          toast({
-            title: "Команда заполнена",
-            description: "В команде уже максимальное количество участников (10)",
-            variant: "destructive",
-          });
-          queryClient.invalidateQueries({ queryKey: ["teams"] });
-          return;
-        }
-
-        if (error.code === '42501') {
-          toast({
-            title: "Не удалось отправить заявку",
-            description: "Проверьте, что вы не состоите в команде.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Неизвестная ошибка
-        throw error;
-      }
-
-      toast({
-        title: "Заявка отправлена",
-        description: "Ожидайте ответа от капитана команды",
-      });
-
-      // Обновляем все связанные кэши
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["teams"] }),
-        queryClient.invalidateQueries({ queryKey: ["profile"] }),
-        queryClient.invalidateQueries({ queryKey: ["team", id] }),
-        queryClient.invalidateQueries({ queryKey: ["team-applications", id] }),
-        queryClient.invalidateQueries({ queryKey: ["team-applications-count"] }),
-      ]);
-    } catch (_error) {
-      toast({
-        title: "Ошибка при отправке заявки",
-        description: "Не удалось отправить заявку. Попробуйте ещё раз.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsApplying(false);
-    }
-  };
 
   if (isLoading) {
     return (

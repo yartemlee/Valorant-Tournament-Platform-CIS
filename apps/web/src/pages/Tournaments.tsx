@@ -13,7 +13,9 @@ import { CreateTournamentDialog } from "@/components/tournaments/CreateTournamen
 import { Trophy, Plus, Filter } from "lucide-react";
 import { toast } from "sonner";
 
-
+// Type definitions for tournament filters
+type TournamentStatus = "draft" | "registration" | "active" | "completed" | "cancelled";
+type TournamentFormat = "single_elimination" | "double_elimination";
 
 
 const Tournaments = () => {

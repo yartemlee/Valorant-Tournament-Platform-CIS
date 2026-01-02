@@ -22,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Search, Trash, Edit, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { Tournament } from "@/types/common.types";
+import { Tournament, TournamentSettings } from "@/types/common.types";
 import { EditTournamentDialog } from "@/components/admin/EditTournamentDialog";
 
 const AdminTournaments = () => {
@@ -169,7 +169,7 @@ const AdminTournaments = () => {
                                             <span className="uppercase">{tournament.format.replace('_', ' ')}</span>
                                             {tournament.settings && (
                                                 <span className="font-medium text-foreground">
-                                                    {tournament.settings.team_size}v{tournament.settings.team_size} • {tournament.settings.match_format.toUpperCase()}
+                                                    {(tournament.settings as unknown as TournamentSettings).team_size}v{(tournament.settings as unknown as TournamentSettings).team_size} • {(tournament.settings as unknown as TournamentSettings).match_format.toUpperCase()}
                                                 </span>
                                             )}
                                         </div>

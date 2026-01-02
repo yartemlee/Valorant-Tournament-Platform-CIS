@@ -47,7 +47,7 @@ export function LobbyPlayerCard({ member, isOwner }: LobbyPlayerCardProps) {
     );
 
     const profile = member.profiles;
-    const rankColor = getRankTier(profile?.rank);
+    const rankColor = getRankTier(profile?.rank ?? null);
 
     const getStatusInfo = () => {
         if (!isOnline) return { text: 'Оффлайн', color: 'bg-gray-500', borderColor: 'border-border' };
