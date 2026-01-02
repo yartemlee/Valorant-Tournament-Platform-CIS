@@ -152,8 +152,8 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
           <NotificationsSection formData={formData} onChange={handleChange} />
         )}
 
-        {/* Sticky Save Button */}
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t mt-6">
+        {/* Save Button */}
+        <div className="p-4 border-t mt-6">
           <Button
             onClick={handleSave}
             disabled={saving}
