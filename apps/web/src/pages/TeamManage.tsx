@@ -1,12 +1,11 @@
-import { Profile, Tournament, Match, TeamWithMembers } from '@/types/common.types';
+import { TeamWithMembers } from '@/types/common.types';
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Settings } from "lucide-react";
 import { TeamRosterTab } from "@/components/teams/manage/TeamRosterTab";
 import { TeamApplicationsTab } from "@/components/teams/manage/TeamApplicationsTab";
@@ -17,7 +16,6 @@ import { useRealtimeTeams } from "@/hooks/useRealtimeTeams";
 const TeamManage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   // Real-time подписки для автоматического обновления состава
   useRealtimeTeamMembers({ teamId: id });
@@ -102,9 +100,9 @@ const TeamManage = () => {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <TopBar />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-5xl mx-auto space-y-6">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" onClick={() => navigate(`/teams/${id}`)}>

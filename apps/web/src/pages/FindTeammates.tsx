@@ -286,9 +286,9 @@ export default function FindTeammates() {
   return (
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <TopBar />
-        <main className="flex-1 p-8 gradient-mesh">
+        <main className="flex-1 p-8 overflow-y-auto gradient-mesh">
           <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between animate-fade-in-up">

@@ -1,4 +1,4 @@
-import { Profile, Tournament, Match, TournamentStatus, TournamentFormat } from '@/types/common.types';
+import { Tournament } from '@/types/common.types';
 import { User } from "@supabase/supabase-js";
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -86,7 +86,7 @@ const Tournaments = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto gradient-mesh">
           <div className="container mx-auto px-6 py-8">

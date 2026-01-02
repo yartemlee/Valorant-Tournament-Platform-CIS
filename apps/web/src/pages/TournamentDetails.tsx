@@ -1,4 +1,4 @@
-import { Profile, Tournament, Match, ParticipantWithTeam } from '@/types/common.types';
+import { Tournament, ParticipantWithTeam } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
@@ -67,49 +67,6 @@ const TournamentDetails = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Real-time subscription for tournament registrations
-  useEffect(() => {
-    if (!id) return;
-
-    // Subscribe to changes in tournament_registrations
-    const channel = supabase
-      .channel(`tournament_${id}_registrations`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tournament_registrations',
-          filter: `tournament_id=eq.${id}`
-        },
-        () => {
-          // Refetch participants when any change occurs
-          refetchParticipants();
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription on unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [id]);
-
-  // Auto-join after data is loaded
-  useEffect(() => {
-    if (!loading && tournament && searchParams.get("action") === "join") {
-      handleJoin();
-      // Clear the action parameter after handling
-      navigate(`/tournaments/${id}`, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, tournament, searchParams]);
-
-  const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-  };
-
   // Separate function to refetch participants for real-time updates
   const refetchParticipants = async (specificTournamentId?: string) => {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
@@ -134,13 +91,15 @@ const TournamentDetails = () => {
             .eq("id", p.team_id)
             .maybeSingle();
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let rosterPlayers: any[] = [];
           if (p.selected_roster && p.selected_roster.length > 0) {
             const { data: profiles } = await supabase
               .from("profiles")
               .select("id, username, avatar_url, rank")
               .in("id", p.selected_roster);
-            rosterPlayers = profiles || [];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            rosterPlayers = (profiles as any[]) || [];
           }
 
           return {
@@ -176,6 +135,51 @@ const TournamentDetails = () => {
         }
       }
     }
+  };
+
+
+  // Real-time subscription for tournament registrations
+  useEffect(() => {
+    if (!id) return;
+
+    // Subscribe to changes in tournament_registrations
+    const channel = supabase
+      .channel(`tournament_${id}_registrations`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `tournament_id=eq.${id}`
+        },
+        () => {
+          // Refetch participants when any change occurs
+          refetchParticipants();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Auto-join after data is loaded
+  useEffect(() => {
+    if (!loading && tournament && searchParams.get("action") === "join") {
+      handleJoin();
+      // Clear the action parameter after handling
+      navigate(`/tournaments/${id}`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, tournament, searchParams]);
+
+  const checkAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
   };
 
   const fetchData = async () => {
@@ -279,6 +283,7 @@ const TournamentDetails = () => {
   const handleRosterConfirm = async (selectedUserIds: string[]) => {
     if (!pendingTeamId) return;
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     const { error } = await supabase.from("tournament_registrations").insert([
       {
         tournament_id: tournament?.id,
@@ -287,6 +292,7 @@ const TournamentDetails = () => {
         selected_roster: selectedUserIds,
       } as any, // Cast to any because selected_roster might not be in types yet
     ]);
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     if (error) {
       if (error.code === '23505') {
@@ -318,7 +324,7 @@ const TournamentDetails = () => {
       toast.success("Турнир начался!");
       setStartDialogOpen(false);
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error("Ошибка начала турнира");
     }
   };
@@ -396,7 +402,7 @@ const TournamentDetails = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-6 py-8">

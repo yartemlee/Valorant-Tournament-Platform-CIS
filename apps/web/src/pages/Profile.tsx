@@ -128,7 +128,7 @@ export default function Profile() {
     <div className="min-h-screen flex bg-background">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <TopBar />
         <main className="flex-1 p-6 lg:p-8 overflow-auto gradient-mesh">
           <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">

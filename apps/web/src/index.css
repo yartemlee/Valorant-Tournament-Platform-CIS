@@ -78,7 +78,6 @@
   html {
     @apply h-full;
     font-family: var(--font-body);
-    scrollbar-gutter: stable;
   }
 
   * {
@@ -93,6 +92,11 @@
   #root {
     @apply min-h-screen;
     background: var(--gradient-bg);
+  }
+
+  /* Scrollbar only in main content area */
+  main {
+    scrollbar-gutter: stable;
   }
 
   /* Typography */
