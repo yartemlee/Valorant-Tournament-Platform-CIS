@@ -30,6 +30,8 @@ export type TeamInvitation = Tables<'team_invitations'>;
 export type TeamApplication = Tables<'team_applications'>;
 export type PlayerRole = Tables<'player_roles'>;
 export type PlayerAgent = Tables<'player_agents'>;
+export type Achievement = Tables<'achievements'>;
+export type UserAchievement = Tables<'user_achievements'> & { achievement?: Achievement };
 
 // Extended types (joins)
 export interface TeamWithMembers extends Team {

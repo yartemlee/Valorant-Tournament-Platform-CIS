@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Target, Award, TrendingUp, Medal } from "lucide-react";
+import { Trophy, Medal } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
@@ -28,7 +28,7 @@ export function TeamStatsSection({ teamId }: TeamStatsSectionProps) {
     wins: team?.medals_gold || 0,
     podiums: (team?.medals_gold || 0) + (team?.medals_silver || 0) + (team?.medals_bronze || 0),
     winrate: 0,
-    recentTournaments: [],
+    recentTournaments: [] as { name: string; placement: number }[],
   };
 
   // Проверяем, есть ли хоть какие-то медали

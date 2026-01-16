@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { toast } from "sonner";
-import { Chrome, MessageCircle } from "lucide-react";
+// removed unused imports
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -54,48 +54,14 @@ const Login = () => {
 
       toast.success("Добро пожаловать!");
       navigate("/");
-    } catch (error) {
+    } catch {
       toast.error("Произошла ошибка при входе");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
 
-      if (error) throw error;
-    } catch (error) {
-      toast.error("Ошибка входа через Google");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDiscordLogin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "discord",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      toast.error("Ошибка входа через Discord");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center gradient-mesh p-4">

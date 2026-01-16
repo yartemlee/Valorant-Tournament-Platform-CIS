@@ -1,10 +1,9 @@
-import { PlayerRole, PlayerAgent, Profile } from '@/types/common.types';
+import { PlayerRole, Profile } from '@/types/common.types';
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoleSelector } from "./RoleSelector";
 import { RankDisplay } from "./RankDisplay";
-import { MedalsDisplay } from "./MedalsDisplay";
 import { toast } from "sonner";
 
 interface ProfileTabProps {
@@ -27,8 +26,8 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
           .eq("user_id", profile.id);
 
         setRoles((rolesData as unknown as PlayerRole[]) || []);
-      } catch (error) {
-        toast.error("Ошибка загрузки данных профиля");
+      } catch {
+        toast.error("Не удалось загрузить данные профиля");
       } finally {
         setLoading(false);
       }
@@ -52,7 +51,7 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
           </CardHeader>
           <CardContent>
             <RankDisplay
-              currentRank={profile.rank}
+              currentRank={profile.rank || undefined}
             />
           </CardContent>
         </Card>

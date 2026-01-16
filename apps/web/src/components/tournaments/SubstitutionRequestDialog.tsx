@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -36,13 +36,7 @@ export function SubstitutionRequestDialog({
     const [playerOut, setPlayerOut] = useState<string>("");
     const [playerIn, setPlayerIn] = useState<string>("");
 
-    useEffect(() => {
-        if (open && teamId) {
-            fetchTeamMembers();
-        }
-    }, [open, teamId]);
-
-    const fetchTeamMembers = async () => {
+    const fetchTeamMembers = useCallback(async () => {
         setFetching(true);
         try {
             // Fetch all team members
@@ -61,11 +55,14 @@ export function SubstitutionRequestDialog({
             if (error) throw error;
 
             if (members) {
-                const players = members.map((m: any) => ({
-                    id: m.profiles.id,
-                    nickname: m.profiles.username,
-                    avatar_url: m.profiles.avatar_url,
-                }));
+                const players = members.map((m) => {
+                    const profile = m.profiles as unknown as { id: string; username: string; avatar_url: string | null };
+                    return {
+                        id: profile.id,
+                        nickname: profile.username,
+                        avatar_url: profile.avatar_url || undefined,
+                    };
+                });
                 setTeamMembers(players);
             }
         } catch {
@@ -73,7 +70,13 @@ export function SubstitutionRequestDialog({
         } finally {
             setFetching(false);
         }
-    };
+    }, [teamId]);
+
+    useEffect(() => {
+        if (open && teamId) {
+            fetchTeamMembers();
+        }
+    }, [open, teamId, fetchTeamMembers]);
 
     const handleSubmit = async () => {
         if (!playerOut || !playerIn) {
@@ -97,8 +100,9 @@ export function SubstitutionRequestDialog({
 
             if (error) throw error;
 
-            if (data && !data.success) {
-                toast.error(data.message || "Ошибка запроса замены");
+            const result = data as { success: boolean; message?: string } | null;
+            if (result && !result.success) {
+                toast.error(result.message || "Ошибка запроса замены");
                 return;
             }
 
@@ -107,8 +111,9 @@ export function SubstitutionRequestDialog({
             onOpenChange(false);
             setPlayerOut("");
             setPlayerIn("");
-        } catch (error: any) {
-            toast.error("Ошибка: " + error.message);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Неизвестная ошибка";
+            toast.error("Ошибка: " + errorMessage);
         } finally {
             setLoading(false);
         }

@@ -2,27 +2,41 @@ import { Profile, SocialLinks } from '@/types/common.types';
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { User, Shield, Link, Gamepad2, Bell } from "lucide-react";
+import { User, Shield, Link, Gamepad2, Bell, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ProfileSection } from "./settings/ProfileSection";
 import { RiotIDSection } from "./settings/RiotIDSection";
+import { RiotAccountSection } from "./settings/RiotAccountSection";
 import { LinkedAccountsSection } from "./settings/LinkedAccountsSection";
 import { PrivacySection } from "./settings/PrivacySection";
 import { NotificationsSection } from "./settings/NotificationsSection";
+import { FEATURES } from "@/config/features";
 
 interface SettingsTabProps {
   profile: Profile;
   onProfileUpdate: (profile: Profile) => void;
 }
 
-const settingsSections = [
-  { id: "profile", label: "Profile", icon: User },
-  { id: "riot-id", label: "Riot ID", icon: Gamepad2 },
-  { id: "linked-accounts", label: "Linked Accounts", icon: Link },
-  { id: "privacy", label: "Privacy", icon: Shield },
-  { id: "notifications", label: "Notifications", icon: Bell },
-];
+const getSettingsSections = () => {
+  const sections = [
+    { id: "profile", label: "Profile", icon: User },
+  ];
+
+  // Add RSO section if enabled
+  if (FEATURES.RSO_ENABLED) {
+    sections.push({ id: "riot-account", label: "Riot Sign On", icon: ShieldCheck });
+  }
+
+  sections.push(
+    { id: "riot-id", label: "Riot ID", icon: Gamepad2 },
+    { id: "linked-accounts", label: "Linked Accounts", icon: Link },
+    { id: "privacy", label: "Privacy", icon: Shield },
+    { id: "notifications", label: "Notifications", icon: Bell },
+  );
+
+  return sections;
+};
 
 export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
   const [activeSection, setActiveSection] = useState("profile");
@@ -111,6 +125,8 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
     }
   };
 
+  const settingsSections = getSettingsSections();
+
   return (
     <div className="flex gap-6">
       {/* Left Navigation Menu */}
@@ -138,6 +154,9 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
       <div className="flex-1 min-w-0">
         {activeSection === "profile" && (
           <ProfileSection formData={formData} onChange={handleChange} />
+        )}
+        {activeSection === "riot-account" && FEATURES.RSO_ENABLED && (
+          <RiotAccountSection />
         )}
         {activeSection === "riot-id" && (
           <RiotIDSection formData={formData} onChange={handleChange} />

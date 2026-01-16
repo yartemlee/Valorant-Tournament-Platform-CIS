@@ -21,34 +21,34 @@ const AdminLayout = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        checkAdmin();
-    }, []);
+        const checkAdmin = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    navigate("/login");
+                    return;
+                }
 
-    const checkAdmin = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                navigate("/login");
-                return;
-            }
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", user.id)
+                    .single();
 
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("role")
-                .eq("id", user.id)
-                .single();
+                if (!profile || profile.role !== "admin") {
+                    toast.error("Доступ запрещен");
+                    navigate("/");
+                    return;
+                }
 
-            if (!profile || profile.role !== "admin") {
-                toast.error("Доступ запрещен");
+                setLoading(false);
+            } catch {
                 navigate("/");
-                return;
             }
+        };
 
-            setLoading(false);
-        } catch {
-            navigate("/");
-        }
-    };
+        checkAdmin();
+    }, [navigate]);
 
     const handleExitAdmin = () => {
         navigate("/");

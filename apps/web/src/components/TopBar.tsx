@@ -55,7 +55,7 @@ const TopBar = () => {
         .single();
 
       if (error || !data) return null;
-      return data as any as Profile;
+      return data as unknown as Profile;
     },
     enabled: !!user?.id,
   });
@@ -140,14 +140,14 @@ const TopBar = () => {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 hover:opacity-80 transition-opacity relative">
                 <Avatar className="h-10 w-10 border-2 border-primary shadow-glow-primary cursor-pointer">
-                  <AvatarImage src={profile?.avatar_url} alt={profile?.username} />
+                  <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.username} />
                   <AvatarFallback className="bg-gradient-accent text-accent-foreground font-bold">
                     {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
-                {notificationsCount > 0 && (
+                {(notificationsCount || 0) > 0 && (
                   <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
-                    {notificationsCount}
+                    {notificationsCount || 0}
                   </span>
                 )}
               </button>
@@ -164,10 +164,10 @@ const TopBar = () => {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setNotificationsOpen(true)}>
                 <Bell className="mr-2 h-4 w-4" />
-                Уведомления
-                {notificationsCount > 0 && (
+                Uvedomleniya
+                {(notificationsCount || 0) > 0 && (
                   <span className="ml-auto bg-destructive text-destructive-foreground text-xs rounded-full px-2 py-0.5">
-                    {notificationsCount}
+                    {notificationsCount || 0}
                   </span>
                 )}
               </DropdownMenuItem>

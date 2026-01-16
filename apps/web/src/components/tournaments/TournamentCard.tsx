@@ -78,7 +78,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
                     return tournament.start_time
                       ? format(new Date(tournament.start_time), "d MMMM yyyy, HH:mm", { locale: ru })
                       : "Дата не указана";
-                  } catch (e) {
+                  } catch {
                     return "Ошибка даты";
                   }
                 })()}

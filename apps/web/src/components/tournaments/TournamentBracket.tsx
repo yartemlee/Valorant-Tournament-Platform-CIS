@@ -86,9 +86,9 @@ export function TournamentBracket({
    * Загружает матчи из базы данных и дополняет их информацией о командах
    */
   const fetchMatches = useCallback(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const { data, error } = await supabase
-      .from("tournament_matches" as any)
+      .from("tournament_matches")
       .select("*")
       .eq("tournament_id", tournamentId)
       .order("round_number", { ascending: true })
@@ -101,7 +101,7 @@ export function TournamentBracket({
 
     // Загружаем информацию о командах для каждого матча
     const matchesWithTeams = await Promise.all(
-      ((data as any[]) || []).map(async (match) => {
+      ((data || []) as BracketMatch[]).map(async (match) => {
         const team1 = match.team1_id ? await getTeamInfo(match.team1_id) : null;
         const team2 = match.team2_id ? await getTeamInfo(match.team2_id) : null;
         return { ...match, team1, team2 } as BracketMatch;
@@ -198,8 +198,7 @@ export function TournamentBracket({
       // Помечаем турнир как имеющий сгенерированную сетку
       await supabase
         .from("tournaments")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ bracket_generated: true } as any)
+        .update({ bracket_generated: true })
         .eq("id", tournamentId);
 
       toast.success("Сетка создана");
@@ -223,9 +222,9 @@ export function TournamentBracket({
     setLoading(true);
     try {
       // 1. Удаляем существующие матчи
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const { error: deleteError } = await supabase
-        .from("tournament_matches" as any)
+        .from("tournament_matches")
         .delete()
         .eq("tournament_id", tournamentId);
 
@@ -319,8 +318,7 @@ export function TournamentBracket({
 
     // Сохраняем все матчи в базу данных
     // Сохраняем все матчи в базу данных
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await supabase.from("tournament_matches" as any).insert(matchesToCreate);
+    await supabase.from("tournament_matches").insert(matchesToCreate);
   }
 
   /**
@@ -432,8 +430,7 @@ export function TournamentBracket({
       best_of: 5,  // Гранд-финал всегда BO5
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await supabase.from("tournament_matches" as any).insert(matchesToCreate);
+    await supabase.from("tournament_matches").insert(matchesToCreate);
   }
 
   // ============================================================================

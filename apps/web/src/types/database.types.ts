@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -865,11 +865,17 @@ export type Database = {
           medals_bronze: number | null
           medals_gold: number | null
           medals_silver: number | null
+          official_rank: string | null
+          official_rank_tier: number | null
           phone_number: string | null
           rank: Database["public"]["Enums"]["valorant_rank"] | null
+          rank_last_updated: string | null
           riot_id: string | null
           riot_id_name: string | null
           riot_id_tag: string | null
+          riot_puuid: string | null
+          riot_verified: boolean | null
+          riot_verified_at: string | null
           role: string | null
           show_country: boolean | null
           show_roles: boolean | null
@@ -898,11 +904,17 @@ export type Database = {
           medals_bronze?: number | null
           medals_gold?: number | null
           medals_silver?: number | null
+          official_rank?: string | null
+          official_rank_tier?: number | null
           phone_number?: string | null
           rank?: Database["public"]["Enums"]["valorant_rank"] | null
+          rank_last_updated?: string | null
           riot_id?: string | null
           riot_id_name?: string | null
           riot_id_tag?: string | null
+          riot_puuid?: string | null
+          riot_verified?: boolean | null
+          riot_verified_at?: string | null
           role?: string | null
           show_country?: boolean | null
           show_roles?: boolean | null
@@ -931,11 +943,17 @@ export type Database = {
           medals_bronze?: number | null
           medals_gold?: number | null
           medals_silver?: number | null
+          official_rank?: string | null
+          official_rank_tier?: number | null
           phone_number?: string | null
           rank?: Database["public"]["Enums"]["valorant_rank"] | null
+          rank_last_updated?: string | null
           riot_id?: string | null
           riot_id_name?: string | null
           riot_id_tag?: string | null
+          riot_puuid?: string | null
+          riot_verified?: boolean | null
+          riot_verified_at?: string | null
           role?: string | null
           show_country?: boolean | null
           show_roles?: boolean | null
@@ -955,6 +973,159 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      riot_accounts: {
+        Row: {
+          access_token_encrypted: string | null
+          created_at: string
+          id: string
+          last_sync_at: string | null
+          puuid: string
+          refresh_token_encrypted: string | null
+          region: string
+          riot_id_name: string
+          riot_id_tag: string
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+          verification_status: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          puuid: string
+          refresh_token_encrypted?: string | null
+          region?: string
+          riot_id_name: string
+          riot_id_tag: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          verification_status?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          puuid?: string
+          refresh_token_encrypted?: string | null
+          region?: string
+          riot_id_name?: string
+          riot_id_tag?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          verification_status?: string | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "riot_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      riot_api_rate_limits: {
+        Row: {
+          endpoint: string
+          id: string
+          last_request_at: string
+          request_count: number | null
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          endpoint: string
+          id?: string
+          last_request_at?: string
+          request_count?: number | null
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          endpoint?: string
+          id?: string
+          last_request_at?: string
+          request_count?: number | null
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "riot_api_rate_limits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      riot_rank_cache: {
+        Row: {
+          act_id: string
+          act_name: string | null
+          current_rank: string | null
+          current_tier: number | null
+          expires_at: string
+          fetched_at: string
+          games_played: number | null
+          id: string
+          leaderboard_rank: number | null
+          peak_rank: string | null
+          peak_tier: number | null
+          puuid: string
+          ranking_in_tier: number | null
+          wins: number | null
+        }
+        Insert: {
+          act_id: string
+          act_name?: string | null
+          current_rank?: string | null
+          current_tier?: number | null
+          expires_at: string
+          fetched_at?: string
+          games_played?: number | null
+          id?: string
+          leaderboard_rank?: number | null
+          peak_rank?: string | null
+          peak_tier?: number | null
+          puuid: string
+          ranking_in_tier?: number | null
+          wins?: number | null
+        }
+        Update: {
+          act_id?: string
+          act_name?: string | null
+          current_rank?: string | null
+          current_tier?: number | null
+          expires_at?: string
+          fetched_at?: string
+          games_played?: number | null
+          id?: string
+          leaderboard_rank?: number | null
+          peak_rank?: string | null
+          peak_tier?: number | null
+          puuid?: string
+          ranking_in_tier?: number | null
+          wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "riot_rank_cache_puuid_fkey"
+            columns: ["puuid"]
+            isOneToOne: false
+            referencedRelation: "riot_accounts"
+            referencedColumns: ["puuid"]
           },
         ]
       }
@@ -1696,6 +1867,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_riot_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_max_requests?: number
+          p_user_id: string
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
       cleanup_expired_lfg_lobbies: { Args: never; Returns: number }
       cleanup_expired_lobbies: { Args: never; Returns: number }
       create_lfg_lobby: {
@@ -1936,6 +2116,7 @@ export type Database = {
         }
         Returns: Json
       }
+      tier_to_rank_name: { Args: { tier: number }; Returns: string }
       transfer_captain: {
         Args: { new_captain_id: string; team_id: string }
         Returns: undefined

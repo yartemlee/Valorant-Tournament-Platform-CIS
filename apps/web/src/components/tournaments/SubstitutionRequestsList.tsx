@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,16 +12,16 @@ interface SubstitutionRequestsListProps {
 
 interface Request {
     id: string;
-    team_id: string;
-    requester_id: string;
-    player_out_id: string;
-    player_in_id: string;
-    status: 'pending' | 'approved' | 'rejected';
+    team_id: string | null;
+    requester_id: string | null;
+    player_out_id: string | null;
+    player_in_id: string | null;
+    status: 'pending' | 'approved' | 'rejected' | null;
     created_at: string;
-    team: { name: string };
-    player_out: { username: string };
-    player_in: { username: string };
-    requester: { username: string };
+    team: { name: string } | null;
+    player_out: { username: string } | null;
+    player_in: { username: string } | null;
+    requester: { username: string } | null;
 }
 
 export function SubstitutionRequestsList({ tournamentId }: SubstitutionRequestsListProps) {
@@ -29,7 +29,7 @@ export function SubstitutionRequestsList({ tournamentId }: SubstitutionRequestsL
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
-    const fetchRequests = async () => {
+    const fetchRequests = useCallback(async () => {
         setLoading(true);
         try {
             const { data, error } = await supabase
@@ -45,13 +45,14 @@ export function SubstitutionRequestsList({ tournamentId }: SubstitutionRequestsL
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
-            setRequests(data || []);
+            if (error) throw error;
+            setRequests((data as unknown as Request[]) || []);
         } catch {
             toast.error("Ошибка загрузки запросов на замену");
         } finally {
             setLoading(false);
         }
-    };
+    }, [tournamentId]);
 
     useEffect(() => {
         fetchRequests();
@@ -76,7 +77,7 @@ export function SubstitutionRequestsList({ tournamentId }: SubstitutionRequestsL
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [tournamentId]);
+    }, [tournamentId, fetchRequests]);
 
     const handleProcess = async (requestId: string, status: 'approved' | 'rejected') => {
         setProcessingId(requestId);
@@ -88,15 +89,18 @@ export function SubstitutionRequestsList({ tournamentId }: SubstitutionRequestsL
 
             if (error) throw error;
 
-            if (data && !data.success) {
-                toast.error(data.message || "Ошибка обработки запроса");
+            const result = data as unknown as { success: boolean; message?: string };
+
+            if (result && !result.success) {
+                toast.error(result.message || "Ошибка обработки запроса");
                 return;
             }
 
             toast.success(status === 'approved' ? "Замена одобрена" : "Замена отклонена");
             fetchRequests();
-        } catch (error: any) {
-            toast.error("Ошибка: " + error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Произошла ошибка";
+            toast.error("Ошибка: " + errorMessage);
         } finally {
             setProcessingId(null);
         }

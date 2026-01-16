@@ -2,13 +2,15 @@ import { Profile } from '@/types/common.types';
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Camera, MessageCircle, Trash2 } from "lucide-react";
+import { Camera, MessageCircle, Trash2, CheckCircle2 } from "lucide-react";
 import { SocialLinks } from "./SocialLinks";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { getCountryByCode } from "@/lib/countries";
 import { CountryFlag } from "@/components/CountryFlag";
 import { AvatarEditorDialog } from "./AvatarEditorDialog";
+import { RankBadge } from "./RankBadge";
+import { FEATURES } from "@/config/features";
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -176,8 +178,21 @@ export function ProfileHeader({ profile, isOwnProfile, isTeamMember, onProfileUp
           <h1 className="text-2xl lg:text-3xl font-bold">{profile.username}</h1>
 
           {profile.riot_id && (
-            <div className="text-muted-foreground">
-              ({profile.riot_id})
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span>({profile.riot_id})</span>
+              {profile.riot_verified && (
+                <CheckCircle2 className="h-4 w-4 text-green-500" aria-label="Верифицированный аккаунт" />
+              )}
+            </div>
+          )}
+
+          {FEATURES.SHOW_OFFICIAL_RANK && profile.official_rank && (
+            <div className="mt-1">
+              <RankBadge
+                rank={profile.official_rank}
+                isVerified={profile.riot_verified ?? false}
+                size="sm"
+              />
             </div>
           )}
 

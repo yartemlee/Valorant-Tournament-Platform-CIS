@@ -1,4 +1,3 @@
-import { Profile } from '@/types/common.types';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -53,9 +52,23 @@ export function LinkedAccountsSection({ formData, onChange }: LinkedAccountsSect
           </div>
           <Switch
             id="show_tracker"
-            checked={formData.show_tracker}
+            checked={(formData.show_tracker as boolean) || false}
             onCheckedChange={(checked) => onChange("show_tracker", checked)}
             disabled={!hasRiotId}
+          />
+        </div>
+
+        <div className="flex items-center justify-between space-x-2 pt-4 border-t">
+          <div className="space-y-1">
+            <Label htmlFor="show_steam">Показывать Steam</Label>
+            <p className="text-sm text-muted-foreground">
+              Отображать ссылку на ваш профиль Steam в профиле
+            </p>
+          </div>
+          <Switch
+            id="show_steam"
+            checked={(formData.show_steam as boolean) || false}
+            onCheckedChange={(checked) => onChange("show_steam", checked)}
           />
         </div>
       </CardContent>

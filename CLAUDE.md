@@ -1,175 +1,102 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Core Rules
-
-1. **Всегда отвечай на русском языке**, даже если вопрос на английском
-2. Приоритет: чистый, эффективный, безопасный и поддерживаемый код
-3. Удаляй мёртвый код, закомментированные блоки и неиспользуемые переменные
-4. Следуй best practices для React, Supabase, TypeScript и Tailwind
-5. При неясности задачи — задавай уточняющие вопросы
-6. Пиши понятные и осмысленные commit-сообщения
-7. Используй MCP серверы (настроены в `.mcp.json`):
-   - **supabase-mcp-server** — для работы с Supabase (миграции, схема БД, запросы)
-   - **context7** — для получения актуальной документации библиотек
-8. **Перед коммитом** запускай `npm run typecheck` и `npm run lint` для проверки ошибок
+# ValoHub — Claude Code Guidelines
 
 ## Project Overview
 
 ValoHub is a Valorant tournament platform for CIS region amateur/semi-professional esports. Built with React + TypeScript + Vite frontend with Supabase backend (PostgreSQL, Auth, Storage, Real-time).
+
+## Tech Stack
+
+- **Frontend**: React 18, TypeScript, Vite, TailwindCSS
+- **UI**: Shadcn UI (Radix UI primitives) in `src/components/ui/`
+- **State**: TanStack Query for server state, React Context for auth
+- **Forms**: React Hook Form + Zod validation
+- **Routing**: React Router v6
+- **Backend**: Supabase (auth, RLS-protected PostgreSQL, Storage, Real-time)
 
 ## Development Commands
 
 ```bash
 npm run dev          # Start dev server (port 8080)
 npm run build        # Production build
-npm run build:dev    # Development build
 npm run lint         # Run ESLint
 npm run typecheck    # TypeScript type checking
-npm run preview      # Preview production build
 ```
 
-## Architecture
+**Before committing**: Run `npm run typecheck && npm run lint` to check for errors.
 
-### Tech Stack
-- **Frontend**: React 18, TypeScript 5.8, Vite 7, TailwindCSS 3.4
-- **UI**: Shadcn UI (Radix UI primitives) in `src/components/ui/`
-- **State**: TanStack Query for server state, React Context for auth
-- **Forms**: React Hook Form + Zod validation
-- **Routing**: React Router v6
-- **Backend**: Supabase (auth, RLS-protected PostgreSQL, Storage, Real-time subscriptions)
+## Project Structure
 
-### Project Structure
 ```
-src/
+apps/web/src/
 ├── components/
-│   ├── ui/           # Shadcn UI components (Button, Dialog, Card, etc.)
+│   ├── ui/           # Shadcn UI components
 │   ├── profile/      # Profile-related components
-│   ├── teams/        # Team management components
-│   ├── admin/        # Admin panel components
-│   └── *.tsx         # Shared components (Header, Footer, TournamentCard)
+│   ├── teams/        # Team management
+│   └── admin/        # Admin panel
 ├── pages/            # Route components
-│   └── admin/        # Admin panel pages
-├── contexts/         # React contexts (AuthContext.tsx)
-├── hooks/            # Custom hooks (useCurrentUserProfile, useRealtime*)
-├── lib/              # Utilities
-│   ├── supabase.ts   # Supabase client
-│   └── utils.ts      # cn() utility for class merging
-├── types/            # TypeScript types (database.types.ts from Supabase)
+├── contexts/         # React contexts (AuthContext)
+├── hooks/            # Custom hooks
+├── lib/              # Utilities (supabase.ts, utils.ts)
+├── types/            # TypeScript types (database.types.ts)
 └── constants/        # App constants
 ```
 
-### Database Schema (Supabase)
-Key tables: `profiles`, `teams`, `team_members`, `team_invitations`, `team_applications`, `tournaments`, `tournament_registrations`, `matches`, `scrims`, `notifications`
+## Key Conventions
 
-Migrations in `supabase/migrations/`. Database types auto-generated in `src/types/database.types.ts`.
+### Zero Any Policy
 
-### Key Enums
+**Never use `any` type.** See skill `typescript-standards` for detailed patterns and alternatives.
+
+### Styling
+
+- Use TailwindCSS utility classes exclusively
+- Use `cn()` from `@/lib/utils` for conditional classes
+- Use Shadcn UI components for all UI elements
+
+### Supabase
+
+- Always check both `data` and `error` from queries
+- Use typed queries with `Database` types from `@/types/database.types.ts`
+- RLS is enabled on all tables
+
+### Path Aliases
+
+`@/*` maps to `./src/*`
+
+## Database Schema
+
+Key tables: `profiles`, `teams`, `team_members`, `team_invitations`, `tournaments`, `tournament_registrations`, `matches`, `scrims`, `notifications`
+
+Key enums:
 - `app_role`: admin, publisher, organizer, player
 - `team_role`: captain, coach, member
-- `tournament_format`: single_elimination, double_elimination
 - `tournament_status`: draft, registration, active, completed, cancelled
 - `valorant_rank`: Iron 1 through Radiant
 
-## Coding Conventions
+## Agent Skills
 
-### Zero Any Policy (CRITICAL)
+### Global (`~/.claude/skills/`)
 
-**НИКОГДА не используй тип `any`!** Это строгое правило проекта.
+| Skill | Purpose |
+|-------|---------|
+| `frontend-design` | Avoid "AI slop", create distinctive UIs |
+| `typescript-standards` | Zero Any Policy, TypeScript best practices |
+| `shadcn-ui` | UI components with Radix primitives |
+| `web-artifacts-builder` | Build standalone HTML artifacts |
 
-```typescript
-// ЗАПРЕЩЕНО
-const data: any = response;
-function handle(e: any) { }
-const items = data as any[];
+### Project (`.claude/skills/`)
 
-// ПРАВИЛЬНО
-const data: UserResponse = response;
-function handle(e: React.ChangeEvent<HTMLInputElement>) { }
-const items: User[] = data;
-```
+| Skill | Purpose |
+|-------|---------|
+| `design-system` | ValoHub "Digital Couture" theme |
+| `eslint-validation` | ESLint rules and workflow |
+| `scrollbar-style` | Custom scrollbar styling |
+| `supabase-realtime` | Real-time features, presence |
+| `supabase-migrations` | Database migrations, RLS policies |
+| `supabase-storage` | File uploads, avatars |
 
-**Что делать вместо `any`:**
+## Domain Rules
 
-1. **Используй конкретные типы из `@/types/database.types.ts`**
-   ```typescript
-   import { Database } from '@/types/database.types';
-   type Team = Database['public']['Tables']['teams']['Row'];
-   ```
-
-2. **Для событий — используй React типы**
-   ```typescript
-   onChange={(e: React.ChangeEvent<HTMLInputElement>) => ...}
-   onClick={(e: React.MouseEvent<HTMLButtonElement>) => ...}
-   onSubmit={(e: React.FormEvent<HTMLFormElement>) => ...}
-   ```
-
-3. **Для неизвестных данных — используй `unknown` с проверкой**
-   ```typescript
-   const data: unknown = await fetchData();
-   if (isUser(data)) { /* теперь data имеет тип User */ }
-   ```
-
-4. **Для generics — используй параметры типов**
-   ```typescript
-   function getFirst<T>(arr: T[]): T | undefined { return arr[0]; }
-   ```
-
-5. **Для сложных Supabase ответов — используй type assertions**
-   ```typescript
-   const { data } = await supabase.from('teams').select('*, captain:profiles(*)');
-   type TeamWithCaptain = Team & { captain: Profile };
-   const teams = data as TeamWithCaptain[] | null;
-   ```
-
-**Pre-commit hook блокирует коммиты с `any`!**
-
-### Styling
-- Use TailwindCSS utility classes exclusively
-- Use `cn()` from `src/lib/utils.ts` for conditional classes
-- Use Shadcn UI components for all UI elements
-
-### Supabase Queries
-- Always check both `data` and `error` from queries
-- Use typed queries with Database types
-- RLS is enabled on all tables - respect access patterns:
-  - profiles: self-editable, readable by authenticated users
-  - teams: editable by captain/coach, readable by all
-  - tournaments: editable by organizer/admin, readable by all
-
-### Naming
-- Event handlers: `handleSubmit`, `handleCreateTeam`, etc.
-- Use const arrow functions for handlers
-
-### Forms
-- Always use react-hook-form + zod + zodResolver
-
-### User Feedback
-- Use Sonner (toast) for all user action feedback
-- Show loading states with Skeleton components
-- Handle error states with user-friendly messages
-
-## Path Aliases
-`@/*` maps to `./src/*` (configured in tsconfig.json and vite.config.ts)
-
-## Environment Variables
-```
-VITE_SUPABASE_URL
-VITE_SUPABASE_ANON_KEY
-```
-
-## Domain Context
-
-### User Roles
-- **Player**: Basic rights, join teams, participate in tournaments
-- **Captain**: Manage team, invite/remove players, register for tournaments, transfer captaincy, delete team
-- **Coach**: Same as captain except delete team and transfer captaincy
-- **Organizer**: Manage created tournaments, input match results
-- **Admin**: Full platform access
-- **Publisher**: Create/edit news posts
-
-### Key Business Rules
 - A player can be in only one team at a time
 - Only captain/coach can register team for tournament
 - Riot ID is required for tournament participation

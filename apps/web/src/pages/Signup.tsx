@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Chrome, MessageCircle } from "lucide-react";
+// removed unused imports
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -98,48 +98,14 @@ const Signup = () => {
         toast.success("Аккаунт создан! Добро пожаловать в ValoHub!");
         navigate("/");
       }
-    } catch (error) {
+    } catch {
       toast.error("Произошла ошибка при регистрации");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
 
-      if (error) throw error;
-    } catch (error) {
-      toast.error("Ошибка регистрации через Google");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDiscordSignup = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "discord",
-        options: {
-          redirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      toast.error("Ошибка регистрации через Discord");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center gradient-mesh p-4 py-12">

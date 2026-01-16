@@ -1,4 +1,3 @@
-import { Profile } from '@/types/common.types';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +23,7 @@ export function ProfileSection({ formData, onChange }: ProfileSectionProps) {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="country">Страна</Label>
-          <Select value={formData.country} onValueChange={(value) => onChange("country", value)}>
+          <Select value={(formData.country as string) || undefined} onValueChange={(value) => onChange("country", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Выберите страну" />
             </SelectTrigger>
@@ -48,26 +47,26 @@ export function ProfileSection({ formData, onChange }: ProfileSectionProps) {
         />
 
         <div className="space-y-2">
-          <Label htmlFor="status">Статус</Label>
+          <Label htmlFor="username">Имя пользователя</Label>
           <Input
-            id="status"
-            placeholder="Соревнуюсь с 2021 года"
-            value={(formData.status as string) || ""}
-            onChange={(e) => onChange("status", e.target.value)}
+            id="username"
+            value={(formData.username as string) || ""}
+            onChange={(e) => onChange("username", e.target.value)}
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="about_me">О себе (до 300 символов)</Label>
+          <Label htmlFor="bio">О себе</Label>
           <Textarea
-            id="about_me"
-            value={formData.about_me}
+            id="bio"
+            value={(formData.about_me as string) || ""}
             onChange={(e) => onChange("about_me", e.target.value)}
+            placeholder="Расскажите немного о себе..."
             maxLength={300}
             rows={4}
           />
           <div className="text-xs text-muted-foreground text-right">
-            {formData.about_me.length}/300
+            {(formData.about_me as string || "").length}/300
           </div>
         </div>
       </CardContent>

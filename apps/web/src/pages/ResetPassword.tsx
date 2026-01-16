@@ -39,8 +39,8 @@ const ResetPassword = () => {
 
       toast.success("Пароль успешно обновлён!");
       navigate("/login");
-    } catch (error) {
-      toast.error("Произошла ошибка");
+    } catch {
+      toast.error("Произошла ошибка при сбросе пароля");
     } finally {
       setLoading(false);
     }

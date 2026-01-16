@@ -1,4 +1,4 @@
-import { Match, Tournament, BracketMatch } from '@/types/common.types';
+import { BracketMatch } from '@/types/common.types';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

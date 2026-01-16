@@ -19,7 +19,7 @@ interface TeamInviteWithTeam {
   id: string;
   team_id: string;
   invited_user_id: string;
-  status: string;
+  status: string | null;
   created_at: string;
   message?: string | null;
   teams: {
@@ -34,7 +34,7 @@ interface TeamApplicationWithTeam {
   id: string;
   team_id: string;
   user_id: string;
-  status: string;
+  status: string | null;
   created_at: string;
   teams: {
     id: string;
@@ -79,7 +79,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
             logo_url
           )
         `)
-        .eq("invited_user_id", session?.user?.id)
+        .eq("invited_user_id", session!.user!.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
       return data || [];
@@ -103,7 +103,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
             logo_url
           )
         `)
-        .eq("applicant_id", session?.user?.id)
+        .eq("applicant_id", session!.user!.id)
         .in("status", ["pending", "accepted", "rejected"])
         .order("created_at", { ascending: false });
       return data || [];
@@ -111,7 +111,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
     enabled: !!session?.user?.id,
   });
 
-  const handleInviteResponse = async (inviteId: string, teamId: string, accept: boolean) => {
+  const handleInviteResponse = async (inviteId: string, accept: boolean) => {
     try {
       if (accept) {
         // Используем RPC функцию для безопасного принятия приглашения
@@ -156,12 +156,13 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
-    } catch (error) {
-      toast.error(error.message || "Произошла ошибка");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Произошла ошибка";
+      toast.error(errorMessage);
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | null) => {
     switch (status) {
       case "pending":
         return <Badge variant="default">На рассмотрении</Badge>;
@@ -186,7 +187,8 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
       toast.success("Уведомление удалено");
       queryClient.invalidateQueries({ queryKey: ["my-team-applications"] });
       queryClient.invalidateQueries({ queryKey: ["notifications-count"] });
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error(error);
       toast.error("Не удалось удалить уведомление");
     }
   };
@@ -214,7 +216,8 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
       toast.success("Все уведомления удалены");
       queryClient.invalidateQueries({ queryKey: ["my-team-applications"] });
       queryClient.invalidateQueries({ queryKey: ["notifications-count"] });
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error(error);
       toast.error("Не удалось очистить уведомления");
     }
   };
@@ -256,7 +259,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() => handleInviteResponse(invite.id, invite.team_id, true)}
+                          onClick={() => handleInviteResponse(invite.id, true)}
                         >
                           <Check className="h-4 w-4 mr-1" />
                           Принять
@@ -264,7 +267,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleInviteResponse(invite.id, invite.team_id, false)}
+                          onClick={() => handleInviteResponse(invite.id, false)}
                         >
                           <X className="h-4 w-4 mr-1" />
                           Отклонить

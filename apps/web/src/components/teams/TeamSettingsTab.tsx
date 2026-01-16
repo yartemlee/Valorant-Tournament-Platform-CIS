@@ -68,7 +68,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
       // Upload to storage
       const fileExt = file.name.split(".").pop();
       const fileName = `${team.id}-${Date.now()}.${fileExt}`;
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("team-logos")
         .upload(fileName, file, { upsert: true });
 
@@ -84,7 +84,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
 
       toast.success("Логотип загружен. Не забудьте сохранить изменения");
     } catch (error) {
-      toast.error(error.message || "Ошибка загрузки логотипа");
+      toast.error((error as Error).message || "Ошибка загрузки логотипа");
     } finally {
       setIsUploading(false);
     }
@@ -116,7 +116,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
       queryClient.invalidateQueries({ queryKey: ["team-manage"] });
       queryClient.invalidateQueries({ queryKey: ["team"] });
     } catch (error) {
-      toast.error(error.message || "Ошибка обновления настроек");
+      toast.error((error as Error).message || "Ошибка обновления настроек");
     } finally {
       setIsUpdating(false);
     }
@@ -143,7 +143,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
 
       navigate("/teams");
     } catch (error) {
-      toast.error(error.message || "Ошибка при распускании команды");
+      toast.error((error as Error).message || "Ошибка при распускании команды");
     }
   };
 
@@ -246,7 +246,7 @@ export function TeamSettingsTab({ team, isOwner, isCoach }: TeamSettingsTabProps
             </div>
             <Switch
               id="is_recruiting"
-              checked={formData.is_recruiting}
+              checked={!!formData.is_recruiting}
               onCheckedChange={(checked) =>
                 setFormData({ ...formData, is_recruiting: checked })
               }

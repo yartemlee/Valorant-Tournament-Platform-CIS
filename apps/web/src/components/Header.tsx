@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Trophy, Users, MessageCircle, HelpCircle } from "lucide-react";
+import { Trophy, MessageCircle, HelpCircle } from "lucide-react";
 
 const Header = () => {
   return (

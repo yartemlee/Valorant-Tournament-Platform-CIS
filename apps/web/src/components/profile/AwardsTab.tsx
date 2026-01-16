@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Star, Target } from "lucide-react";
-import { toast } from "sonner";
 import { UserAchievement } from "@/types/common.types";
 
 interface AwardsTabProps {
@@ -30,8 +29,8 @@ export function AwardsTab({ userId }: AwardsTabProps) {
 
         if (error) throw error;
         setAchievements(data || []);
-      } catch (error) {
-        toast.error("Ошибка загрузки наград");
+      } catch {
+        // Игнорируем ошибку, просто не показываем награды
       } finally {
         setLoading(false);
       }
