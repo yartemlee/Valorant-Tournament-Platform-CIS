@@ -1,0 +1,25 @@
+{
+    "files": [],
+    "include": [],
+    "references": [
+        {
+            "path": "./apps/web"
+        },
+        {
+            "path": "./apps/desktop"
+        },
+        {
+            "path": "./packages/shared"
+        }
+    ],
+    "exclude": [
+        "node_modules",
+        "**/node_modules",
+        "dist",
+        "**/dist",
+        ".git",
+        ".vscode",
+        ".agent",
+        "coverage"
+    ]
+}

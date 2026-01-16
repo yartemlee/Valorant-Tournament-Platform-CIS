@@ -21754,10 +21754,22 @@ class HeartbeatManager {
   }
   /**
    * Start syncing with Supabase
+   * Can be called multiple times to update the access token
    */
   async start(supabaseUrl2, supabaseAnonKey, accessToken, userId, onStatusChange) {
     if (this.isRunning) {
-      console.log("[HeartbeatManager] Already running");
+      console.log("[HeartbeatManager] Updating access token");
+      this.supabase = createClient(supabaseUrl2, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      });
       return;
     }
     this.supabase = createClient(supabaseUrl2, supabaseAnonKey, {
@@ -22168,10 +22180,35 @@ class CommandListener {
   }
   /**
    * Start listening for commands
+   * Can be called multiple times to update the access token
    */
   async start(supabaseUrl2, supabaseAnonKey, accessToken, userId) {
     if (this.isListening) {
-      console.log("[CommandListener] Already listening");
+      console.log("[CommandListener] Updating access token and resubscribing");
+      if (this.channel) {
+        await this.channel.unsubscribe();
+        this.channel = null;
+      }
+      this.supabase = createClient(supabaseUrl2, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      });
+      const channelName2 = `desktop-commands:${userId}`;
+      this.channel = this.supabase.channel(channelName2);
+      this.channel.on("broadcast", { event: "command" }, async (payload) => {
+        await this.handleCommand(payload.payload);
+      }).subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("[CommandListener] Resubscribed to:", channelName2);
+        }
+      });
       return;
     }
     this.supabase = createClient(supabaseUrl2, supabaseAnonKey, {

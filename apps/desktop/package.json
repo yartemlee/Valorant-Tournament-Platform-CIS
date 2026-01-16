@@ -18,20 +18,20 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
-    "@valohub/shared": "workspace:*",
+    "@valohub/shared": "*",
     "axios": "^1.7.9",
     "electron-store": "^10.0.0",
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/cli": "^7.8.3",
     "@electron-forge/maker-squirrel": "^7.10.2",
     "@electron-forge/maker-zip": "^7.10.2",
     "@electron-forge/plugin-vite": "^7.10.2",
     "@types/node": "^22.16.5",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.23",
-    "electron": "^33.2.1",
+    "electron": "^40.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",

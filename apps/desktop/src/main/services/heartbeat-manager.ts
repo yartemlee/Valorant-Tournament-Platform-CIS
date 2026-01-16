@@ -30,6 +30,7 @@ export class HeartbeatManager {
 
   /**
    * Start syncing with Supabase
+   * Can be called multiple times to update the access token
    */
   async start(
     supabaseUrl: string,
@@ -38,8 +39,20 @@ export class HeartbeatManager {
     userId: string,
     onStatusChange?: (status: DesktopStatusData) => void
   ): Promise<void> {
+    // If already running, just update the Supabase client with new token
     if (this.isRunning) {
-      console.log('[HeartbeatManager] Already running');
+      console.log('[HeartbeatManager] Updating access token');
+      this.supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      });
       return;
     }
 

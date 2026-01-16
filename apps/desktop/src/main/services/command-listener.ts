@@ -37,6 +37,7 @@ export class CommandListener {
 
   /**
    * Start listening for commands
+   * Can be called multiple times to update the access token
    */
   async start(
     supabaseUrl: string,
@@ -44,8 +45,43 @@ export class CommandListener {
     accessToken: string,
     userId: string
   ): Promise<void> {
+    // If already listening, update the client with new token and resubscribe
     if (this.isListening) {
-      console.log('[CommandListener] Already listening');
+      console.log('[CommandListener] Updating access token and resubscribing');
+
+      // Unsubscribe from old channel
+      if (this.channel) {
+        await this.channel.unsubscribe();
+        this.channel = null;
+      }
+
+      // Create new client with updated token
+      this.supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      });
+
+      // Resubscribe to channel
+      const channelName = `desktop-commands:${userId}`;
+      this.channel = this.supabase.channel(channelName);
+
+      this.channel
+        .on('broadcast', { event: 'command' }, async (payload) => {
+          await this.handleCommand(payload.payload as DesktopCommand);
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[CommandListener] Resubscribed to:', channelName);
+          }
+        });
+
       return;
     }
 
