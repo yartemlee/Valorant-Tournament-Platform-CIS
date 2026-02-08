@@ -36,6 +36,7 @@ apps/web/src/
 ├── pages/            # Route components
 ├── contexts/         # React contexts (AuthContext)
 ├── hooks/            # Custom hooks
+├── services/         # Service layer (query keys, API functions)
 ├── lib/              # Utilities (supabase.ts, utils.ts)
 ├── types/            # TypeScript types (database.types.ts)
 └── constants/        # App constants
@@ -52,6 +53,36 @@ apps/web/src/
 - Use TailwindCSS utility classes exclusively
 - Use `cn()` from `@/lib/utils` for conditional classes
 - Use Shadcn UI components for all UI elements
+
+### Service Layer (MANDATORY)
+
+When writing new code or modifying existing components:
+
+- **Query keys**: Always use `queryKeys` from `@/services/queryKeys` — never hardcode strings like `["profile", id]`
+- **Profile queries**: Use `fetchProfileById`, `fetchProfileByUsername` etc. from `@/services/profiles`
+- **Team queries**: Use `fetchTeams`, `fetchTeamById`, `fetchTeamMemberRole` etc. from `@/services/teams`
+- **Current user profile**: Use the `useCurrentUserProfile()` hook — never write inline `supabase.from("profiles")` queries for the current user
+- **Cache invalidation**: Use `queryKeys.*` for `invalidateQueries` calls
+
+```ts
+// GOOD
+import { queryKeys } from "@/services/queryKeys";
+import { fetchProfileById } from "@/services/profiles";
+
+const { data } = useQuery({
+  queryKey: queryKeys.profiles.detail(userId),
+  queryFn: () => fetchProfileById(userId),
+});
+
+// BAD — never do this in new code
+const { data } = useQuery({
+  queryKey: ["profile", userId],
+  queryFn: async () => {
+    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
+    return data;
+  },
+});
+```
 
 ### Supabase
 

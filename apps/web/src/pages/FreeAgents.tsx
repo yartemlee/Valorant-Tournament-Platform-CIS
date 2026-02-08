@@ -2,6 +2,9 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrentUserProfile } from "@/hooks/useCurrentUserProfile";
+import { queryKeys } from "@/services/queryKeys";
+import { fetchTeamById, fetchTeamMemberRole } from "@/services/teams";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
@@ -20,7 +23,7 @@ const rankOrder = [
 
 const FreeAgents = () => {
     const { session } = useAuth();
-
+    const { profile } = useCurrentUserProfile();
 
     const [filters, setFilters] = useState<FreeAgentFilters>({
         search: "",
@@ -39,52 +42,31 @@ const FreeAgents = () => {
         rank?: string | null;
     } | null>(null);
 
-    // Get current user profile
-    const { data: profile } = useQuery({
-        queryKey: ["profile", session?.user?.id],
-        queryFn: async () => {
-            if (!session?.user?.id) return null;
-            const { data } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", session.user.id)
-                .single();
-            return data;
-        },
-        enabled: !!session?.user?.id,
-    });
-
     // Check if user has a team
     const hasTeam = !!profile?.current_team_id;
 
     // Get user's team (if captain/coach)
     const { data: userTeam } = useQuery({
-        queryKey: ["user-team", profile?.current_team_id],
-        queryFn: async () => {
-            if (!profile?.current_team_id) return null;
-            const { data } = await supabase
-                .from("teams")
-                .select("id, name, tag, logo_url")
-                .eq("id", profile.current_team_id)
-                .single();
-            return data;
-        },
+        queryKey: profile?.current_team_id
+            ? queryKeys.teams.detail(profile.current_team_id)
+            : ["noop-team"],
+        queryFn: () =>
+            profile?.current_team_id
+                ? fetchTeamById(profile.current_team_id)
+                : null,
         enabled: !!profile?.current_team_id,
     });
 
     // Check if user is captain or coach of their team
     const { data: userTeamRole } = useQuery({
-        queryKey: ["user-team-role", session?.user?.id, profile?.current_team_id],
-        queryFn: async () => {
-            if (!session?.user?.id || !profile?.current_team_id) return null;
-            const { data } = await supabase
-                .from("team_members")
-                .select("role")
-                .eq("team_id", profile.current_team_id)
-                .eq("user_id", session.user.id)
-                .single();
-            return data?.role;
-        },
+        queryKey:
+            session?.user?.id && profile?.current_team_id
+                ? queryKeys.teamMembers.role(profile.current_team_id, session.user.id)
+                : ["noop-role"],
+        queryFn: () =>
+            session?.user?.id && profile?.current_team_id
+                ? fetchTeamMemberRole(profile.current_team_id, session.user.id)
+                : null,
         enabled: !!session?.user?.id && !!profile?.current_team_id,
     });
 
@@ -92,7 +74,9 @@ const FreeAgents = () => {
 
     // Get current user's free agent card
     const { data: myCard, refetch: refetchMyCard } = useQuery({
-        queryKey: ["my-free-agent-card", session?.user?.id],
+        queryKey: session?.user?.id
+            ? queryKeys.freeAgents.myCard(session.user.id)
+            : ["noop-card"],
         queryFn: async () => {
             if (!session?.user?.id) return null;
             const { data } = await supabase
@@ -107,7 +91,7 @@ const FreeAgents = () => {
 
     // Fetch all active free agent cards with profile data
     const { data: cards = [], isLoading, refetch } = useQuery({
-        queryKey: ["free-agent-cards"],
+        queryKey: queryKeys.freeAgents.all,
         queryFn: async () => {
             const { data: cardsData, error } = await supabase
                 .from("free_agent_cards")

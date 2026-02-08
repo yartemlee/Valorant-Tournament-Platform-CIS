@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Coins, LogOut, Settings, User, Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { User as SupabaseUser } from "@supabase/supabase-js";
+import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,26 +22,10 @@ import { useRealtimeProfiles } from "@/hooks/useRealtimeProfiles";
 import { Profile } from "@/types/common.types";
 
 const TopBar = () => {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const { user, authLoading } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   // Fetch profile using React Query
   const { data: profile } = useQuery({
@@ -121,7 +106,12 @@ const TopBar = () => {
         )}
 
         {/* Auth Section */}
-        {!user ? (
+        {authLoading ? (
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-24 rounded-lg" />
+            <Skeleton className="h-10 w-10 rounded-full" />
+          </div>
+        ) : !user ? (
           <>
             <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
               Войти

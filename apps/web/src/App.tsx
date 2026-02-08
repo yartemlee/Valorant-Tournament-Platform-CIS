@@ -1,39 +1,43 @@
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, BrowserRouter, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { supabase } from "@/lib/supabase";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Use HashRouter for Electron (file:// protocol), BrowserRouter for web
 const isElectron = window.location.protocol === 'file:';
 const Router = isElectron ? HashRouter : BrowserRouter;
-import { useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Profile from "./pages/Profile";
-import Tournaments from "./pages/Tournaments";
-import TournamentDetails from "./pages/TournamentDetails";
-import Teams from "./pages/Teams";
-import CreateTeam from "./pages/CreateTeam";
-import TeamDetails from "./pages/TeamDetails";
-import TeamManage from "./pages/TeamManage";
-import FreeAgents from "./pages/FreeAgents";
-import FindTeammates from "./pages/FindTeammates";
-import NotFound from "./pages/NotFound";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminTeams from "./pages/admin/AdminTeams";
-import AdminTournaments from "./pages/admin/AdminTournaments";
-import AdminFreeAgents from "./pages/admin/AdminFreeAgents";
-import MatchRequestsList from "./pages/admin/MatchRequestsList";
-import MatchRequestDetails from "./pages/admin/MatchRequestDetails";
+
+// Lazy-loaded page components
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Tournaments = lazy(() => import("./pages/Tournaments"));
+const TournamentDetails = lazy(() => import("./pages/TournamentDetails"));
+const Teams = lazy(() => import("./pages/Teams"));
+const CreateTeam = lazy(() => import("./pages/CreateTeam"));
+const TeamDetails = lazy(() => import("./pages/TeamDetails"));
+const TeamManage = lazy(() => import("./pages/TeamManage"));
+const FreeAgents = lazy(() => import("./pages/FreeAgents"));
+const FindTeammates = lazy(() => import("./pages/FindTeammates"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Admin pages
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminTeams = lazy(() => import("./pages/admin/AdminTeams"));
+const AdminTournaments = lazy(() => import("./pages/admin/AdminTournaments"));
+const AdminFreeAgents = lazy(() => import("./pages/admin/AdminFreeAgents"));
+const MatchRequestsList = lazy(() => import("./pages/admin/MatchRequestsList"));
+const MatchRequestDetails = lazy(() => import("./pages/admin/MatchRequestDetails"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,37 +85,39 @@ const App = () => {
             <Toaster />
             <Sonner />
             <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:username" element={<Profile />} />
-                <Route path="/tournaments" element={<Tournaments />} />
-                <Route path="/tournaments/:id" element={<TournamentDetails />} />
-                <Route path="/teams" element={<Teams />} />
-                <Route path="/teams/create" element={<CreateTeam />} />
-                <Route path="/teams/:id" element={<TeamDetails />} />
-                <Route path="/teams/:id/manage" element={<TeamManage />} />
-                <Route path="/free-agents" element={<FreeAgents />} />
-                <Route path="/find-teammates" element={<FindTeammates />} />
+              <Suspense>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/:username" element={<Profile />} />
+                  <Route path="/tournaments" element={<Tournaments />} />
+                  <Route path="/tournaments/:id" element={<TournamentDetails />} />
+                  <Route path="/teams" element={<Teams />} />
+                  <Route path="/teams/create" element={<CreateTeam />} />
+                  <Route path="/teams/:id" element={<TeamDetails />} />
+                  <Route path="/teams/:id/manage" element={<TeamManage />} />
+                  <Route path="/free-agents" element={<FreeAgents />} />
+                  <Route path="/find-teammates" element={<FindTeammates />} />
 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="teams" element={<AdminTeams />} />
-                  <Route path="tournaments" element={<AdminTournaments />} />
-                  <Route path="tournaments/:tournamentId/requests" element={<MatchRequestsList />} />
-                  <Route path="requests/:requestId" element={<MatchRequestDetails />} />
-                  <Route path="free-agents" element={<AdminFreeAgents />} />
-                </Route>
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="users" element={<AdminUsers />} />
+                    <Route path="teams" element={<AdminTeams />} />
+                    <Route path="tournaments" element={<AdminTournaments />} />
+                    <Route path="tournaments/:tournamentId/requests" element={<MatchRequestsList />} />
+                    <Route path="requests/:requestId" element={<MatchRequestDetails />} />
+                    <Route path="free-agents" element={<AdminFreeAgents />} />
+                  </Route>
 
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
             </Router>
           </TooltipProvider>
         </AuthProvider>

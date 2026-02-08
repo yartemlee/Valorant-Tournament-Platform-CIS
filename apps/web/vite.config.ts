@@ -14,9 +14,6 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
       "@shared": path.resolve(__dirname, "../../packages/shared/src"),
     },
+    dedupe: ["react", "react-dom"],
   },
-  define: {
-    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify("https://yblnsfkhqsfsnrevivpy.supabase.co"),
-    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlibG5zZmtocXNmc25yZXZpdnB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NDUwMjMsImV4cCI6MjA3OTEyMTAyM30.hV0Sgx0SE5isMUWZbb_onyrdtOruVCp3EdBunJ5HhKM"),
-  }
 });

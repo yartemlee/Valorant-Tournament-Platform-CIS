@@ -1,51 +1,40 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { queryKeys } from "@/services/queryKeys";
+import { fetchProfileById } from "@/services/profiles";
+import { fetchTeamMemberRole } from "@/services/teams";
 
 export function useCurrentUserProfile(teamId?: string) {
   const { session } = useAuth();
+  const userId = session?.user?.id;
 
   const { data: profile, refetch: refetchProfile } = useQuery({
-    queryKey: ["profile", session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
-      return data;
-    },
-    enabled: !!session?.user?.id,
+    queryKey: userId ? queryKeys.profiles.detail(userId) : queryKeys.profiles.all,
+    queryFn: () => (userId ? fetchProfileById(userId) : null),
+    enabled: !!userId,
   });
 
-  const { data: teamMember, refetch: refetchTeamMember } = useQuery({
-    queryKey: ["team-member", teamId, session?.user?.id],
-    queryFn: async () => {
-      if (!teamId || !session?.user?.id) return null;
-      const { data } = await supabase
-        .from("team_members")
-        .select("role")
-        .eq("team_id", teamId)
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!teamId && !!session?.user?.id,
-    // Refetch more aggressively to ensure fresh data after captain transfer
+  const { data: teamMemberRole, refetch: refetchTeamMember } = useQuery({
+    queryKey:
+      teamId && userId
+        ? queryKeys.teamMembers.role(teamId, userId)
+        : ["noop"],
+    queryFn: () =>
+      teamId && userId ? fetchTeamMemberRole(teamId, userId) : null,
+    enabled: !!teamId && !!userId,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
   return {
-    id: session?.user?.id,
+    id: userId,
     profile,
     current_team_id: profile?.current_team_id,
-    isCaptainOfThisTeam: teamMember?.role === "captain",
-    isMemberOfThisTeam: !!teamMember,
-    isCoachOfThisTeam: teamMember?.role === "coach",
-    isManager: teamMember?.role === "captain" || teamMember?.role === "coach",
+    isCaptainOfThisTeam: teamMemberRole === "captain",
+    isMemberOfThisTeam: !!teamMemberRole,
+    isCoachOfThisTeam: teamMemberRole === "coach",
+    isManager: teamMemberRole === "captain" || teamMemberRole === "coach",
     refetch: () => {
       refetchProfile();
       refetchTeamMember();

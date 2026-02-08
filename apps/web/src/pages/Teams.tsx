@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrentUserProfile } from "@/hooks/useCurrentUserProfile";
+import { queryKeys } from "@/services/queryKeys";
+import { fetchTeams } from "@/services/teams";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
@@ -18,70 +20,24 @@ const Teams = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const { session, authLoading: sessionLoading } = useAuth();
+  const { authLoading: sessionLoading } = useAuth();
+
+  const { profile } = useCurrentUserProfile();
 
   // Real-time подписка на все команды для автоматического обновления списка
   useRealtimeTeams({ watchAll: true });
 
-  // Get user profile
-  const { data: profile } = useQuery({
-    queryKey: ["profile", session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
-      return data;
-    },
-    enabled: !!session?.user?.id,
-  });
-
-  // Get all teams using simple select (no nested joins)
+  // Get all teams
+  const filters = { status: statusFilter, search: searchQuery ?? "" };
   const { data: teams, isLoading, isError, refetch } = useQuery({
-    queryKey: ["teams", { status: statusFilter, search: searchQuery ?? "" }],
+    queryKey: queryKeys.teams.list(filters),
     enabled: !sessionLoading,
-    queryFn: async () => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-
-      try {
-        let query = supabase
-          .from('teams')
-          .select('id, name, tag, logo_url, is_recruiting, created_at, team_members(id)')
-          .abortSignal(controller.signal);
-
-        // Apply status filter
-        if (statusFilter === 'recruiting') {
-          query = query.eq('is_recruiting', true);
-        } else if (statusFilter === 'closed') {
-          query = query.eq('is_recruiting', false);
-        }
-
-        // Apply search filter
-        if (searchQuery && searchQuery.trim()) {
-          query = query.or(`name.ilike.%${searchQuery}%,tag.ilike.%${searchQuery}%`);
-        }
-
-        query = query.order('created_at', { ascending: false });
-
-        const { data, error } = await query;
-
-        if (error) {
-          throw error;
-        }
-
-        return data || [];
-      } finally {
-        clearTimeout(timeout);
-      }
-    },
-    refetchOnMount: 'always',
+    queryFn: () => fetchTeams(filters),
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
     staleTime: 30_000,
     retry: 1,
-    networkMode: 'always',
+    networkMode: "always",
   });
 
   const handleCreateTeam = () => {

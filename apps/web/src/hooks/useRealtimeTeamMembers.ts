@@ -1,19 +1,12 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { queryKeys } from "@/services/queryKeys";
 
 interface UseRealtimeTeamMembersOptions {
-  /** ID команды для отслеживания изменений в составе */
   teamId?: string;
 }
 
-/**
- * Hook для real-time обновлений состава команды
- * Подписывается на изменения в таблице team_members для конкретной команды
- * Автоматически обновляет все запросы связанные с составом команды
- * 
- * @param options - Конфигурация подписки
- */
 export function useRealtimeTeamMembers(options: UseRealtimeTeamMembersOptions) {
   const { teamId } = options;
   const queryClient = useQueryClient();
@@ -32,13 +25,10 @@ export function useRealtimeTeamMembers(options: UseRealtimeTeamMembersOptions) {
           filter: `team_id=eq.${teamId}`,
         },
         () => {
-          // Инвалидируем все запросы связанные с командой
-          queryClient.invalidateQueries({ queryKey: ["team", teamId] });
-          queryClient.invalidateQueries({ queryKey: ["team-manage", teamId] });
-          queryClient.invalidateQueries({ queryKey: ["team-member", teamId] });
-
-          // Также обновляем общий список команд (там может быть счётчик участников)
-          queryClient.invalidateQueries({ queryKey: ["teams"] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(teamId) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.teams.manage(teamId) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.teamMembers.all(teamId) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
         }
       )
       .subscribe();
@@ -48,8 +38,3 @@ export function useRealtimeTeamMembers(options: UseRealtimeTeamMembersOptions) {
     };
   }, [teamId, queryClient]);
 }
-
-
-
-
-
