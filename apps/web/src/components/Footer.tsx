@@ -1,4 +1,5 @@
 import { MessageCircle, Youtube, Twitch } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -15,56 +16,55 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="font-bold mb-4 text-foreground">Quick Links</h3>
+            <h3 className="font-bold mb-4 text-foreground">Навигация</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#tournaments" className="text-muted-foreground hover:text-accent transition-colors">
-                  Tournaments
-                </a>
+                <Link to="/tournaments" className="text-muted-foreground hover:text-accent transition-colors">
+                  Турниры
+                </Link>
               </li>
               <li>
-                <a href="#leaderboard" className="text-muted-foreground hover:text-accent transition-colors">
-                  Leaderboard
-                </a>
+                <Link to="/teams" className="text-muted-foreground hover:text-accent transition-colors">
+                  Команды
+                </Link>
               </li>
               <li>
-                <a href="#faq" className="text-muted-foreground hover:text-accent transition-colors">
-                  FAQ
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
-                  Contact
-                </a>
+                <Link to="/free-agents" className="text-muted-foreground hover:text-accent transition-colors">
+                  Свободные агенты
+                </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-bold mb-4 text-foreground">Legal</h3>
+            <h3 className="font-bold mb-4 text-foreground">Правовая информация</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
-                  About
-                </a>
+                <Link to="/privacy" className="text-muted-foreground hover:text-accent transition-colors">
+                  Политика конфиденциальности
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
-                  Terms of Service
-                </a>
+                <Link to="/terms" className="text-muted-foreground hover:text-accent transition-colors">
+                  Условия использования
+                </Link>
               </li>
             </ul>
           </div>
         </div>
 
+        {/* Riot Games Disclaimer */}
+        <div className="border-t border-border pt-6 mb-6">
+          <p className="text-xs text-muted-foreground/70 leading-relaxed text-center">
+            ValoHub не аффилирован с Riot Games, Inc. или VALORANT Esports.
+            Riot Games, VALORANT и все связанные логотипы являются товарными знаками
+            или зарегистрированными товарными знаками Riot Games, Inc.
+          </p>
+        </div>
+
         <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            © 2025 ValoHub. All rights reserved.
+            &copy; {new Date().getFullYear()} ValoHub. Все права защищены.
           </div>
 
           <div className="flex items-center gap-4">

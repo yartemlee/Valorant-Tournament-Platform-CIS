@@ -16,6 +16,7 @@ const Router = isElectron ? HashRouter : BrowserRouter;
 const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -27,6 +28,8 @@ const TeamDetails = lazy(() => import("./pages/TeamDetails"));
 const TeamManage = lazy(() => import("./pages/TeamManage"));
 const FreeAgents = lazy(() => import("./pages/FreeAgents"));
 const FindTeammates = lazy(() => import("./pages/FindTeammates"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Admin pages
@@ -90,6 +93,7 @@ const App = () => {
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/profile" element={<Profile />} />
@@ -102,6 +106,8 @@ const App = () => {
                   <Route path="/teams/:id/manage" element={<TeamManage />} />
                   <Route path="/free-agents" element={<FreeAgents />} />
                   <Route path="/find-teammates" element={<FindTeammates />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
 
                   {/* Admin Routes */}
                   <Route path="/admin" element={<AdminLayout />}>

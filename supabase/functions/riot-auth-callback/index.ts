@@ -1,25 +1,37 @@
 // Edge Function: riot-auth-callback
-// Handles Riot OAuth callback and creates/updates riot_accounts
+// Handles Riot OAuth callback for both account linking and login flows
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { RiotApiClient, getRandomDemoRank, TIER_TO_RANK } from '../_shared/riot-api.ts';
 import { encryptToken } from '../_shared/crypto.ts';
 
+interface LinkingState {
+  type?: undefined;
+  userId: string;
+  timestamp: number;
+  nonce: string;
+}
+
+interface LoginState {
+  type: 'login';
+  timestamp: number;
+  nonce: string;
+}
+
+type StateData = LinkingState | LoginState;
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
   const url = new URL(req.url);
   const appUrl = Deno.env.get('APP_URL') || 'http://localhost:8080';
 
-  // Helper function to redirect with error
   const redirectWithError = (error: string) => {
     return Response.redirect(`${appUrl}/profile?riot_error=${encodeURIComponent(error)}`, 302);
   };
 
-  // Helper function to redirect with success
   const redirectWithSuccess = () => {
     return Response.redirect(`${appUrl}/profile?riot_linked=true`, 302);
   };
@@ -27,27 +39,22 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    // Use service role for database operations (bypasses RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check for DEMO_MODE
+    // Check for DEMO_MODE (legacy linking flow)
     const isDemoMode = url.searchParams.get('demo') === 'true';
 
     if (isDemoMode) {
-      // Demo mode: create mock riot account
       const userId = url.searchParams.get('user_id');
       if (!userId) {
         return redirectWithError('Missing user_id in demo mode');
       }
 
-      // Generate demo Riot ID
       const demoName = `ValoHubPlayer${Math.floor(Math.random() * 9999)}`;
       const demoTag = `${Math.floor(1000 + Math.random() * 9000)}`;
       const demoPuuid = `DEMO-${crypto.randomUUID()}`;
       const demoRank = getRandomDemoRank();
 
-      // Check if user already has a riot account
       const { data: existing } = await supabase
         .from('riot_accounts')
         .select('id')
@@ -55,7 +62,6 @@ Deno.serve(async (req) => {
         .single();
 
       if (existing) {
-        // Update existing account
         await supabase
           .from('riot_accounts')
           .update({
@@ -68,7 +74,6 @@ Deno.serve(async (req) => {
           })
           .eq('user_id', userId);
       } else {
-        // Create new riot account
         await supabase
           .from('riot_accounts')
           .insert({
@@ -82,7 +87,6 @@ Deno.serve(async (req) => {
           });
       }
 
-      // Update profile with riot info
       await supabase
         .from('profiles')
         .update({
@@ -96,7 +100,6 @@ Deno.serve(async (req) => {
         })
         .eq('id', userId);
 
-      // Create demo rank cache
       const currentActId = Deno.env.get('CURRENT_ACT_ID') || 'demo-act-1';
       await supabase
         .from('riot_rank_cache')
@@ -108,7 +111,7 @@ Deno.serve(async (req) => {
           act_id: currentActId,
           act_name: 'Episode 10 Act 1 (Demo)',
           fetched_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
+          expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
         }, {
           onConflict: 'puuid,act_id',
         });
@@ -130,8 +133,7 @@ Deno.serve(async (req) => {
       return redirectWithError('Missing code or state');
     }
 
-    // Decode and validate state
-    let stateData: { userId: string; timestamp: number; nonce: string };
+    let stateData: StateData;
     try {
       stateData = JSON.parse(atob(state));
     } catch {
@@ -143,14 +145,26 @@ Deno.serve(async (req) => {
       return redirectWithError('State expired');
     }
 
-    const userId = stateData.userId;
-
     // Exchange code for tokens
     const riotClient = new RiotApiClient();
     const tokens = await riotClient.exchangeCodeForTokens(code);
-
-    // Get account info
     const accountInfo = await riotClient.getAccountInfo(tokens.access_token);
+
+    // Encrypt tokens
+    const encryptedAccessToken = await encryptToken(tokens.access_token);
+    const encryptedRefreshToken = await encryptToken(tokens.refresh_token);
+    const tokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+
+    // ── LOGIN FLOW ──
+    if (stateData.type === 'login') {
+      return await handleLoginFlow(
+        supabase, riotClient, accountInfo, encryptedAccessToken,
+        encryptedRefreshToken, tokenExpiresAt, appUrl
+      );
+    }
+
+    // ── LINKING FLOW (legacy — userId in state) ──
+    const userId = (stateData as LinkingState).userId;
 
     // Check if PUUID is already linked to another user
     const { data: existingPuuid } = await supabase
@@ -163,12 +177,6 @@ Deno.serve(async (req) => {
       return redirectWithError('This Riot account is already linked to another user');
     }
 
-    // Encrypt tokens
-    const encryptedAccessToken = await encryptToken(tokens.access_token);
-    const encryptedRefreshToken = await encryptToken(tokens.refresh_token);
-    const tokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
-
-    // Check if user already has a riot account
     const { data: existing } = await supabase
       .from('riot_accounts')
       .select('id')
@@ -176,7 +184,6 @@ Deno.serve(async (req) => {
       .single();
 
     if (existing) {
-      // Update existing account
       await supabase
         .from('riot_accounts')
         .update({
@@ -192,7 +199,6 @@ Deno.serve(async (req) => {
         })
         .eq('user_id', userId);
     } else {
-      // Create new riot account
       await supabase
         .from('riot_accounts')
         .insert({
@@ -209,7 +215,6 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Update profile
     await supabase
       .from('profiles')
       .update({
@@ -220,7 +225,7 @@ Deno.serve(async (req) => {
       })
       .eq('id', userId);
 
-    // Try to fetch rank (optional, may fail)
+    // Try to fetch rank
     try {
       const rankData = await riotClient.getRankInfo(accountInfo.puuid, 'eu');
       if (rankData) {
@@ -251,7 +256,6 @@ Deno.serve(async (req) => {
       }
     } catch (rankError) {
       console.warn('Failed to fetch rank:', rankError);
-      // Non-fatal, continue
     }
 
     return redirectWithSuccess();
@@ -261,3 +265,161 @@ Deno.serve(async (req) => {
     return redirectWithError('Server error during authentication');
   }
 });
+
+/**
+ * Handle RSO login flow: find or create user by PUUID, generate magic link
+ */
+async function handleLoginFlow(
+  supabase: ReturnType<typeof createClient>,
+  riotClient: RiotApiClient,
+  accountInfo: { puuid: string; gameName: string; tagLine: string },
+  encryptedAccessToken: string,
+  encryptedRefreshToken: string,
+  tokenExpiresAt: string,
+  appUrl: string,
+): Promise<Response> {
+  // Look up existing user by PUUID
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('riot_puuid', accountInfo.puuid)
+    .single();
+
+  let userId: string;
+  let isNewUser = false;
+
+  if (existingProfile) {
+    // ── RETURNING USER ──
+    userId = existingProfile.id;
+
+    // Update riot_accounts with fresh tokens
+    await supabase
+      .from('riot_accounts')
+      .update({
+        riot_id_name: accountInfo.gameName,
+        riot_id_tag: accountInfo.tagLine,
+        access_token_encrypted: encryptedAccessToken,
+        refresh_token_encrypted: encryptedRefreshToken,
+        token_expires_at: tokenExpiresAt,
+        last_sync_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId);
+
+    // Update profile Riot ID in case it changed
+    await supabase
+      .from('profiles')
+      .update({
+        riot_id: `${accountInfo.gameName}#${accountInfo.tagLine}`,
+      })
+      .eq('id', userId);
+
+  } else {
+    // ── NEW USER ──
+    isNewUser = true;
+
+    const tempEmail = `${accountInfo.puuid.slice(0, 8)}@valohub.local`;
+
+    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+      email: tempEmail,
+      password: crypto.randomUUID(),
+      email_confirm: true,
+      user_metadata: {
+        username: accountInfo.gameName,
+        full_name: `${accountInfo.gameName}#${accountInfo.tagLine}`,
+      },
+    });
+
+    if (createError || !newUser.user) {
+      console.error('Failed to create user:', createError);
+      return Response.redirect(
+        `${appUrl}/login?error=${encodeURIComponent('Failed to create account')}`,
+        302
+      );
+    }
+
+    userId = newUser.user.id;
+
+    // Create riot_accounts entry
+    await supabase.from('riot_accounts').insert({
+      user_id: userId,
+      puuid: accountInfo.puuid,
+      riot_id_name: accountInfo.gameName,
+      riot_id_tag: accountInfo.tagLine,
+      access_token_encrypted: encryptedAccessToken,
+      refresh_token_encrypted: encryptedRefreshToken,
+      token_expires_at: tokenExpiresAt,
+      verification_status: 'verified',
+      verified_at: new Date().toISOString(),
+      region: 'eu',
+    });
+
+    // Update profile
+    await supabase.from('profiles').update({
+      riot_id: `${accountInfo.gameName}#${accountInfo.tagLine}`,
+      riot_puuid: accountInfo.puuid,
+      riot_verified: true,
+      riot_verified_at: new Date().toISOString(),
+    }).eq('id', userId);
+
+    // Try to fetch rank (non-critical)
+    try {
+      const rankData = await riotClient.getRankInfo(accountInfo.puuid, 'eu');
+      if (rankData) {
+        const currentActId = Deno.env.get('CURRENT_ACT_ID') || 'unknown';
+
+        await supabase.from('riot_rank_cache').upsert({
+          puuid: accountInfo.puuid,
+          current_tier: rankData.currenttier,
+          current_rank: TIER_TO_RANK[rankData.currenttier] || 'Unknown',
+          ranking_in_tier: rankData.ranking_in_tier,
+          act_id: currentActId,
+          fetched_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        }, {
+          onConflict: 'puuid,act_id',
+        });
+
+        await supabase.from('profiles').update({
+          official_rank: TIER_TO_RANK[rankData.currenttier] || 'Unranked',
+          official_rank_tier: rankData.currenttier,
+          rank_last_updated: new Date().toISOString(),
+        }).eq('id', userId);
+      }
+    } catch (rankError) {
+      console.warn('Failed to fetch rank for new user:', rankError);
+    }
+  }
+
+  // Generate magic link for the user
+  const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+  if (!authUser?.user?.email) {
+    return Response.redirect(
+      `${appUrl}/login?error=${encodeURIComponent('User email not found')}`,
+      302
+    );
+  }
+
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    type: 'magiclink',
+    email: authUser.user.email,
+  });
+
+  if (linkError || !linkData) {
+    console.error('Failed to generate magic link:', linkError);
+    return Response.redirect(
+      `${appUrl}/login?error=${encodeURIComponent('Failed to generate login link')}`,
+      302
+    );
+  }
+
+  const linkUrl = new URL(linkData.properties.action_link);
+  const tokenHash = linkUrl.searchParams.get('token_hash') || '';
+
+  let callbackUrl = `${appUrl}/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=magiclink`;
+
+  if (isNewUser) {
+    callbackUrl += `&new_user=true&riot_name=${encodeURIComponent(accountInfo.gameName)}`;
+  }
+
+  return Response.redirect(callbackUrl, 302);
+}

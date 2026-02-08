@@ -1,55 +1,61 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-// removed unused imports
+import { useAuth } from "@/contexts/AuthContext";
 
 const Signup = () => {
+  const [searchParams] = useSearchParams();
+  const riotName = searchParams.get("riot_name") || "";
+  const { session } = useAuth();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
-    confirmPassword: "",
-    username: "",
+    username: riotName,
     fullName: "",
     dateOfBirth: "",
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [newsletter, setNewsletter] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!session) {
+      navigate("/login");
+    }
+  }, [session, navigate]);
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleCompleteProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!agreedToTerms) {
       toast.error("Необходимо принять правила платформы");
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Пароли не совпадают");
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      toast.error("Пароль должен содержать минимум 8 символов");
-      return;
-    }
-
     if (!/^[a-zA-Z0-9_]{3,16}$/.test(formData.username)) {
-      toast.error("Юзернейм должен содержать 3-16 символов (латиница, цифры, _)");
+      toast.error(
+        "Юзернейм должен содержать 3-16 символов (латиница, цифры, _)"
+      );
       return;
     }
 
-    // Check age
     const birthDate = new Date(formData.dateOfBirth);
-    const age = new Date().getFullYear() - birthDate.getFullYear();
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
     if (age < 16) {
       toast.error("Регистрация доступна только с 16 лет");
       return;
@@ -57,55 +63,55 @@ const Signup = () => {
 
     setLoading(true);
 
-    // Check if username is already taken
-    const { data: existingUser } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("username", formData.username)
-      .single();
-
-    if (existingUser) {
-      toast.error("Этот юзернейм уже занят");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            username: formData.username,
-            full_name: formData.fullName,
-          },
-        },
-      });
+      // Check if username is already taken
+      const { data: existingUser } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("username", formData.username)
+        .neq("id", session?.user?.id ?? "")
+        .single();
 
-      if (error) {
-        if (error.message.includes("already registered")) {
-          toast.error("Email уже зарегистрирован");
-        } else if (error.message.includes("duplicate key")) {
-          toast.error("Этот юзернейм уже занят");
-        } else {
-          toast.error(error.message);
-        }
+      if (existingUser) {
+        toast.error("Этот юзернейм уже занят");
+        setLoading(false);
         return;
       }
 
-      if (data.user) {
-        toast.success("Аккаунт создан! Добро пожаловать в ValoHub!");
-        navigate("/");
+      // Update profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          username: formData.username,
+          full_name: formData.fullName || null,
+        })
+        .eq("id", session!.user.id);
+
+      if (profileError) {
+        toast.error("Ошибка обновления профиля: " + profileError.message);
+        return;
       }
+
+      // Update email if provided and different from current
+      if (formData.email && formData.email !== session?.user?.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: formData.email,
+        });
+        if (emailError) {
+          console.warn("Email update failed:", emailError.message);
+        }
+      }
+
+      toast.success("Профиль заполнен! Добро пожаловать в ValoHub!");
+      navigate("/");
     } catch {
-      toast.error("Произошла ошибка при регистрации");
+      toast.error("Произошла ошибка при сохранении профиля");
     } finally {
       setLoading(false);
     }
   };
 
-
+  if (!session) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center gradient-mesh p-4 py-12">
@@ -114,58 +120,26 @@ const Signup = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-display font-bold mb-2 tracking-tight">
-              Создать аккаунт
+              Завершение регистрации
             </h1>
             <p className="text-muted-foreground">
-              Присоединяйся к СНГ-хабу Valorant
+              Заполни профиль, чтобы начать играть
             </p>
           </div>
 
-          {/* OAuth Buttons */}
-          {/* <div className="space-y-3 mb-6">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-12 text-base"
-              onClick={handleGoogleSignup}
-              disabled={loading}
-            >
-              <Chrome className="mr-2 h-5 w-5" />
-              Регистрация через Google
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-12 text-base"
-              onClick={handleDiscordSignup}
-              disabled={loading}
-            >
-              <MessageCircle className="mr-2 h-5 w-5" />
-              Регистрация через Discord
-            </Button>
-          </div>
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-card text-muted-foreground">или</span>
-            </div>
-          </div> */}
-
-          {/* Registration Form */}
-          <form onSubmit={handleSignup} className="space-y-4">
+          {/* Profile Form */}
+          <form onSubmit={handleCompleteProfile} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email">Email (для уведомлений)</Label>
                 <Input
                   id="email"
                   type="email"
                   placeholder="your@email.com"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   disabled={loading}
                 />
               </div>
@@ -177,40 +151,13 @@ const Signup = () => {
                   type="text"
                   placeholder="username123"
                   value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
                   required
                   disabled={loading}
                   pattern="[a-zA-Z0-9_]{3,16}"
                   title="3-16 символов, латиница, цифры, _"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Пароль *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Минимум 8 символов"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  disabled={loading}
-                  minLength={8}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Подтверждение пароля *</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="Повторите пароль"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  required
-                  disabled={loading}
                 />
               </div>
             </div>
@@ -223,7 +170,9 @@ const Signup = () => {
                   type="text"
                   placeholder="Иван Иванов"
                   value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
                   disabled={loading}
                 />
               </div>
@@ -234,12 +183,18 @@ const Signup = () => {
                   id="dateOfBirth"
                   type="date"
                   value={formData.dateOfBirth}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, dateOfBirth: e.target.value })
+                  }
                   required
                   disabled={loading}
-                  max={new Date(new Date().setFullYear(new Date().getFullYear() - 16))
-                    .toISOString()
-                    .split("T")[0]}
+                  max={
+                    new Date(
+                      new Date().setFullYear(new Date().getFullYear() - 16)
+                    )
+                      .toISOString()
+                      .split("T")[0]
+                  }
                 />
               </div>
             </div>
@@ -250,10 +205,15 @@ const Signup = () => {
                 <Checkbox
                   id="terms"
                   checked={agreedToTerms}
-                  onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setAgreedToTerms(checked as boolean)
+                  }
                   required
                 />
-                <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-tight">
+                <Label
+                  htmlFor="terms"
+                  className="text-sm font-normal cursor-pointer leading-tight"
+                >
                   Мне 16+ и я принимаю{" "}
                   <Link to="/terms" className="text-primary hover:underline">
                     Правила платформы
@@ -269,9 +229,14 @@ const Signup = () => {
                 <Checkbox
                   id="newsletter"
                   checked={newsletter}
-                  onCheckedChange={(checked) => setNewsletter(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setNewsletter(checked as boolean)
+                  }
                 />
-                <Label htmlFor="newsletter" className="text-sm font-normal cursor-pointer">
+                <Label
+                  htmlFor="newsletter"
+                  className="text-sm font-normal cursor-pointer"
+                >
                   Получать новости о турнирах и обновлениях
                 </Label>
               </div>
@@ -283,19 +248,9 @@ const Signup = () => {
               disabled={loading || !agreedToTerms}
               variant="hero"
             >
-              {loading ? "Создание аккаунта..." : "Создать аккаунт"}
+              {loading ? "Сохранение..." : "Завершить регистрацию"}
             </Button>
           </form>
-
-          {/* Login Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Уже есть аккаунт?{" "}
-              <Link to="/login" className="text-primary hover:underline font-medium">
-                Войти
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>

@@ -4,7 +4,15 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoleSelector } from "./RoleSelector";
 import { RankDisplay } from "./RankDisplay";
+import { FEATURES } from "@/config/features";
 import { toast } from "sonner";
+
+interface RiotRankCacheRow {
+  peak_rank: string | null;
+  peak_tier: number | null;
+  wins: number | null;
+  games_played: number | null;
+}
 
 interface ProfileTabProps {
   profile: Profile;
@@ -14,18 +22,40 @@ interface ProfileTabProps {
 
 export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
   const [roles, setRoles] = useState<PlayerRole[]>([]);
+  const [rankCache, setRankCache] = useState<RiotRankCacheRow | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProfileData = async () => {
       try {
+        const promises: Promise<unknown>[] = [];
+
         // Load roles
-        const { data: rolesData } = await supabase
+        const rolesPromise = supabase
           .from("player_roles")
           .select("*")
-          .eq("user_id", profile.id);
+          .eq("user_id", profile.id)
+          .then(({ data }) => {
+            setRoles((data as unknown as PlayerRole[]) || []);
+          });
+        promises.push(rolesPromise);
 
-        setRoles((rolesData as unknown as PlayerRole[]) || []);
+        // Load riot rank cache if puuid exists
+        if (profile.riot_puuid) {
+          const rankPromise = supabase
+            .from("riot_rank_cache")
+            .select("peak_rank, peak_tier, wins, games_played")
+            .eq("puuid", profile.riot_puuid)
+            .order("fetched_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+            .then(({ data }) => {
+              setRankCache(data);
+            });
+          promises.push(rankPromise);
+        }
+
+        await Promise.all(promises);
       } catch {
         toast.error("Не удалось загрузить данные профиля");
       } finally {
@@ -34,27 +64,38 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
     };
 
     loadProfileData();
-  }, [profile.id]);
+  }, [profile.id, profile.riot_puuid]);
 
   if (loading) {
     return <div className="animate-pulse">Загрузка...</div>;
   }
+
+  const currentRank = profile.official_rank || profile.rank || undefined;
+  const currentRankTier = profile.official_rank_tier ?? undefined;
 
   return (
     <div className="flex gap-6">
       {/* Left Side - Ranks and About */}
       <div className="flex-1 space-y-6">
         {/* Ranks Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ранги(В разработке)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RankDisplay
-              currentRank={profile.rank || undefined}
-            />
-          </CardContent>
-        </Card>
+        {FEATURES.SHOW_OFFICIAL_RANK && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Ранги</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RankDisplay
+                currentRank={currentRank}
+                currentRankTier={currentRankTier}
+                peakRank={rankCache?.peak_rank ?? undefined}
+                peakRankTier={rankCache?.peak_tier ?? undefined}
+                isVerified={profile.riot_verified ?? false}
+                wins={rankCache?.wins ?? undefined}
+                gamesPlayed={rankCache?.games_played ?? undefined}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* About Me Section */}
         <Card>

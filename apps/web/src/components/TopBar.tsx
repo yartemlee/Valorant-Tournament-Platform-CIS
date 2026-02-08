@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import RiotLogo from "@/components/icons/RiotLogo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,19 +113,14 @@ const TopBar = () => {
             <Skeleton className="h-10 w-10 rounded-full" />
           </div>
         ) : !user ? (
-          <>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
-              Войти
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="bg-gradient-primary shadow-glow-primary hover:shadow-glow-primary hover:scale-105"
-              onClick={() => navigate("/signup")}
-            >
-              Регистрация
-            </Button>
-          </>
+          <Button
+            size="sm"
+            className="bg-[#EB0029] hover:bg-[#D10025] text-white shadow-md hover:shadow-lg transition-all"
+            onClick={() => navigate("/login")}
+          >
+            <RiotLogo className="h-4 w-4 mr-2" />
+            Войти
+          </Button>
         ) : (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
