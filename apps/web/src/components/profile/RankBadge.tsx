@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Shield } from 'lucide-react';
-import { getRankColorClass } from '@/types/riot.types';
+import { getRankColorClass, getRankIconUrl } from '@/types/riot.types';
 
 interface RankBadgeProps {
   rank: string;
+  tier?: number;
   isVerified?: boolean;
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
@@ -12,12 +14,14 @@ interface RankBadgeProps {
 
 export function RankBadge({
   rank,
+  tier,
   isVerified = false,
   size = 'md',
   showIcon = true,
   className,
 }: RankBadgeProps) {
   const colors = getRankColorClass(rank);
+  const [iconError, setIconError] = useState(false);
 
   const sizeClasses = {
     sm: 'text-xs px-2 py-0.5',
@@ -26,9 +30,34 @@ export function RankBadge({
   };
 
   const iconSizes = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4',
-    lg: 'h-5 w-5',
+    sm: 16,
+    md: 24,
+    lg: 32,
+  };
+
+  const fallbackIconSizes = {
+    sm: 'h-4 w-4',
+    md: 'h-6 w-6',
+    lg: 'h-8 w-8',
+  };
+
+  const renderIcon = () => {
+    if (!showIcon) return null;
+
+    if (tier != null && tier > 0 && !iconError) {
+      return (
+        <img
+          src={getRankIconUrl(tier)}
+          alt={rank}
+          width={iconSizes[size]}
+          height={iconSizes[size]}
+          className="object-contain"
+          onError={() => setIconError(true)}
+        />
+      );
+    }
+
+    return <Shield className={cn(fallbackIconSizes[size], 'opacity-80')} />;
   };
 
   return (
@@ -42,11 +71,11 @@ export function RankBadge({
         className
       )}
     >
-      {showIcon && <Shield className={cn(iconSizes[size], 'opacity-80')} />}
+      {renderIcon()}
       <span>{rank}</span>
       {isVerified && (
         <CheckCircle2
-          className={cn(iconSizes[size], 'text-green-500')}
+          className={cn(fallbackIconSizes[size], 'text-green-500')}
           aria-label="Подтверждённый ранг"
         />
       )}

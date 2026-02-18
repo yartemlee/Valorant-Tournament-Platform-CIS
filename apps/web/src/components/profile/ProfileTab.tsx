@@ -72,6 +72,7 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
 
   const currentRank = profile.official_rank || profile.rank || undefined;
   const currentRankTier = profile.official_rank_tier ?? undefined;
+  const isDemo = profile.riot_puuid?.startsWith('demo-') ?? false;
 
   return (
     <div className="flex gap-6">
@@ -89,9 +90,9 @@ export function ProfileTab({ profile, isOwnProfile }: ProfileTabProps) {
                 currentRankTier={currentRankTier}
                 peakRank={rankCache?.peak_rank ?? undefined}
                 peakRankTier={rankCache?.peak_tier ?? undefined}
-                isVerified={profile.riot_verified ?? false}
                 wins={rankCache?.wins ?? undefined}
                 gamesPlayed={rankCache?.games_played ?? undefined}
+                isDemo={isDemo}
               />
             </CardContent>
           </Card>

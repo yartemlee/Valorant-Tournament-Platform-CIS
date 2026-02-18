@@ -190,7 +190,7 @@ export function ProfileHeader({ profile, isOwnProfile, isTeamMember, onProfileUp
             <div className="mt-1">
               <RankBadge
                 rank={profile.official_rank}
-                isVerified={profile.riot_verified ?? false}
+                tier={profile.official_rank_tier ?? undefined}
                 size="sm"
               />
             </div>

@@ -1,4 +1,4 @@
-import { Profile, SocialLinks } from '@/types/common.types';
+import { type Profile, type SocialLinks } from '@/types/common.types';
 import { SiDiscord, SiTwitch, SiYoutube, SiTiktok, SiInstagram, SiX } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 
@@ -58,22 +58,6 @@ export function SocialLinks({ profile, isTeamMember, isOwnProfile }: SocialLinks
         url: (profile.social_links as unknown as SocialLinks)?.twitter ? `https://twitter.com/${(profile.social_links as unknown as SocialLinks).twitter}` : null
       },
     ];
-
-  // Add Tracker.gg if enabled and Riot ID is present
-  if (profile.show_tracker && (profile.riot_id_name || profile.riot_id)) {
-    const riotIdName = profile.riot_id_name || profile.riot_id?.split('#')[0];
-    const riotIdTag = profile.riot_id_tag || profile.riot_id?.split('#')[1];
-
-    if (riotIdName && riotIdTag) {
-      socials.push({
-        name: "Tracker.gg",
-        username: `${riotIdName}#${riotIdTag}`,
-        icon: null,
-        url: `https://tracker.gg/valorant/profile/riot/${riotIdName}%23${riotIdTag}/overview`,
-        text: "TRN"
-      });
-    }
-  }
 
   const activeSocials = socials.filter(s => s.username);
 

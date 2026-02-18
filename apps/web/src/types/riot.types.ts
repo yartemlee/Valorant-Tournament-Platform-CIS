@@ -19,6 +19,10 @@ export interface RiotRankInfo {
   tier: number;
   rankingInTier?: number;
   leaderboardRank?: number;
+  peakRank?: string;
+  peakTier?: number;
+  wins?: number;
+  gamesPlayed?: number;
   cached?: boolean;
   expiresAt?: string;
   demo?: boolean;
@@ -88,6 +92,12 @@ export const RANK_COLORS: Record<string, { bg: string; text: string; border: str
   'Immortal': { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' },
   'Radiant': { bg: 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20', text: 'text-yellow-300', border: 'border-yellow-500/30' },
 };
+
+const COMPETITIVE_TIERS_UUID = '03621f52-342b-cf4e-4f86-9350a49c6d04';
+
+export function getRankIconUrl(tier: number): string {
+  return `https://media.valorant-api.com/competitivetiers/${COMPETITIVE_TIERS_UUID}/${tier}/largeicon.png`;
+}
 
 export function getRankColorClass(rank: string): { bg: string; text: string; border: string } {
   // Extract base rank name (e.g., "Diamond 2" -> "Diamond")

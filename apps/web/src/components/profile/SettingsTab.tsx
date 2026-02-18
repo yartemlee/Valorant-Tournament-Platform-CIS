@@ -2,53 +2,34 @@ import { Profile, SocialLinks } from '@/types/common.types';
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { User, Shield, Link, Gamepad2, Bell, ShieldCheck } from "lucide-react";
+import { User, Shield, Link, Bell, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ProfileSection } from "./settings/ProfileSection";
-import { RiotIDSection } from "./settings/RiotIDSection";
 import { RiotAccountSection } from "./settings/RiotAccountSection";
 import { LinkedAccountsSection } from "./settings/LinkedAccountsSection";
 import { PrivacySection } from "./settings/PrivacySection";
 import { NotificationsSection } from "./settings/NotificationsSection";
-import { FEATURES } from "@/config/features";
 
 interface SettingsTabProps {
   profile: Profile;
   onProfileUpdate: (profile: Profile) => void;
 }
 
-const getSettingsSections = () => {
-  const sections = [
-    { id: "profile", label: "Profile", icon: User },
-  ];
-
-  // Add RSO section if enabled
-  if (FEATURES.RSO_ENABLED) {
-    sections.push({ id: "riot-account", label: "Riot Sign On", icon: ShieldCheck });
-  }
-
-  sections.push(
-    { id: "riot-id", label: "Riot ID", icon: Gamepad2 },
-    { id: "linked-accounts", label: "Linked Accounts", icon: Link },
-    { id: "privacy", label: "Privacy", icon: Shield },
-    { id: "notifications", label: "Notifications", icon: Bell },
-  );
-
-  return sections;
-};
+const settingsSections = [
+  { id: "profile", label: "Profile", icon: User },
+  { id: "riot-account", label: "Riot Sign On", icon: ShieldCheck },
+  { id: "linked-accounts", label: "Linked Accounts", icon: Link },
+  { id: "privacy", label: "Privacy", icon: Shield },
+  { id: "notifications", label: "Notifications", icon: Bell },
+];
 
 export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
   const [activeSection, setActiveSection] = useState("profile");
   const [formData, setFormData] = useState({
-
     country: profile.country || "",
     phone_number: profile.phone_number || "",
     status: profile.status || "",
-    riot_id: (profile.riot_id || "").split("#")[0],
-    riot_tag: (profile.riot_id || "").split("#")[1] || "",
-    riot_id_name: profile.riot_id_name || (profile.riot_id || "").split("#")[0],
-    riot_id_tag: profile.riot_id_tag || (profile.riot_id || "").split("#")[1] || "",
     about_me: profile.bio || "",
     discord_username: (profile.social_links as unknown as SocialLinks)?.discord || "",
     twitch_username: (profile.social_links as unknown as SocialLinks)?.twitch || "",
@@ -74,14 +55,12 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
     try {
       setSaving(true);
 
-      const updates: Partial<Profile> & { riot_id?: string } = {
+      const updates: Partial<Profile> = {
         country: formData.country,
         phone_number: formData.phone_number,
         status: formData.status,
         bio: formData.about_me,
         instagram_username: formData.instagram_username,
-        riot_id_name: formData.riot_id, // We use the form field 'riot_id' for name
-        riot_id_tag: formData.riot_tag,
         social_links: {
           discord: formData.discord_username,
           twitch: formData.twitch_username,
@@ -98,14 +77,6 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
         discord_notifications: formData.discord_notifications,
         updated_at: new Date().toISOString(),
       };
-
-      // Only update riot_id if both fields are present or if clearing
-      if (formData.riot_id && formData.riot_tag) {
-        updates.riot_id = `${formData.riot_id}#${formData.riot_tag}`;
-      } else if (formData.riot_id) {
-        // Fallback if only ID is provided
-        updates.riot_id = formData.riot_id;
-      }
 
       const { data, error } = await supabase
         .from("profiles")
@@ -124,8 +95,6 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
       setSaving(false);
     }
   };
-
-  const settingsSections = getSettingsSections();
 
   return (
     <div className="flex gap-6">
@@ -155,11 +124,8 @@ export function SettingsTab({ profile, onProfileUpdate }: SettingsTabProps) {
         {activeSection === "profile" && (
           <ProfileSection formData={formData} onChange={handleChange} />
         )}
-        {activeSection === "riot-account" && FEATURES.RSO_ENABLED && (
-          <RiotAccountSection />
-        )}
-        {activeSection === "riot-id" && (
-          <RiotIDSection formData={formData} onChange={handleChange} />
+        {activeSection === "riot-account" && (
+          <RiotAccountSection profile={profile} onProfileUpdate={onProfileUpdate} />
         )}
         {activeSection === "linked-accounts" && (
           <LinkedAccountsSection formData={formData} onChange={handleChange} />

@@ -1,6 +1,5 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface LinkedAccountsSectionProps {
@@ -17,8 +16,6 @@ export function LinkedAccountsSection({ formData, onChange }: LinkedAccountsSect
     { field: "instagram_username", label: "Instagram", placeholder: "username" },
     { field: "twitter_username", label: "Twitter/X", placeholder: "@username" },
   ];
-
-  const hasRiotId = !!(formData.riot_id && formData.riot_tag);
 
   return (
     <Card>
@@ -39,37 +36,6 @@ export function LinkedAccountsSection({ formData, onChange }: LinkedAccountsSect
               />
             </div>
           ))}
-        </div>
-
-        <div className="flex items-center justify-between space-x-2 pt-4 border-t">
-          <div className="space-y-1">
-            <Label htmlFor="show_tracker">Показывать Tracker.gg</Label>
-            <p className="text-sm text-muted-foreground">
-              {hasRiotId
-                ? "Отображать ссылку на статистику Tracker.gg в профиле"
-                : "Привяжите Riot ID, чтобы включить отображение статистики"}
-            </p>
-          </div>
-          <Switch
-            id="show_tracker"
-            checked={(formData.show_tracker as boolean) || false}
-            onCheckedChange={(checked) => onChange("show_tracker", checked)}
-            disabled={!hasRiotId}
-          />
-        </div>
-
-        <div className="flex items-center justify-between space-x-2 pt-4 border-t">
-          <div className="space-y-1">
-            <Label htmlFor="show_steam">Показывать Steam</Label>
-            <p className="text-sm text-muted-foreground">
-              Отображать ссылку на ваш профиль Steam в профиле
-            </p>
-          </div>
-          <Switch
-            id="show_steam"
-            checked={(formData.show_steam as boolean) || false}
-            onCheckedChange={(checked) => onChange("show_steam", checked)}
-          />
         </div>
       </CardContent>
     </Card>

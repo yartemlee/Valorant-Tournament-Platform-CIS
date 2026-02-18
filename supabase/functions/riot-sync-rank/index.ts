@@ -98,8 +98,13 @@ Deno.serve(async (req) => {
           tier: cachedRank.current_tier,
           rankingInTier: cachedRank.ranking_in_tier,
           leaderboardRank: cachedRank.leaderboard_rank,
+          peakRank: cachedRank.peak_rank,
+          peakTier: cachedRank.peak_tier,
+          wins: cachedRank.wins,
+          gamesPlayed: cachedRank.games_played,
           cached: true,
           expiresAt: cachedRank.expires_at,
+          demo: isDemoMode,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -110,16 +115,27 @@ Deno.serve(async (req) => {
       rank: string;
       rankingInTier: number | null;
       leaderboardRank: number | null;
+      peakTier?: number;
+      peakRank?: string;
+      wins?: number;
+      gamesPlayed?: number;
     };
 
     if (isDemoMode) {
-      // Demo mode: return random rank
+      // Demo mode: return random rank with peak/stats
       const demoRank = getRandomDemoRank();
+      const peakTier = Math.min(demoRank.tier + Math.floor(Math.random() * 3), 27);
+      const wins = Math.floor(Math.random() * 41) + 10; // 10-50
+      const gamesPlayed = wins + Math.floor(Math.random() * 31) + 5; // wins + 5..35
       rankData = {
         tier: demoRank.tier,
         rank: demoRank.rank,
         rankingInTier: demoRank.rankingInTier,
         leaderboardRank: demoRank.tier === 27 ? Math.floor(Math.random() * 500) + 1 : null,
+        peakTier,
+        peakRank: TIER_TO_RANK[peakTier] || 'Unknown',
+        wins,
+        gamesPlayed,
       };
     } else {
       // Production: fetch from Riot API
@@ -154,6 +170,10 @@ Deno.serve(async (req) => {
         current_rank: rankData.rank,
         ranking_in_tier: rankData.rankingInTier,
         leaderboard_rank: rankData.leaderboardRank,
+        peak_tier: rankData.peakTier ?? null,
+        peak_rank: rankData.peakRank ?? null,
+        wins: rankData.wins ?? 0,
+        games_played: rankData.gamesPlayed ?? 0,
         act_id: currentActId,
         act_name: isDemoMode ? 'Episode 10 Act 1 (Demo)' : undefined,
         fetched_at: new Date().toISOString(),
@@ -184,6 +204,10 @@ Deno.serve(async (req) => {
         tier: rankData.tier,
         rankingInTier: rankData.rankingInTier,
         leaderboardRank: rankData.leaderboardRank,
+        peakRank: rankData.peakRank,
+        peakTier: rankData.peakTier,
+        wins: rankData.wins,
+        gamesPlayed: rankData.gamesPlayed,
         cached: false,
         expiresAt: expiresAt,
         demo: isDemoMode,
