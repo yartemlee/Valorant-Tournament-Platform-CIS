@@ -12,13 +12,12 @@ interface TeamManageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   team: TeamWithMembers;
-  isOwner: boolean;
   isCaptain?: boolean;
   isCoach?: boolean;
   onCaptainTransferred?: () => void;
 }
 
-export function TeamManageDialog({ open, onOpenChange, team, isOwner, isCaptain, isCoach, onCaptainTransferred }: TeamManageDialogProps) {
+export function TeamManageDialog({ open, onOpenChange, team, isCaptain, isCoach, onCaptainTransferred }: TeamManageDialogProps) {
   // Доступ только для капитана или тренера (no separate owner role)
   const hasAccess = isCaptain || isCoach;
 
@@ -64,11 +63,9 @@ export function TeamManageDialog({ open, onOpenChange, team, isOwner, isCaptain,
           </TabsList>
 
           <TabsContent value="roster" className="mt-6">
-            <TeamRosterTab 
-              team={team} 
-              isOwner={isOwner} 
-              isCaptain={isCaptain} 
-              isCoach={isCoach}
+            <TeamRosterTab
+              team={team}
+              isCaptain={isCaptain}
               currentUserId={session?.user?.id}
               onCaptainTransferred={() => {
                 onOpenChange(false);
@@ -82,7 +79,7 @@ export function TeamManageDialog({ open, onOpenChange, team, isOwner, isCaptain,
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
-            <TeamSettingsTab team={team} isOwner={isOwner} isCaptain={isCaptain} isCoach={isCoach} />
+            <TeamSettingsTab team={team} isCaptain={isCaptain} isCoach={isCoach} />
           </TabsContent>
         </Tabs>
       </DialogContent>

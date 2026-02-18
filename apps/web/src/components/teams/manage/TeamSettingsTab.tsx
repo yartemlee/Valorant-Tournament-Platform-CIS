@@ -26,12 +26,11 @@ import { Trash2 } from "lucide-react";
 
 interface TeamSettingsTabProps {
   team: TeamWithMembers;
-  isOwner: boolean;
   isCaptain?: boolean;
   isCoach?: boolean;
 }
 
-export function TeamSettingsTab({ team, isOwner: _isOwner, isCaptain, isCoach }: TeamSettingsTabProps) {
+export function TeamSettingsTab({ team, isCaptain, isCoach }: TeamSettingsTabProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);

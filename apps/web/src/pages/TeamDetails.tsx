@@ -84,7 +84,6 @@ const TeamDetails = () => {
     enabled: !!id,
   });
 
-  const isOwner = currentUserId === team?.captain_id;
   const teamMembers = team?.team_members || [];
   const memberCount = teamMembers.length;
   const isFull = memberCount >= 10;
@@ -148,7 +147,6 @@ const TeamDetails = () => {
               team={team}
               memberCount={memberCount}
               canApply={!!canApply}
-              isOwner={isOwner}
               isMember={isMemberOfThisTeam}
               isApplying={isApplying}
               isManager={isManager}
@@ -184,7 +182,6 @@ const TeamDetails = () => {
         open={manageDialogOpen}
         onOpenChange={setManageDialogOpen}
         team={team}
-        isOwner={isOwner}
         isCaptain={isCaptainOfThisTeam}
         isCoach={isCoachOfThisTeam}
         onCaptainTransferred={() => {

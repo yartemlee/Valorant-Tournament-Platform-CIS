@@ -36,6 +36,10 @@ build_log.txt
 lint_output.txt
 debug_roles.ts
 
+# Lint reports
+apps/web/lint*.json
+apps/web/lint*.txt
+
 # One-off scripts
 fix-any-types.ps1
 fix-any-types-pass2.ps1

@@ -29,9 +29,7 @@ import { UserMinus, Crown, Shield } from "lucide-react";
 
 interface TeamRosterTabProps {
   team: TeamWithMembers;
-  isOwner: boolean;
   isCaptain?: boolean;
-  isCoach?: boolean;
   currentUserId?: string;
   onCaptainTransferred?: () => void;
 }

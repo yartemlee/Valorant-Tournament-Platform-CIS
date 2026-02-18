@@ -11,13 +11,10 @@ import { AwardsTab } from "@/components/profile/AwardsTab";
 import { SettingsTab } from "@/components/profile/SettingsTab";
 import { toast } from "sonner";
 
-import { User } from "@supabase/supabase-js";
-
 export default function Profile() {
   const { username } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [_currentUser, setCurrentUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "profile");
@@ -29,7 +26,6 @@ export default function Profile() {
       try {
         // Get current user
         const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
 
         // If username is provided, load that profile, otherwise load current user's profile
         let targetUserId = user?.id;

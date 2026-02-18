@@ -39,23 +39,3 @@ export async function updateProfile(
   if (error) throw error;
   return data;
 }
-
-export async function fetchPlayerRoles(userId: string) {
-  const { data, error } = await supabase
-    .from("player_roles")
-    .select("*")
-    .eq("user_id", userId);
-
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function fetchPlayerAgents(userId: string) {
-  const { data, error } = await supabase
-    .from("player_agents")
-    .select("*")
-    .eq("user_id", userId);
-
-  if (error) throw error;
-  return data ?? [];
-}

@@ -127,9 +127,7 @@ const TeamManage = () => {
               <TabsContent value="roster" className="space-y-4">
                 <TeamRosterTab
                   team={team}
-                  isOwner={isOwner}
                   isCaptain={isCaptain}
-                  isCoach={isCoach}
                   currentUserId={session?.user?.id}
                 />
               </TabsContent>
@@ -139,7 +137,7 @@ const TeamManage = () => {
               </TabsContent>
 
               <TabsContent value="settings" className="space-y-4">
-                <TeamSettingsTab team={team} isOwner={isOwner} isCoach={isCoach} />
+                <TeamSettingsTab team={team} isCaptain={isCaptain} isCoach={isCoach} />
               </TabsContent>
             </Tabs>
           </div>

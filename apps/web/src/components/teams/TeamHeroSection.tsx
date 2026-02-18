@@ -15,7 +15,6 @@ interface TeamHeroSectionProps {
   team: TeamWithMembers;
   memberCount: number;
   canApply: boolean;
-  isOwner: boolean;
   isMember: boolean;
   isApplying: boolean;
   isManager?: boolean;
@@ -30,7 +29,6 @@ export function TeamHeroSection({
   team,
   memberCount,
   canApply,
-  isOwner: _isOwner,
   isMember,
   isApplying,
   isManager,
